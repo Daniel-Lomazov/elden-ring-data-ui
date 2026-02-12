@@ -74,5 +74,4 @@ elden_ring_data_ui/
 
 ---
 
-If you'd like, I can also produce a small `final_check.py` import-verifier and a simple `setup.ps1` to automate the conda commands on Windows. Let me know which you prefer.
-   Or:
+<!-- Removed assistant-suggested helper offer to keep README focused and minimal -->
