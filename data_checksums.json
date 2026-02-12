@@ -1,0 +1,173 @@
+{
+  "generated": "20260212_043857",
+  "files": [
+    {
+      "path": "data/armors.csv",
+      "sha256": "5d3ef50f43aadd1b70468c1477f0b7b50aa78fbf8efec9f7b6e8b426bee64282",
+      "size": 528043,
+      "mtime": 1770863783
+    },
+    {
+      "path": "data/ashesOfWar.csv",
+      "sha256": "082beffb6301d0d88172a94a81bcbcd065af9158fc04fe4de4eb0a7cd45706b3",
+      "size": 50345,
+      "mtime": 1770863783
+    },
+    {
+      "path": "data/bosses.csv",
+      "sha256": "91c953ce8018d1f84991c404a0ca25bdcf6d80883872e977feb17ed22b2ac518",
+      "size": 52806,
+      "mtime": 1770863783
+    },
+    {
+      "path": "data/creatures.csv",
+      "sha256": "39c528c069aeb75bb80010a687db3e8a21e4a2cd3429e8a2d9378a0dfe5987ff",
+      "size": 83572,
+      "mtime": 1770863783
+    },
+    {
+      "path": "data/incantations.csv",
+      "sha256": "37bea748d40cfc025b1bdac1ff431e840024dfcc743aee036f32281b453f26e1",
+      "size": 86869,
+      "mtime": 1770863783
+    },
+    {
+      "path": "data/locations.csv",
+      "sha256": "d1fc065375d3251d928b1fcad4dc438b5530275c94ec7b52c541ad05ef07e508",
+      "size": 158955,
+      "mtime": 1770863783
+    },
+    {
+      "path": "data/npcs.csv",
+      "sha256": "3adad41b532022bcd100ca8b4624dcb39adcdab06259b304d497ba83ccbb4774",
+      "size": 41297,
+      "mtime": 1770863783
+    },
+    {
+      "path": "data/shields.csv",
+      "sha256": "c6e69dc779d0179edefe32241cf4fda999a39b35221d7f7502d232fde995edb7",
+      "size": 41880,
+      "mtime": 1770863783
+    },
+    {
+      "path": "data/shields_upgrades.csv",
+      "sha256": "160788b0d1295286f53416028710d5d2fb589338712e0050269d708d091c0b4b",
+      "size": 9011627,
+      "mtime": 1770863783
+    },
+    {
+      "path": "data/skills.csv",
+      "sha256": "221dee3849541628c41bf043c538d46a56455c4d0cb2a0a8d5ec38af2c74bda3",
+      "size": 100359,
+      "mtime": 1770863783
+    },
+    {
+      "path": "data/sorceries.csv",
+      "sha256": "38ce91370548752ff377edf9a7e9d284276661cc8925d37e2ce1582fceb78e79",
+      "size": 52037,
+      "mtime": 1770863783
+    },
+    {
+      "path": "data/spiritAshes.csv",
+      "sha256": "f69d6f01c88e4b62fdd151588aa2f3241a11baf13d19a2850253764d8d0ed00f",
+      "size": 45649,
+      "mtime": 1770863783
+    },
+    {
+      "path": "data/talismans.csv",
+      "sha256": "d65885631605a9e58495dbe83cb4f342670108d4d477c5934e8b67c2fae95b90",
+      "size": 73639,
+      "mtime": 1770863783
+    },
+    {
+      "path": "data/weapons.csv",
+      "sha256": "819379cd6ddbce8f0035adcf143bc0ea2ec4d5e70fab1d5f37ca3f7e35ff028b",
+      "size": 184319,
+      "mtime": 1770863783
+    },
+    {
+      "path": "data/weapons_upgrades.csv",
+      "sha256": "462b27f5678f7f148b8dad9814b4aa536a3c6c063dd39b3078682d56b7c8992d",
+      "size": 18932758,
+      "mtime": 1770863783
+    },
+    {
+      "path": "data/items/ammos.csv",
+      "sha256": "475bbbe969d861b694a1394d7620c374d4166ee9643f62dc0c93e64b944566d5",
+      "size": 25929,
+      "mtime": 1770863783
+    },
+    {
+      "path": "data/items/bells.csv",
+      "sha256": "5eca4e4fcea3e0616a4b208d2bfba8e96df247af2c3853c97e80c6e533ba038a",
+      "size": 21966,
+      "mtime": 1770863783
+    },
+    {
+      "path": "data/items/consumables.csv",
+      "sha256": "07709b19c343d8869015d288f4c591c2fd9d22bdc3bfba6190fee345c754a571",
+      "size": 95067,
+      "mtime": 1770863783
+    },
+    {
+      "path": "data/items/cookbooks.csv",
+      "sha256": "deccdda283f8f075f5baf3238163286c288280a572cd22721c6a456ff527f2cb",
+      "size": 49059,
+      "mtime": 1770863783
+    },
+    {
+      "path": "data/items/crystalTears.csv",
+      "sha256": "ff8e9e44331c1fefd55f2c9d938ffd6e3e18685deba04e1ad107a79413407eb1",
+      "size": 16789,
+      "mtime": 1770863783
+    },
+    {
+      "path": "data/items/greatRunes.csv",
+      "sha256": "a148d250320a917cbc17008193074559e0d1c98d76f399670fa399be8e28a338",
+      "size": 5068,
+      "mtime": 1770863783
+    },
+    {
+      "path": "data/items/keyItems.csv",
+      "sha256": "740a21066977adfe9f6362eee6548130bac7b35f7464771bd041c577350fd303",
+      "size": 64132,
+      "mtime": 1770863783
+    },
+    {
+      "path": "data/items/materials.csv",
+      "sha256": "bdb107dbf986cae5c9d4556dde72be777a049d4855f8bc549d837ed899b22d45",
+      "size": 44359,
+      "mtime": 1770863783
+    },
+    {
+      "path": "data/items/multi.csv",
+      "sha256": "96ec771c282a30aa219099d829c6163d35eeb9b1102eb817c9fc27476c456710",
+      "size": 8023,
+      "mtime": 1770863783
+    },
+    {
+      "path": "data/items/remembrances.csv",
+      "sha256": "54a09115ebde8c26f04c821d0419a6d350fa95ebec853fad6db3303cd8db24b0",
+      "size": 17189,
+      "mtime": 1770863783
+    },
+    {
+      "path": "data/items/tools.csv",
+      "sha256": "bf75de8ed2336ae2a3733432f9dca82234e48cdddac5c8e2e375682373f77432",
+      "size": 20474,
+      "mtime": 1770863783
+    },
+    {
+      "path": "data/items/upgradeMaterials.csv",
+      "sha256": "9281055956cae12acf10fce2469346c7d69c1b5334d33a08d45345ee8b921ae7",
+      "size": 18815,
+      "mtime": 1770863783
+    },
+    {
+      "path": "data/items/whetblades.csv",
+      "sha256": "02dd870b112ac7b1fe3dad34e8c676ab4050b5049bc82871c0acf0d27bf7505a",
+      "size": 3665,
+      "mtime": 1770863783
+    }
+  ]
+}

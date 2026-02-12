@@ -1,0 +1,54 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv/
+
+# Python cache and test
+.pytest_cache/
+
+# Local env files
+.env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Data (optional, uncomment if you want to exclude local data)
+# data/*.csv
+# data/items/*.csv
+
+# Streamlit cache
+.streamlit/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Package manager
+dist/
+build/
+*.egg-info/
+
+# Conda
+conda-meta/
+
+# Logs
+*.log
+
+# Local data backups and generated manifests
+data_backup_*.zip
+*.zip
+data_checksums.txt
+.mypy_cache/
