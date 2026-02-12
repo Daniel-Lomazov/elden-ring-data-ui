@@ -84,3 +84,18 @@ elden_ring_data_ui/
 - **Manual runs:** can be started from the Actions UI (`workflow_dispatch`).
 
 This CI job runs linting (`ruff`) and a smoke-import test to ensure core modules import cleanly. Adjust the schedule or workflow in `.github/workflows/ci.yml` if you prefer a different cadence.
+
+### Manually triggering the workflow
+
+You can run the CI workflow manually from GitHub (useful for immediate checks):
+
+- Open the repository on GitHub and go to the **Actions** tab.
+- Select the **CI** workflow from the list on the left.
+- Click the **Run workflow** button on the right.
+- Choose the branch (default: `main`) and click **Run workflow**.
+
+Or run it from the command line with the GitHub CLI (authenticated):
+
+```bash
+gh workflow run .github/workflows/ci.yml --ref main
+```
