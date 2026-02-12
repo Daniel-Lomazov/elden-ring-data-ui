@@ -52,3 +52,11 @@ data_backup_*.zip
 *.zip
 data_checksums.txt
 .mypy_cache/
+
+# Generated or helper files not needed in minimal repo
+environment.yml
+setup.ps1
+final_check.py
+secure_data.py
+armor_column_map.json
+data_checksums.json
