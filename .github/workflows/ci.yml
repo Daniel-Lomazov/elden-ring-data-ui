@@ -5,6 +5,11 @@ on:
     branches: [ main ]
   pull_request:
     branches: [ main ]
+  schedule:
+    # Runs daily at 02:00 UTC. Adjust cron as needed.
+    - cron: '0 2 * * *'
+  # Allow manual runs from the Actions UI
+  workflow_dispatch:
 
 jobs:
   lint-and-smoke:
