@@ -75,3 +75,4 @@ elden_ring_data_ui/
 ---
 
 <!-- Removed assistant-suggested helper offer to keep README focused and minimal -->
+<!-- CI trigger: heartbeat -->
