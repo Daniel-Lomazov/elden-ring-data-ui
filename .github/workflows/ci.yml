@@ -15,8 +15,8 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
-          restore-keys: ${{ runner.os }}-pip-
+          key: "${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}"
+          restore-keys: "${{ runner.os }}-pip-"
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
@@ -32,12 +32,12 @@ jobs:
       - name: Smoke imports (includes streamlit)
         run: |
           python - <<'PY'
-import importlib, sys
-for m in ("data_loader", "ui_components", "streamlit"):
-    try:
-        importlib.import_module(m)
-    except Exception as e:
-        print(f"import failed: {m}: {e}")
-        sys.exit(1)
-print('smoke imports ok')
-PY
+          import importlib, sys
+          for m in ("data_loader", "ui_components", "streamlit"):
+              try:
+                  importlib.import_module(m)
+              except Exception as e:
+                  print(f"import failed: {m}: {e}")
+                  sys.exit(1)
+          print('smoke imports ok')
+          PY
