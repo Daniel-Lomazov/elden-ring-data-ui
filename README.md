@@ -4,26 +4,22 @@ A modular Streamlit application for loading, comparing, filtering, and optimizin
 
 ## Quick Start
 
-```powershell
-# Elden Ring Data UI (Minimal)
+This repository contains a compact Streamlit app focused on ranking and sorting Elden Ring datasets (armors, weapons, items). The trimmed project keeps only the app, data loader, parsing helpers, and dataset CSVs.
 
-This repository contains a compact Streamlit app focused on ranking and sorting Elden Ring datasets (armors, weapons, items).
-
-The project was intentionally trimmed to a minimal core: a lightweight ranking UI, a data loader, and a few parsing helpers. This keeps the app fast to run and easy to maintain.
-
-## Quick Start
+Windows (Conda, recommended):
 
 ```powershell
-# Create environment from environment.yml (recommended)
 conda env create -f environment.yml
 conda activate elden_ring_ui
+streamlit run app.py
+```
 
-# Or create a minimal venv and install requirements
+Cross-platform (venv):
+
+```bash
 python -m venv .venv
-.\.venv\Scripts\activate
+source .venv/bin/activate  # or .\.venv\Scripts\activate on Windows
 pip install -r requirements.txt
-
-# Run the app
 streamlit run app.py
 ```
 
@@ -68,8 +64,8 @@ elden_ring_data_ui/
 
 ## Notes
 
-- This trimmed project focuses on the ranking/sorting UI. Some earlier modules (filtering, scoring, and other utilities) were removed during cleanup to keep the codebase minimal and focused.
-- If you need back the removed features (filters, optimization UI, tests), they can be restored or reimplemented on request.
+- This trimmed project focuses on the ranking/sorting UI. Some earlier modules (filtering, optimization helpers, and tests) were removed during cleanup to keep the codebase minimal and focused.
+- If you need the removed features restored, I can add them back or provide separate branches for experimental tooling.
 
 ## Troubleshooting
 
