@@ -76,3 +76,11 @@ elden_ring_data_ui/
 
 <!-- Removed assistant-suggested helper offer to keep README focused and minimal -->
 <!-- CI trigger: heartbeat -->
+
+## CI Schedule
+
+- **Workflow:** `.github/workflows/ci.yml`
+- **Schedule:** hourly at `:00` UTC (cron `0 * * * *`).
+- **Manual runs:** can be started from the Actions UI (`workflow_dispatch`).
+
+This CI job runs linting (`ruff`) and a smoke-import test to ensure core modules import cleanly. Adjust the schedule or workflow in `.github/workflows/ci.yml` if you prefer a different cadence.
