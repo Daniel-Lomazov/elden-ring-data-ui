@@ -396,11 +396,27 @@ def main():
             "_prev_enable_hist_tuning_interactive",
             "_qp_hydrated",
             "_optimizer_cache",
+            "_opt_weight_stats_signature",
         ]
         for key in reset_keys:
             if key in st.session_state:
                 del st.session_state[key]
+        dynamic_weight_keys = [
+            key for key in list(st.session_state.keys()) if key.startswith("opt_weight_")
+        ]
+        for key in dynamic_weight_keys:
+            del st.session_state[key]
         qp_clear()
+
+    def sync_optimizer_weight_state(stats: list[str]):
+        signature = "|".join([str(s) for s in stats])
+        if st.session_state.get("_opt_weight_stats_signature") == signature:
+            return
+        allowed_keys = {f"opt_weight_{safe_stat_key(stat)}" for stat in stats}
+        for key in list(st.session_state.keys()):
+            if key.startswith("opt_weight_") and key not in allowed_keys:
+                del st.session_state[key]
+        st.session_state["_opt_weight_stats_signature"] = signature
 
     if "_qp_hydrated" not in st.session_state:
         st.session_state["show_all_datasets"] = qp_get_bool("show_all", False)
@@ -838,6 +854,7 @@ def main():
 
     if highlighted_stats:
         primary_highlight = highlighted_stats[0]
+        sync_optimizer_weight_state(highlighted_stats)
 
     # default sort: Highest First (no None option)
     sort_options = ["Highest First", "Lowest First"]

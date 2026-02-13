@@ -13,7 +13,7 @@ This is the consolidated, actionable list of all major issues encountered from s
 - [x] Harden side-by-side rendering to keep classic/interactive panel parity.
 - [x] Add safer interactive fallback behavior instead of full block failure.
 - [x] Resolve root cause for `Histogram render error: enter` by avoiding unconditional context-manager usage on non-container targets.
-- [ ] Final visual alignment polishing across all modes under browser resize conditions.
+- [x] Final visual alignment polishing across all modes under browser resize conditions (unified embed height).
 
 ### 2) State and UX Consistency
 
@@ -22,6 +22,7 @@ This is the consolidated, actionable list of all major issues encountered from s
 - [x] Add reset path for filters/stats and tuning state.
 - [x] Add safer numeric formatting and consistent metric rendering.
 - [x] Preserve multi-stat ranking behavior for single-piece armor optimization.
+- [x] Sync optimizer weight inputs when highlighted stats change.
 
 ### 3) Optimization and Ranking
 
@@ -29,6 +30,7 @@ This is the consolidated, actionable list of all major issues encountered from s
 - [x] Implement `maximin_normalized` with objective-direction handling (`weight` minimized).
 - [x] Implement `weighted_sum_normalized` method path.
 - [x] Add output metadata (`__opt_score`, `__opt_rank`, etc.) and dev diagnostics view.
+- [x] Expose `weighted_sum_normalized` weights in the sidebar and pass through to optimizer.
 - [ ] Optional future: expose richer optimizer selection UX and Pareto-style views.
 
 ### 4) Ops/Automation Reliability
@@ -98,3 +100,11 @@ This is the consolidated, actionable list of all major issues encountered from s
 1. Histogram visual parity pass (classic vs interactive vs side-by-side).
 2. Browser-resize regression pass with debug border toggles.
 3. Keep all changes minimal and constrained to rendering/layout paths.
+
+---
+
+## E) Current Session Focus (Planned + Executed)
+
+1. Histogram alignment polish across modes (completed).
+2. Expose weighted-sum optimizer weights in the UI (completed).
+3. Tighten optimizer weight state sync/reset behavior (completed).

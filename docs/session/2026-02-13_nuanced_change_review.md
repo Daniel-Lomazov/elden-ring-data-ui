@@ -86,3 +86,44 @@ This document reviews the non-trivial implementation decisions and why they were
   - operational traceability.
 
 This preserves current behavior while eliminating repeated failure patterns.
+
+---
+
+## 7) Histogram Height Alignment
+
+### Problem shape
+- Side-by-side panels could visually diverge because classic and interactive embeds used different height targets.
+
+### Nuanced adjustment
+- Unified the embed height used by classic and interactive histograms.
+- Ensured height configuration flows through both renderers consistently.
+
+### Why this matters
+- Keeps classic and interactive panels aligned across modes and resizes.
+
+---
+
+## 8) Weighted-Sum UI Exposure
+
+### Problem shape
+- `weighted_sum_normalized` existed but had no UI for per-stat weights.
+
+### Nuanced adjustment
+- Added per-stat weight inputs in the sidebar when the method is selected.
+- Included weight signatures in cache keys to avoid stale ranking results.
+
+### Why this matters
+- Users can now express preference strength directly in the UI.
+
+---
+
+## 9) Optimizer Weight State Sync
+
+### Problem shape
+- Changing highlighted stats could leave orphaned weight inputs in state.
+
+### Nuanced adjustment
+- Synced and pruned optimizer weight keys whenever the highlighted stats set changes.
+
+### Why this matters
+- Prevents stale or misleading weights from leaking into new runs.

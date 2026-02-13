@@ -12,6 +12,7 @@ This file summarizes the current sanity-check coverage and the debug/alignment p
   - TCP listener detection
   - HTTP readiness probe
   - machine-readable startup flags (`READY`, `LISTENER_PID`).
+- Manual UI check: verify weighted-sum weights change ranking order when adjusted.
 
 ## Operational Commands (Canonical)
 

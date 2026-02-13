@@ -60,6 +60,10 @@ This file normalizes and classifies the user requests made across this session, 
     - Class: Documentation / Traceability  
     - Expected: markdown artifacts capturing asks, changes, outcomes.
 
+13. **Implement the three forward moves (alignment, optimizer UI, state UX)**  
+   - Class: Bug Fix + Architecture + UX  
+   - Expected: aligned histogram panels, configurable weighted-sum UI, and clean state transitions.
+
 ## Simplified User Intent Summary
 
 - Build a stable, production-like local workflow for a Streamlit app.
@@ -67,3 +71,4 @@ This file normalizes and classifies the user requests made across this session, 
 - Keep UX behavior deterministic across classic/interactive/side-by-side views.
 - Preserve momentum with minimal, focused changes and strong verification.
 - Maintain an auditable history of asks, fixes, and operational outcomes.
+- Extend the UI to make optimizer method choice and weights actionable.
