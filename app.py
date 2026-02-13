@@ -763,8 +763,11 @@ def main():
             armor_full_set = True
             type_label_map, armor_piece_labels = resolve_armor_piece_types(df)
         elif armor_mode == ARMOR_MODE_COMPLETE_ARMOR_SET:
-            armor_full_set = True
-            type_label_map, armor_piece_labels = resolve_armor_piece_types(df)
+            armor_placeholder_mode = True
+            st.sidebar.info(
+                "Complete armor set is planned as a meticulous full-set optimizer. "
+                "It is not implemented yet, so no results are shown in this mode."
+            )
 
     # determine possible highlight stats
     numeric_cols = df.select_dtypes(include=["number"]).columns.tolist()
@@ -1513,6 +1516,7 @@ def main():
         section_label: str,
         piece_key: str | None,
         show_weight_note: bool = True,
+        compact_mode: bool = False,
     ):
         if source_df.empty:
             st.info(f"No candidates found for {section_label}.")
@@ -1629,8 +1633,7 @@ def main():
                 f"<div style='{color_style} padding:12px; border-radius:8px;'>",
                 unsafe_allow_html=True,
             )
-            c1, c2 = st.columns([1, 3])
-            with c1:
+            if compact_mode:
                 if "image" in df.columns and pd.notna(row.get("image")):
                     try:
                         st.image(row["image"], width=140)
@@ -1638,22 +1641,18 @@ def main():
                         st.write("📦")
                 else:
                     st.write("📦")
+                if "name" in df.columns:
+                    st.markdown(f"### {row['name']}")
+                if "__overall_score_100" in row and pd.notna(row.get("__overall_score_100")):
+                    overall_val = float(row.get("__overall_score_100", 0.0))
+                    st.metric("Overall", f"{overall_val:.2f}")
+                if "description" in df.columns and pd.notna(row.get("description")):
+                    st.caption(row["description"])
                 for hs in highlighted_stats:
                     if hs in row:
                         val_h = row.get(hs)
                         display_h = format_metric_value(val_h)
                         st.metric(f"⭐ {hs}", display_h)
-            with c2:
-                title_left, title_right = st.columns([4, 1])
-                with title_left:
-                    if "name" in df.columns:
-                        st.markdown(f"### {row['name']}")
-                with title_right:
-                    if "__overall_score_100" in row and pd.notna(row.get("__overall_score_100")):
-                        overall_val = float(row.get("__overall_score_100", 0.0))
-                        st.metric("Overall", f"{overall_val:.2f}")
-                if "description" in df.columns and pd.notna(row.get("description")):
-                    st.caption(row["description"])
 
                 stats = [c for c in numeric_cols if c not in ["id"]]
                 if dataset == "armors":
@@ -1674,25 +1673,83 @@ def main():
                     display_stats = [s for s in stats if s not in highlighted_stats]
 
                 if display_stats:
-                    cols_per_row = 4
-                    for i in range(0, len(display_stats), cols_per_row):
-                        parts = st.columns(cols_per_row)
-                        for j, p in enumerate(parts):
-                            if i + j < len(display_stats):
-                                s = display_stats[i + j]
-                                label = s
-                                val = row.get(s, 0)
-                                num_val = None
-                                try:
-                                    num_val = float(val)
-                                except Exception:
-                                    num_val = None
+                    stat_lines = []
+                    for stat in display_stats:
+                        val = row.get(stat, 0)
+                        try:
+                            num_val = float(val)
+                        except Exception:
+                            num_val = None
+                        if num_val is not None and num_val == 0:
+                            continue
+                        stat_lines.append(f"{stat}: {format_metric_value(val)}")
+                    if stat_lines:
+                        st.caption(" | ".join(stat_lines))
+            else:
+                c1, c2 = st.columns([1, 3])
+                with c1:
+                    if "image" in df.columns and pd.notna(row.get("image")):
+                        try:
+                            st.image(row["image"], width=140)
+                        except Exception:
+                            st.write("📦")
+                    else:
+                        st.write("📦")
+                    for hs in highlighted_stats:
+                        if hs in row:
+                            val_h = row.get(hs)
+                            display_h = format_metric_value(val_h)
+                            st.metric(f"⭐ {hs}", display_h)
+                with c2:
+                    title_left, title_right = st.columns([4, 1])
+                    with title_left:
+                        if "name" in df.columns:
+                            st.markdown(f"### {row['name']}")
+                    with title_right:
+                        if "__overall_score_100" in row and pd.notna(row.get("__overall_score_100")):
+                            overall_val = float(row.get("__overall_score_100", 0.0))
+                            st.metric("Overall", f"{overall_val:.2f}")
+                    if "description" in df.columns and pd.notna(row.get("description")):
+                        st.caption(row["description"])
 
-                                if num_val is not None and num_val == 0 and s not in highlighted_stats:
-                                    p.write("")
-                                else:
-                                    display_val = format_metric_value(val)
-                                    p.metric(label, display_val)
+                    stats = [c for c in numeric_cols if c not in ["id"]]
+                    if dataset == "armors":
+                        desired_cols = ["weight", "Dmg: Phy", "bleed", "frost", "Res: Poi."]
+                        found_cols = [c for c in desired_cols if c in numeric_cols]
+                        for c in numeric_cols:
+                            if (
+                                c.startswith("Dmg:") or c.startswith("Res:")
+                            ) and c not in found_cols:
+                                found_cols.append(c)
+
+                        display_stats = [
+                            s
+                            for s in found_cols
+                            if s in stats and s not in highlighted_stats
+                        ]
+                    else:
+                        display_stats = [s for s in stats if s not in highlighted_stats]
+
+                    if display_stats:
+                        cols_per_row = 4
+                        for i in range(0, len(display_stats), cols_per_row):
+                            parts = st.columns(cols_per_row)
+                            for j, p in enumerate(parts):
+                                if i + j < len(display_stats):
+                                    s = display_stats[i + j]
+                                    label = s
+                                    val = row.get(s, 0)
+                                    num_val = None
+                                    try:
+                                        num_val = float(val)
+                                    except Exception:
+                                        num_val = None
+
+                                    if num_val is not None and num_val == 0 and s not in highlighted_stats:
+                                        p.write("")
+                                    else:
+                                        display_val = format_metric_value(val)
+                                        p.metric(label, display_val)
             st.markdown("</div>", unsafe_allow_html=True)
             st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
 
@@ -1712,7 +1769,13 @@ def main():
                     piece_df = piece_df[piece_df["type"].astype(str) == str(raw_type)]
                 with columns[idx % 4]:
                     st.subheader(label)
-                    render_ranked_cards(piece_df, label, raw_type, show_weight_note=False)
+                    render_ranked_cards(
+                        piece_df,
+                        label,
+                        raw_type,
+                        show_weight_note=False,
+                        compact_mode=True,
+                    )
         return
 
     if dataset == "armors" and armor_single_piece:
