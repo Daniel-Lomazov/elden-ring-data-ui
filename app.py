@@ -90,6 +90,11 @@ def build_hist_click_key(
     return f"weight_hist_click_{scope}_{safe_dataset}_{safe_piece}_{safe_mode}_{weight_token}"
 
 
+def safe_stat_key(value: str) -> str:
+    token = re.sub(r"[^A-Za-z0-9_]+", "_", str(value or "").strip()).strip("_")
+    return token.lower() if token else "stat"
+
+
 @st.cache_resource
 def get_loader():
     return DataLoader(data_dir="data")
@@ -786,6 +791,8 @@ def main():
     primary_highlight = None
     lock_stat_order = True
     optimizer_method = DEFAULT_OPTIMIZATION_METHOD
+    optimizer_weights = None
+    optimizer_weight_signature = None
     use_max_weight = False
     max_weight_limit = None
     ensure_state_in_options("hist_view_mode", HIST_VIEW_OPTIONS, "Side-by-side")
@@ -989,6 +996,25 @@ def main():
         optimizer_method = st.sidebar.selectbox(
             "Method:", options=method_options, key="optimizer_method"
         )
+
+        if optimizer_method == "weighted_sum_normalized" and highlighted_stats:
+            st.sidebar.caption(
+                "Set weights for each selected stat (higher weight = stronger preference)."
+            )
+            optimizer_weights = {}
+            for stat in highlighted_stats:
+                weight_key = f"opt_weight_{safe_stat_key(stat)}"
+                if weight_key not in st.session_state:
+                    st.session_state[weight_key] = 1.0
+                optimizer_weights[stat] = st.sidebar.number_input(
+                    f"Weight: {stat}",
+                    min_value=0.0,
+                    step=0.1,
+                    key=weight_key,
+                )
+            optimizer_weight_signature = tuple(
+                float(optimizer_weights.get(stat, 1.0)) for stat in highlighted_stats
+            )
 
         if "weight" in numeric_cols:
             use_max_weight = st.sidebar.checkbox(
@@ -1394,11 +1420,17 @@ def main():
                 armor_piece_type,
                 tuple(highlighted_stats),
                 optimizer_method,
+                optimizer_weight_signature,
                 ascending,
                 sampled_mode,
                 use_max_weight,
                 float(max_weight_limit) if max_weight_limit is not None else None,
                 frame_signature(display_df, ["name", "type", "weight", *highlighted_stats]),
+            )
+            weight_payload = (
+                optimizer_weights
+                if optimizer_method == "weighted_sum_normalized" and optimizer_weights
+                else {stat: 1.0 for stat in highlighted_stats}
             )
             rank_cache = st.session_state.setdefault("_optimizer_cache", {})
             if cache_key in rank_cache:
@@ -1411,7 +1443,7 @@ def main():
                         selected_stats=highlighted_stats,
                         method=optimizer_method,
                         config={
-                            "weights": {stat: 1.0 for stat in highlighted_stats},
+                            "weights": weight_payload,
                             "lock_stat_order": lock_stat_order,
                         },
                     )
@@ -1422,7 +1454,7 @@ def main():
                     selected_stats=highlighted_stats,
                     method=optimizer_method,
                     config={
-                        "weights": {stat: 1.0 for stat in highlighted_stats},
+                        "weights": weight_payload,
                         "lock_stat_order": lock_stat_order,
                     },
                 )
@@ -1502,10 +1534,17 @@ def main():
             st.info("No dev-view columns available for current data.")
 
     if dataset == "armors" and armor_single_piece and len(highlighted_stats) >= 2:
-        st.caption(
+        caption_line = (
             f"Ranking single pieces by highlighted stats: {', '.join(highlighted_stats)} "
             f"(method: {optimizer_method})"
         )
+        if optimizer_method == "weighted_sum_normalized" and optimizer_weights:
+            weight_tokens = [
+                f"{stat}={float(optimizer_weights.get(stat, 1.0)):.2f}"
+                for stat in highlighted_stats
+            ]
+            caption_line += f" | weights: {', '.join(weight_tokens)}"
+        st.caption(caption_line)
     elif primary_highlight:
         st.caption(f"Highlight stat: {primary_highlight}")
 

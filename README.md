@@ -165,6 +165,7 @@ In **Single piece** armor mode, users can choose multiple highlighted stats and 
    - 2+ selected stats → optimizer ranking is used.
    - 1 selected stat → legacy single-stat sort behavior is used.
    - Sidebar includes method selection, optional max-weight constraint, and reset action.
+   - When `weighted_sum_normalized` is selected, per-stat weight inputs appear in the sidebar.
    - Current ranked rows can be exported to CSV from the main view.
 
 ### Where this is implemented
@@ -207,9 +208,10 @@ In **Single piece** armor mode, users can choose multiple highlighted stats and 
 ## Optimization methods
 
 - ✅ **Implemented now (default in UI):** `maximin_normalized`.
+- ✅ **Implemented now (with per-stat weights UI):** `weighted_sum_normalized`.
 - ⏳ **Recommended next methods to add/expose**
    - **Pareto frontier (non-dominated set):** useful when you want trade-off options instead of a single total order.
-   - **Weighted sum (user-configurable weights):** useful when users want explicit preference strength by stat.
+   - **Weighted sum (user-configurable weights):** now surfaced with sidebar weights and ready for refinement.
    - **Maximin variants:** useful for stricter fairness-style ranking (e.g., floors/thresholds per stat).
    - **Alternative normalization (z-score/robust scaling):** useful when stat distributions are skewed or have outliers.
    - **Constraint-based selection (e.g., `weight <= X`, then maximize Y):** useful when hard gameplay limits must be respected first.
