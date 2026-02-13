@@ -6,11 +6,88 @@ import re
 import json
 import hashlib
 import subprocess
+import html
+import copy
+import time
 from pathlib import Path
+
+try:
+    import plotly.graph_objects as go
+except Exception:
+    go = None
+
+try:
+    from streamlit_plotly_events import plotly_events
+except Exception:
+    plotly_events = None
+
 from data_loader import DataLoader
 from ui_components import parse_armor_stats
+from optimizer import (
+    optimize_single_piece,
+    DEFAULT_OPTIMIZATION_METHOD,
+    OPTIMIZER_METHODS,
+)
+from histogram_views import (
+    HISTOGRAM_CONFIG,
+    build_histogram_spec,
+    render_classic_histogram,
+    build_interactive_histogram_figure,
+    get_clicked_weight,
+)
+from histogram_layout import (
+    place_one_by_two_grid,
+    place_graphical_object_in_grid_cell,
+    resolve_auto_render_layer,
+)
+from tuning_controls import (
+    render_dimension_tuning_toggle as tc_render_dimension_tuning_toggle,
+    render_transport_number_input as tc_render_transport_number_input,
+)
 
 st.set_page_config(page_title="Elden Ring - Ranking UI", page_icon="🏆", layout="wide")
+
+MULTI_STAT_METHOD = DEFAULT_OPTIMIZATION_METHOD
+
+ARMOR_MODE_SINGLE_PIECE = "single_piece"
+ARMOR_MODE_FULL_ARMOR_SET = "full_armor_set"
+ARMOR_MODE_COMPLETE_ARMOR_SET = "complete_armor_set"
+ARMOR_MODE_LABELS = {
+    ARMOR_MODE_SINGLE_PIECE: "Single piece",
+    ARMOR_MODE_FULL_ARMOR_SET: "Full armor set",
+    ARMOR_MODE_COMPLETE_ARMOR_SET: "Complete armor set",
+}
+
+HIST_VIEW_OPTIONS = [
+    "Classic",
+    "Interactive (click-to-set)",
+    "Side-by-side",
+]
+
+
+def normalize_hist_view_mode(value: str) -> str:
+    normalized = str(value or "").strip()
+    if normalized in HIST_VIEW_OPTIONS:
+        return normalized
+    return "Side-by-side"
+
+
+def build_hist_click_key(
+    scope: str,
+    dataset: str,
+    armor_piece_type,
+    hist_view_mode: str,
+    max_weight_limit,
+) -> str:
+    piece = str(armor_piece_type or "all")
+    safe_piece = re.sub(r"[^A-Za-z0-9_\-]+", "_", piece)
+    safe_dataset = re.sub(r"[^A-Za-z0-9_\-]+", "_", str(dataset or "dataset"))
+    safe_mode = re.sub(r"[^A-Za-z0-9_\-]+", "_", normalize_hist_view_mode(hist_view_mode))
+    try:
+        weight_token = f"{float(max_weight_limit):.3f}"
+    except Exception:
+        weight_token = "na"
+    return f"weight_hist_click_{scope}_{safe_dataset}_{safe_piece}_{safe_mode}_{weight_token}"
 
 
 @st.cache_resource
@@ -73,6 +150,411 @@ def main():
                 )
         return {"missing": missing, "mismatches": mismatches}
 
+    def render_dev_table(table_df: pd.DataFrame, max_rows_sample: int = 100):
+        if table_df is None or table_df.empty:
+            st.info("No rows to display in dev view.")
+            return
+
+        sample_df = table_df.head(max_rows_sample)
+        column_widths = {}
+        for col in table_df.columns:
+            header_len = len(str(col))
+            max_cell_len = header_len
+            if col in sample_df.columns:
+                try:
+                    max_cell_len = max(
+                        header_len,
+                        sample_df[col].astype(str).map(len).max(),
+                    )
+                except Exception:
+                    max_cell_len = header_len
+
+            min_px = 90
+            max_px = 320
+            if str(col).lower() in ["name", "type"]:
+                max_px = 240
+            width_px = int(max(min_px, min(max_px, max_cell_len * 8 + 24)))
+            column_widths[col] = width_px
+
+        header_html = "".join(
+            f"<th style='min-width:{column_widths[c]}px;width:{column_widths[c]}px;'>"
+            f"{html.escape(str(c))}</th>"
+            for c in table_df.columns
+        )
+
+        body_rows = []
+        for _, row in table_df.iterrows():
+            cells = "".join(
+                f"<td style='min-width:{column_widths[c]}px;width:{column_widths[c]}px;'>"
+                f"{html.escape(str(row.get(c, '')))}</td>"
+                for c in table_df.columns
+            )
+            body_rows.append(f"<tr>{cells}</tr>")
+
+        table_html = f"""
+        <div style='overflow-x:auto; overflow-y:auto; max-height:480px; border:1px solid rgba(128,128,128,0.25); border-radius:8px;'>
+          <table style='border-collapse:collapse; table-layout:fixed; width:max-content; min-width:100%;'>
+            <thead style='position:sticky; top:0; background:rgba(20,20,20,0.95); z-index:1;'>
+              <tr>{header_html}</tr>
+            </thead>
+            <tbody>
+              {''.join(body_rows)}
+            </tbody>
+          </table>
+        </div>
+        <style>
+          th, td {{ padding: 6px 10px; border-bottom: 1px solid rgba(128,128,128,0.2); text-align:left; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }}
+        </style>
+        """
+        st.markdown(table_html, unsafe_allow_html=True)
+
+    def format_metric_value(value):
+        try:
+            if value is None:
+                return "0.00"
+
+            if isinstance(value, str):
+                token = re.search(r"[-+]?\d*\.?\d+(?:[eE][-+]?\d+)?", value)
+                if token:
+                    num = float(token.group(0))
+                else:
+                    return str(value)
+            else:
+                num = float(value)
+
+            if not pd.notna(num) or num in (float("inf"), float("-inf")):
+                return "0.00"
+
+            return f"{num:.2f}"
+        except Exception:
+            return str(value)
+
+    def qp_get(key: str, default: str = "") -> str:
+        try:
+            if hasattr(st, "query_params"):
+                val = st.query_params.get(key, default)
+                if isinstance(val, list):
+                    return val[0] if val else default
+                return str(val)
+
+            legacy = st.experimental_get_query_params()
+            val = legacy.get(key, [default])
+            if isinstance(val, list):
+                return str(val[0]) if val else default
+            return str(val)
+        except Exception:
+            return default
+
+    def qp_get_bool(key: str, default: bool = False) -> bool:
+        return qp_get(key, "true" if default else "false").lower() == "true"
+
+    def qp_get_int(key: str, default: int) -> int:
+        try:
+            return int(qp_get(key, str(default)))
+        except Exception:
+            return default
+
+    def qp_update(params: dict):
+        try:
+            if hasattr(st, "query_params"):
+                st.query_params.update(params)
+            else:
+                st.experimental_set_query_params(**params)
+        except Exception:
+            pass
+
+    def qp_clear():
+        try:
+            if hasattr(st, "query_params"):
+                st.query_params.clear()
+            else:
+                st.experimental_set_query_params()
+        except Exception:
+            pass
+
+    def render_dimension_tuning_toggle(
+        ui,
+        label: str,
+        enable_key: str,
+        prev_enable_key: str,
+        restore_values: dict,
+        help_text: str,
+    ) -> bool:
+        return tc_render_dimension_tuning_toggle(
+            st,
+            ui,
+            label=label,
+            enable_key=enable_key,
+            prev_enable_key=prev_enable_key,
+            restore_values=restore_values,
+            help_text=help_text,
+        )
+
+    def render_transport_number_input(
+        ui,
+        control_id: str,
+        label: str,
+        input_key: str,
+        canonical_key: str,
+        default_key: str,
+        min_value: float,
+        max_value: float,
+        help_text: str,
+        step: float = 0.000001,
+        display_format: str = "%.10f",
+        base_step: float = 0.000005,
+    ):
+        return tc_render_transport_number_input(
+            st,
+            ui,
+            control_id=control_id,
+            label=label,
+            input_key=input_key,
+            canonical_key=canonical_key,
+            default_key=default_key,
+            min_value=min_value,
+            max_value=max_value,
+            help_text=help_text,
+            step=step,
+            display_format=display_format,
+            base_step=base_step,
+        )
+
+    def normalize_armor_mode(value: str) -> str:
+        raw = str(value or "").strip().lower()
+        legacy_map = {
+            "single piece": ARMOR_MODE_SINGLE_PIECE,
+            "full list": ARMOR_MODE_FULL_ARMOR_SET,
+            "full armor set": ARMOR_MODE_FULL_ARMOR_SET,
+            "full almost set": ARMOR_MODE_COMPLETE_ARMOR_SET,
+            "full_almost_set": ARMOR_MODE_COMPLETE_ARMOR_SET,
+            "complete armor set": ARMOR_MODE_COMPLETE_ARMOR_SET,
+            "complete_armor_set": ARMOR_MODE_COMPLETE_ARMOR_SET,
+        }
+        normalized = legacy_map.get(raw, raw)
+        if normalized not in ARMOR_MODE_LABELS:
+            return ARMOR_MODE_SINGLE_PIECE
+        return normalized
+
+    def on_hist_view_mode_change():
+        st.session_state["hist_view_mode"] = normalize_hist_view_mode(
+            st.session_state.get("hist_view_mode_widget", "Side-by-side")
+        )
+
+    def reset_ui_state():
+        reset_keys = [
+            "show_all_datasets",
+            "selected_dataset_label",
+            "armor_mode",
+            "armor_piece_type",
+            "highlighted_stats",
+            "lock_stat_order",
+            "single_highlight_stat",
+            "sort_order",
+            "rows_to_show",
+            "show_raw_dev",
+            "optimizer_method",
+            "use_max_weight",
+            "hist_view_mode",
+            "hist_view_mode_widget",
+            "max_weight_limit",
+            "enable_hist_tuning_classic",
+            "enable_hist_tuning_interactive",
+            "classic_width_ratio",
+            "classic_width_ratio_input",
+            "hist_default_classic_width_ratio",
+            "interactive_width_ratio",
+            "interactive_width_ratio_input",
+            "hist_default_width_ratio",
+            "hist_default_interactive_width_ratio",
+            "classic_x_offset_px",
+            "classic_x_offset_px_input",
+            "hist_default_classic_x_offset_px",
+            "classic_y_offset_px",
+            "classic_y_offset_px_input",
+            "hist_default_classic_y_offset_px",
+            "interactive_x_offset_px",
+            "interactive_x_offset_px_input",
+            "hist_default_interactive_x_offset_px",
+            "interactive_y_offset_px",
+            "interactive_y_offset_px_input",
+            "hist_default_interactive_y_offset_px",
+            "interactive_height_ratio",
+            "interactive_height_ratio_input",
+            "hist_default_height_ratio",
+            "hist_default_interactive_height_ratio",
+            "classic_height_ratio",
+            "classic_height_ratio_input",
+            "hist_default_classic_height_ratio",
+            "show_plot_debug_border",
+            "_prev_enable_hist_tuning_classic",
+            "_prev_enable_hist_tuning_interactive",
+            "_qp_hydrated",
+            "_optimizer_cache",
+        ]
+        for key in reset_keys:
+            if key in st.session_state:
+                del st.session_state[key]
+        qp_clear()
+
+    if "_qp_hydrated" not in st.session_state:
+        st.session_state["show_all_datasets"] = qp_get_bool("show_all", False)
+        st.session_state["selected_dataset_label"] = qp_get("dataset", "")
+        st.session_state["armor_mode"] = normalize_armor_mode(
+            qp_get("armor_mode", ARMOR_MODE_SINGLE_PIECE)
+        )
+        st.session_state["armor_piece_type"] = qp_get("piece_type", "")
+        st.session_state["highlighted_stats"] = [
+            s for s in qp_get("stats", "").split("|") if s
+        ]
+        st.session_state["lock_stat_order"] = qp_get_bool("lock_order", True)
+        st.session_state["single_highlight_stat"] = qp_get("single_stat", "")
+        st.session_state["sort_order"] = qp_get("sort", "Highest First")
+        st.session_state["rows_to_show"] = qp_get_int("rows", 5)
+        st.session_state["show_raw_dev"] = qp_get_bool("dev", False)
+        st.session_state["optimizer_method"] = qp_get(
+            "method", DEFAULT_OPTIMIZATION_METHOD
+        )
+        st.session_state["use_max_weight"] = qp_get_bool("use_max_weight", False)
+        st.session_state["hist_view_mode"] = normalize_hist_view_mode(
+            qp_get("hist_view", "Side-by-side")
+        )
+        st.session_state["hist_view_mode_widget"] = st.session_state["hist_view_mode"]
+        st.session_state["enable_hist_tuning_interactive"] = qp_get_bool(
+            "hist_tune_interactive", qp_get_bool("hist_width_tune", False)
+        )
+        st.session_state["enable_hist_tuning_classic"] = qp_get_bool(
+            "hist_tune_classic", False
+        )
+        try:
+            ratio = float(qp_get("hist_width_ratio", "1.0"))
+        except Exception:
+            ratio = 1.0
+        st.session_state["interactive_width_ratio"] = min(4.0, max(0.3, ratio))
+        try:
+            classic_width_ratio = float(qp_get("hist_classic_width_ratio", "1.0"))
+        except Exception:
+            classic_width_ratio = 1.0
+        st.session_state["classic_width_ratio"] = min(4.0, max(0.3, classic_width_ratio))
+        try:
+            default_ratio = float(qp_get("hist_width_default_ratio", "1.0"))
+        except Exception:
+            default_ratio = 1.0
+        st.session_state["hist_default_width_ratio"] = min(4.0, max(0.3, default_ratio))
+        st.session_state["hist_default_interactive_width_ratio"] = float(
+            st.session_state["hist_default_width_ratio"]
+        )
+        try:
+            default_classic_width_ratio = float(
+                qp_get("hist_classic_width_default_ratio", "1.0")
+            )
+        except Exception:
+            default_classic_width_ratio = 1.0
+        st.session_state["hist_default_classic_width_ratio"] = min(
+            4.0, max(0.3, default_classic_width_ratio)
+        )
+        try:
+            height_ratio = float(qp_get("hist_height_ratio", "1.0"))
+        except Exception:
+            height_ratio = 1.0
+        st.session_state["interactive_height_ratio"] = min(3.0, max(0.4, height_ratio))
+        try:
+            default_height_ratio = float(qp_get("hist_height_default_ratio", "1.0"))
+        except Exception:
+            default_height_ratio = 1.0
+        st.session_state["hist_default_height_ratio"] = min(3.0, max(0.4, default_height_ratio))
+        st.session_state["hist_default_interactive_height_ratio"] = float(
+            st.session_state["hist_default_height_ratio"]
+        )
+        try:
+            classic_height_ratio = float(qp_get("hist_classic_height_ratio", "1.0"))
+        except Exception:
+            classic_height_ratio = 1.0
+        st.session_state["classic_height_ratio"] = min(3.0, max(0.4, classic_height_ratio))
+        try:
+            default_classic_height_ratio = float(
+                qp_get("hist_classic_height_default_ratio", "1.0")
+            )
+        except Exception:
+            default_classic_height_ratio = 1.0
+        st.session_state["hist_default_classic_height_ratio"] = min(
+            3.0, max(0.4, default_classic_height_ratio)
+        )
+        try:
+            classic_x_offset = float(qp_get("hist_classic_x_offset", "0"))
+        except Exception:
+            classic_x_offset = 0.0
+        st.session_state["classic_x_offset_px"] = min(160.0, max(-160.0, classic_x_offset))
+        try:
+            classic_y_offset = float(qp_get("hist_classic_y_offset", "0"))
+        except Exception:
+            classic_y_offset = 0.0
+        st.session_state["classic_y_offset_px"] = min(120.0, max(-120.0, classic_y_offset))
+        try:
+            interactive_x_offset = float(qp_get("hist_interactive_x_offset", "0"))
+        except Exception:
+            interactive_x_offset = 0.0
+        st.session_state["interactive_x_offset_px"] = min(160.0, max(-160.0, interactive_x_offset))
+        try:
+            interactive_y_offset = float(qp_get("hist_interactive_y_offset", "0"))
+        except Exception:
+            interactive_y_offset = 0.0
+        st.session_state["interactive_y_offset_px"] = min(120.0, max(-120.0, interactive_y_offset))
+        st.session_state["hist_default_classic_x_offset_px"] = float(
+            st.session_state.get("classic_x_offset_px", 0.0)
+        )
+        st.session_state["hist_default_classic_y_offset_px"] = float(
+            st.session_state.get("classic_y_offset_px", 0.0)
+        )
+        st.session_state["hist_default_interactive_x_offset_px"] = float(
+            st.session_state.get("interactive_x_offset_px", 0.0)
+        )
+        st.session_state["hist_default_interactive_y_offset_px"] = float(
+            st.session_state.get("interactive_y_offset_px", 0.0)
+        )
+        st.session_state["show_plot_debug_border"] = qp_get_bool("hist_debug_border", False)
+        st.session_state["_prev_enable_hist_tuning_classic"] = False
+        st.session_state["_prev_enable_hist_tuning_interactive"] = False
+        try:
+            st.session_state["max_weight_limit"] = float(qp_get("max_weight", "0.0"))
+        except Exception:
+            st.session_state["max_weight_limit"] = 0.0
+        st.session_state["_qp_hydrated"] = True
+
+    # Apply deferred updates before widgets are instantiated.
+    if "_pending_max_weight_limit" in st.session_state:
+        try:
+            st.session_state["max_weight_limit"] = float(
+                st.session_state["_pending_max_weight_limit"]
+            )
+        except Exception:
+            pass
+        del st.session_state["_pending_max_weight_limit"]
+
+    def frame_signature(frame: pd.DataFrame, cols: list) -> str:
+        target_cols = [c for c in cols if c in frame.columns]
+        if not target_cols:
+            return f"rows:{len(frame)}"
+        hashed = pd.util.hash_pandas_object(
+            frame[target_cols].fillna(""), index=False
+        ).values
+        return hashlib.sha256(hashed.tobytes()).hexdigest()
+
+    def ensure_state_in_options(key: str, options: list, fallback):
+        current = st.session_state.get(key, fallback)
+        if current not in options:
+            st.session_state[key] = fallback
+
+    def ensure_state_multiselect(key: str, options: list, fallback: list):
+        current = st.session_state.get(key, fallback)
+        if not isinstance(current, list):
+            current = []
+        filtered = [x for x in current if x in options]
+        if not filtered:
+            filtered = [x for x in fallback if x in options]
+        st.session_state[key] = filtered
+
+
     # Ensure manifest exists
     if not manifest_path.exists():
         st.sidebar.info("No checksum manifest found — generating now...")
@@ -107,13 +589,32 @@ def main():
             st.sidebar.success("Data integrity OK")
 
     st.title("🏆 Elden Ring — Ranking & Sorting")
+    st.markdown(
+        """
+        <style>
+        [data-testid="stMetricValue"] {
+            font-size: 1.05rem !important;
+            line-height: 1.1 !important;
+            font-variant-numeric: tabular-nums;
+        }
+        [data-testid="stMetricValue"] > div {
+            font-size: 1.05rem !important;
+            line-height: 1.1 !important;
+            font-variant-numeric: tabular-nums;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
 
     loader = get_loader()
     datasets = loader.get_available_datasets()
 
     # Sidebar dataset chooser
     st.sidebar.header("Dataset")
-    show_all = st.sidebar.checkbox("Show all datasets", value=False)
+    show_all = st.sidebar.checkbox(
+        "Show all datasets", key="show_all_datasets"
+    )
 
     # Default behavior: show only 'armors' (if available). Enable checkbox to reveal all datasets.
     if show_all:
@@ -133,8 +634,10 @@ def main():
 
     dataset_label_map = {pretty_dataset_label(k): k for k in ds_keys}
     ds_labels = list(dataset_label_map.keys())
+    if ds_labels:
+        ensure_state_in_options("selected_dataset_label", ds_labels, ds_labels[0])
     selected_dataset_label = st.sidebar.selectbox(
-        "Choose dataset:", options=ds_labels, index=0
+        "Choose dataset:", options=ds_labels, key="selected_dataset_label"
     )
     dataset = dataset_label_map.get(selected_dataset_label)
 
@@ -164,12 +667,19 @@ def main():
     # Additional armor-specific UI: single-piece vs set and piece-type filter
     armor_single_piece = False
     armor_piece_type = None
+    armor_placeholder_mode = False
     if dataset == "armors":
         st.sidebar.markdown("---")
         st.sidebar.subheader("Armor View")
-        # default to Single piece mode
-        armor_mode = st.sidebar.radio("Mode:", ["Full list", "Single piece"], index=1)
-        if armor_mode == "Single piece":
+        mode_options = list(ARMOR_MODE_LABELS.keys())
+        ensure_state_in_options("armor_mode", mode_options, ARMOR_MODE_SINGLE_PIECE)
+        armor_mode = st.sidebar.radio(
+            "Mode:",
+            mode_options,
+            key="armor_mode",
+            format_func=lambda mode_key: ARMOR_MODE_LABELS.get(mode_key, str(mode_key)),
+        )
+        if armor_mode == ARMOR_MODE_SINGLE_PIECE:
             armor_single_piece = True
             # try to get piece types from the armors dataframe
             try:
@@ -214,8 +724,24 @@ def main():
                 types = ["Head", "Chest", "Arms", "Legs"]
 
             # show CamelCase labels in the selectbox and map back to original values
-            selected_label = st.sidebar.selectbox("Piece type:", options=types, index=0)
+            if types:
+                ensure_state_in_options("armor_piece_type", types, types[0])
+            selected_label = st.sidebar.selectbox(
+                "Piece type:", options=types, key="armor_piece_type"
+            )
             armor_piece_type = type_label_map.get(selected_label, selected_label)
+        elif armor_mode == ARMOR_MODE_FULL_ARMOR_SET:
+            armor_placeholder_mode = True
+            st.sidebar.info(
+                "Full armor set is planned as a fast assembly mode from top single-piece picks. "
+                "It is not implemented yet, so no results are shown in this mode."
+            )
+        elif armor_mode == ARMOR_MODE_COMPLETE_ARMOR_SET:
+            armor_placeholder_mode = True
+            st.sidebar.info(
+                "Complete armor set is planned as a meticulous full-set optimizer. "
+                "It is not implemented yet, so no results are shown in this mode."
+            )
 
     # determine possible highlight stats
     numeric_cols = df.select_dtypes(include=["number"]).columns.tolist()
@@ -233,32 +759,273 @@ def main():
     with col2:
         st.info(f"Total Rows: {len(df)}")
 
-    # Controls
-    control_cols = st.columns([2, 1, 1])
+    if dataset == "armors" and armor_placeholder_mode:
+        st.markdown("---")
+        selected_mode_key = st.session_state.get("armor_mode", ARMOR_MODE_SINGLE_PIECE)
+        selected_mode_label = ARMOR_MODE_LABELS.get(selected_mode_key, "Armor mode")
+        st.info(
+            f"{selected_mode_label} is currently a placeholder mode. "
+            "This view is intentionally empty until implementation is added."
+        )
+        qp_update(
+            {
+                "show_all": str(show_all).lower(),
+                "dataset": selected_dataset_label,
+                "armor_mode": str(selected_mode_key),
+                "piece_type": "",
+                "stats": "",
+                "single_stat": "",
+            }
+        )
+        return
+
+    # Controls (sidebar)
     # Use raw CSV column names for stat options and display labels (no friendly renaming)
     options_labels = list(stat_options)
-
-    with control_cols[0]:
-        # default highlight: first relevant stat (if any) — present friendly labels
-        if options_labels:
-            selected_label = st.selectbox(
-                "Highlight stat:", options=options_labels, index=0
-            )
-            # selected_label is the raw column name
-            highlight = selected_label
-        else:
-            highlight = None
-    with control_cols[1]:
-        # default sort: Highest First (no None option)
-        sort_choice = st.selectbox(
-            "Sort order:", ["Highest First", "Lowest First"], index=0
+    highlighted_stats = []
+    primary_highlight = None
+    lock_stat_order = True
+    optimizer_method = DEFAULT_OPTIMIZATION_METHOD
+    use_max_weight = False
+    max_weight_limit = None
+    ensure_state_in_options("hist_view_mode", HIST_VIEW_OPTIONS, "Side-by-side")
+    st.session_state["hist_view_mode"] = normalize_hist_view_mode(
+        st.session_state.get("hist_view_mode", "Side-by-side")
+    )
+    if "hist_view_mode_widget" not in st.session_state:
+        st.session_state["hist_view_mode_widget"] = st.session_state["hist_view_mode"]
+    else:
+        st.session_state["hist_view_mode_widget"] = normalize_hist_view_mode(
+            st.session_state.get("hist_view_mode_widget", "Side-by-side")
         )
-    with control_cols[2]:
-        # default rows: 5
-        per_page = st.selectbox("Rows to show:", [5, 10, 25, 50, 100], index=0)
+    hist_view_mode = str(st.session_state.get("hist_view_mode", "Side-by-side"))
 
-    # Control: when checked, show only zero-value stats; when unchecked, hide zero-value stats
-    show_only_zero = st.checkbox("Show only zero-value stats", value=False)
+    st.sidebar.markdown("---")
+    st.sidebar.subheader("Ranking Controls")
+    # In single-piece armor mode, allow selecting many highlighted stats.
+    if dataset == "armors" and armor_single_piece:
+        default_highlights = (
+            options_labels[:2] if len(options_labels) >= 2 else options_labels[:1]
+        )
+        ensure_state_multiselect("highlighted_stats", options_labels, default_highlights)
+        highlighted_stats = st.sidebar.multiselect(
+            "Highlighted stats:",
+            options=options_labels,
+            key="highlighted_stats",
+        )
+        lock_stat_order = st.sidebar.checkbox(
+            "Lock stat order",
+            help="When on, keep the selected stat order for tie-break visuals.",
+            key="lock_stat_order",
+        )
+        if not lock_stat_order:
+            highlighted_stats = sorted(highlighted_stats)
+    else:
+        # Existing single-highlight behavior for non single-piece views.
+        if options_labels:
+            ensure_state_in_options("single_highlight_stat", options_labels, options_labels[0])
+            selected_label = st.sidebar.selectbox(
+                "Highlight stat:", options=options_labels, key="single_highlight_stat"
+            )
+            highlighted_stats = [selected_label]
+
+    if highlighted_stats:
+        primary_highlight = highlighted_stats[0]
+
+    # default sort: Highest First (no None option)
+    sort_options = ["Highest First", "Lowest First"]
+    ensure_state_in_options("sort_order", sort_options, "Highest First")
+    sort_choice = st.sidebar.selectbox(
+        "Sort order:", sort_options, key="sort_order"
+    )
+    # default rows: 5
+    row_options = [5, 10, 25, 50, 100]
+    ensure_state_in_options("rows_to_show", row_options, 5)
+    per_page = st.sidebar.selectbox("Rows to show:", row_options, key="rows_to_show")
+
+    show_raw_dev = st.sidebar.checkbox(
+        "Show raw data table (dev view)",
+        key="show_raw_dev",
+    )
+
+    enable_hist_tuning_classic = False
+    enable_hist_tuning_interactive = False
+    interactive_width_ratio = 1.0
+    classic_width_ratio = 1.0
+    default_hist_width_ratio = float(st.session_state.get("hist_default_width_ratio", 1.0))
+    default_classic_width_ratio = float(
+        st.session_state.get("hist_default_classic_width_ratio", 1.0)
+    )
+    interactive_height_ratio = 1.0
+    default_hist_height_ratio = float(st.session_state.get("hist_default_height_ratio", 1.0))
+    classic_height_ratio = 1.0
+    default_classic_height_ratio = float(
+        st.session_state.get("hist_default_classic_height_ratio", 1.0)
+    )
+    classic_x_offset_px = 0.0
+    classic_y_offset_px = 0.0
+    interactive_x_offset_px = 0.0
+    interactive_y_offset_px = 0.0
+    show_plot_debug_border = bool(st.session_state.get("show_plot_debug_border", False))
+
+    st.session_state.setdefault("classic_width_ratio", 1.0)
+    st.session_state.setdefault("hist_default_classic_width_ratio", 1.0)
+    st.session_state.setdefault("hist_default_interactive_width_ratio", float(st.session_state.get("hist_default_width_ratio", 1.0)))
+    st.session_state.setdefault("hist_default_interactive_height_ratio", float(st.session_state.get("hist_default_height_ratio", 1.0)))
+    st.session_state.setdefault("classic_x_offset_px", 0.0)
+    st.session_state.setdefault("classic_y_offset_px", 0.0)
+    st.session_state.setdefault("interactive_x_offset_px", 0.0)
+    st.session_state.setdefault("interactive_y_offset_px", 0.0)
+    st.session_state.setdefault("hist_default_classic_x_offset_px", 0.0)
+    st.session_state.setdefault("hist_default_classic_y_offset_px", 0.0)
+    st.session_state.setdefault("hist_default_interactive_x_offset_px", 0.0)
+    st.session_state.setdefault("hist_default_interactive_y_offset_px", 0.0)
+
+    def render_histogram_tuning_controls(ui, view_kind: str):
+        is_classic = view_kind == "classic"
+        prefix = "classic" if is_classic else "interactive"
+        enable_key = f"enable_hist_tuning_{prefix}"
+        prev_enable_key = f"_prev_enable_hist_tuning_{prefix}"
+        defaults_map = {
+            f"{prefix}_width_ratio": f"hist_default_{prefix}_width_ratio",
+            f"{prefix}_height_ratio": f"hist_default_{prefix}_height_ratio",
+            f"{prefix}_x_offset_px": f"hist_default_{prefix}_x_offset_px",
+            f"{prefix}_y_offset_px": f"hist_default_{prefix}_y_offset_px",
+        }
+
+        enabled_local = render_dimension_tuning_toggle(
+            ui,
+            "Enable manual dimensions tuning",
+            enable_key=enable_key,
+            prev_enable_key=prev_enable_key,
+            restore_values=defaults_map,
+            help_text="Tune width, height, and offsets for this histogram panel.",
+        )
+
+        auto_flags = []
+        if enabled_local:
+            ui.caption("Size")
+            width_value, width_auto = render_transport_number_input(
+                ui,
+                control_id=f"{prefix}_width",
+                label="Width ratio",
+                input_key=f"{prefix}_width_ratio_input",
+                canonical_key=f"{prefix}_width_ratio",
+                default_key=f"hist_default_{prefix}_width_ratio",
+                min_value=0.3,
+                max_value=4.0,
+                help_text="Width multiplier relative to the generated base width.",
+            )
+            height_value, height_auto = render_transport_number_input(
+                ui,
+                control_id=f"{prefix}_height",
+                label="Height ratio",
+                input_key=f"{prefix}_height_ratio_input",
+                canonical_key=f"{prefix}_height_ratio",
+                default_key=f"hist_default_{prefix}_height_ratio",
+                min_value=0.4,
+                max_value=3.0,
+                help_text="Height multiplier relative to the generated base height.",
+            )
+            ui.caption("Offset")
+            x_value, x_auto = render_transport_number_input(
+                ui,
+                control_id=f"{prefix}_xoffset",
+                label="X offset (px)",
+                input_key=f"{prefix}_x_offset_px_input",
+                canonical_key=f"{prefix}_x_offset_px",
+                default_key=f"hist_default_{prefix}_x_offset_px",
+                min_value=-160.0,
+                max_value=160.0,
+                help_text="Horizontal offset in pixels.",
+                step=1.0,
+                display_format="%.0f",
+                base_step=0.5,
+            )
+            y_value, y_auto = render_transport_number_input(
+                ui,
+                control_id=f"{prefix}_yoffset",
+                label="Y offset (px)",
+                input_key=f"{prefix}_y_offset_px_input",
+                canonical_key=f"{prefix}_y_offset_px",
+                default_key=f"hist_default_{prefix}_y_offset_px",
+                min_value=-120.0,
+                max_value=120.0,
+                help_text="Vertical offset in pixels.",
+                step=1.0,
+                display_format="%.0f",
+                base_step=0.5,
+            )
+            auto_flags.extend([width_auto, height_auto, x_auto, y_auto])
+
+            if ui.button(
+                "Lock current values as defaults",
+                key=f"lock_hist_{prefix}_defaults",
+            ):
+                st.session_state[f"hist_default_{prefix}_width_ratio"] = float(width_value)
+                st.session_state[f"hist_default_{prefix}_height_ratio"] = float(height_value)
+                st.session_state[f"hist_default_{prefix}_x_offset_px"] = float(x_value)
+                st.session_state[f"hist_default_{prefix}_y_offset_px"] = float(y_value)
+                if prefix == "interactive":
+                    st.session_state["hist_default_width_ratio"] = float(width_value)
+                    st.session_state["hist_default_height_ratio"] = float(height_value)
+
+        if any(auto_flags):
+            time.sleep(0.05)
+            st.rerun()
+
+        ui.caption(
+            f"Defaults — W: {float(st.session_state.get(f'hist_default_{prefix}_width_ratio', 1.0)):.2f}, "
+            f"H: {float(st.session_state.get(f'hist_default_{prefix}_height_ratio', 1.0)):.2f}, "
+            f"X: {float(st.session_state.get(f'hist_default_{prefix}_x_offset_px', 0.0)):.0f}px, "
+            f"Y: {float(st.session_state.get(f'hist_default_{prefix}_y_offset_px', 0.0)):.0f}px"
+        )
+
+    if dataset == "armors" and armor_single_piece:
+        st.sidebar.markdown("---")
+        st.sidebar.subheader("Optimization")
+        method_options = list(OPTIMIZER_METHODS.keys())
+        ensure_state_in_options("optimizer_method", method_options, DEFAULT_OPTIMIZATION_METHOD)
+        optimizer_method = st.sidebar.selectbox(
+            "Method:", options=method_options, key="optimizer_method"
+        )
+
+        if "weight" in numeric_cols:
+            use_max_weight = st.sidebar.checkbox(
+                "Use max weight constraint",
+                key="use_max_weight",
+            )
+            if use_max_weight:
+                st.sidebar.selectbox(
+                    "Histogram view:",
+                    options=HIST_VIEW_OPTIONS,
+                    key="hist_view_mode_widget",
+                    on_change=on_hist_view_mode_change,
+                )
+                on_hist_view_mode_change()
+                hist_view_mode = str(st.session_state["hist_view_mode"])
+                max_weight_limit = st.sidebar.number_input(
+                    "Max weight:",
+                    min_value=0.0,
+                    step=0.1,
+                    key="max_weight_limit",
+                )
+                st.sidebar.markdown("---")
+                st.sidebar.subheader("Histogram tuning (temporary): dimensions")
+                st.sidebar.caption(
+                    "Manual tuning controls are attached directly below each histogram panel."
+                )
+                show_plot_debug_border = st.sidebar.checkbox(
+                    "Show plot debug border (temporary)",
+                    key="show_plot_debug_border",
+                    help="Draws a thin white rectangle around each rendered histogram block for visual size matching.",
+                )
+
+    st.sidebar.button(
+        "Reset filters/stats",
+        key="reset_filters",
+        on_click=reset_ui_state,
+    )
 
     # perform sorting and show rows using internal rendering
     # Inline minimal renderer to avoid external dependencies
@@ -269,32 +1036,514 @@ def main():
         if "type" in display_df.columns:
             display_df = display_df[display_df['type'].astype(str) == str(armor_piece_type)]
 
-    # If 'Show only zero-value stats' is checked and a highlight stat is selected,
-    # filter rows to only those where the highlighted stat equals zero.
-    if highlight and show_only_zero:
+    pre_weight_df = display_df.copy()
+    weight_series_all = None
+    min_weight_available = None
+    max_weight_available = None
+    min_weight_for_three = None
+    if "weight" in pre_weight_df.columns:
+        weight_series_all = pd.to_numeric(pre_weight_df["weight"], errors="coerce").dropna()
+        if not weight_series_all.empty:
+            min_weight_available = float(weight_series_all.min())
+            max_weight_available = float(weight_series_all.max())
+            sorted_weights = sorted(weight_series_all.tolist())
+            if len(sorted_weights) >= 3:
+                min_weight_for_three = float(sorted_weights[2])
+
+    if use_max_weight and max_weight_limit is not None and "weight" in display_df.columns:
+        hist_view_mode = normalize_hist_view_mode(
+            str(st.session_state.get("hist_view_mode", hist_view_mode))
+        )
+        st.session_state["hist_view_mode"] = hist_view_mode
+        display_df = display_df[pd.to_numeric(display_df["weight"], errors="coerce") <= float(max_weight_limit)]
+
+        candidate_count = len(display_df)
+        if candidate_count == 0:
+            if min_weight_available is not None:
+                st.warning(
+                    f"No candidates at max weight {float(max_weight_limit):.2f}. "
+                    f"Lowest available weight in this category is {min_weight_available:.2f}."
+                )
+                if min_weight_for_three is not None:
+                    st.info(
+                        f"Increase Max weight to at least {min_weight_for_three:.2f} "
+                        f"to get 3+ candidates."
+                    )
+                else:
+                    st.info("Increase Max weight to at least that value to start seeing candidates.")
+                if st.button("Set to minimal viable weight", key="set_min_viable_weight"):
+                    target_weight = (
+                        float(min_weight_for_three)
+                        if min_weight_for_three is not None
+                        else float(min_weight_available)
+                    )
+                    st.session_state["_pending_max_weight_limit"] = target_weight
+                    st.rerun()
+            else:
+                st.warning("No candidates match the current max-weight filter.")
+        elif candidate_count == 1:
+            st.info("1 candidate matches this max-weight filter. Ranking is shown, but comparison is limited.")
+        elif candidate_count == 2:
+            st.info("2 candidates match this max-weight filter. Ranking works, but trade-off visibility is limited.")
+
+        if weight_series_all is not None and not weight_series_all.empty:
+            histogram_config = HISTOGRAM_CONFIG
+            histogram_runtime_config = copy.deepcopy(histogram_config)
+            histogram_runtime_config["debug"]["show_border"] = bool(show_plot_debug_border)
+            enable_hist_tuning_classic = bool(st.session_state.get("enable_hist_tuning_classic", False))
+            enable_hist_tuning_interactive = bool(
+                st.session_state.get("enable_hist_tuning_interactive", False)
+            )
+            interactive_width_ratio = float(
+                st.session_state.get("interactive_width_ratio", default_hist_width_ratio)
+            )
+            interactive_height_ratio = float(
+                st.session_state.get("interactive_height_ratio", default_hist_height_ratio)
+            )
+            classic_width_ratio = float(
+                st.session_state.get("classic_width_ratio", default_classic_width_ratio)
+            )
+            classic_height_ratio = float(
+                st.session_state.get("classic_height_ratio", default_classic_height_ratio)
+            )
+            interactive_x_offset_px = float(st.session_state.get("interactive_x_offset_px", 0.0))
+            interactive_y_offset_px = float(st.session_state.get("interactive_y_offset_px", 0.0))
+            classic_x_offset_px = float(st.session_state.get("classic_x_offset_px", 0.0))
+            classic_y_offset_px = float(st.session_state.get("classic_y_offset_px", 0.0))
+            classic_width_ratio_effective = (
+                float(classic_width_ratio)
+                if enable_hist_tuning_classic
+                else float(st.session_state.get("hist_default_classic_width_ratio", 1.0))
+            )
+            classic_height_ratio_effective = (
+                float(classic_height_ratio)
+                if enable_hist_tuning_classic
+                else float(default_classic_height_ratio)
+            )
+            interactive_width_ratio_effective = (
+                float(interactive_width_ratio)
+                if enable_hist_tuning_interactive
+                else float(
+                    st.session_state.get(
+                        "hist_default_interactive_width_ratio", default_hist_width_ratio
+                    )
+                )
+            )
+            interactive_height_ratio_effective = (
+                float(interactive_height_ratio)
+                if enable_hist_tuning_interactive
+                else float(
+                    st.session_state.get(
+                        "hist_default_interactive_height_ratio", default_hist_height_ratio
+                    )
+                )
+            )
+
+            layout_mode = "grid" if hist_view_mode == "Side-by-side" else "single"
+
+            classic_hist_config, _classic_render_layer = resolve_auto_render_layer(
+                base_config=histogram_runtime_config,
+                view_kind="classic",
+                layout_mode=layout_mode,
+                width_ratio=classic_width_ratio_effective,
+                height_ratio=classic_height_ratio_effective,
+                x_offset_px=classic_x_offset_px,
+                y_offset_px=classic_y_offset_px,
+            )
+            interactive_hist_config, interactive_render_layer = resolve_auto_render_layer(
+                base_config=histogram_runtime_config,
+                view_kind="interactive",
+                layout_mode=layout_mode,
+                width_ratio=interactive_width_ratio_effective,
+                height_ratio=interactive_height_ratio_effective,
+                x_offset_px=interactive_x_offset_px,
+                y_offset_px=interactive_y_offset_px,
+            )
+
+            histogram_spec = build_histogram_spec(weight_series_all, histogram_config)
+            if histogram_spec is None:
+                st.warning(histogram_config["labels"]["invalid_data"])
+            else:
+                st.caption(histogram_config["labels"]["caption"])
+            try:
+                interactive_available = go is not None and plotly_events is not None
+
+                def render_interactive_plot(target_ui, click_key: str):
+                    def run_in_target_context(fn):
+                        if hasattr(target_ui, "__enter__") and hasattr(target_ui, "__exit__"):
+                            with target_ui:
+                                return fn()
+                        return fn()
+
+                    try:
+                        fig, interactive_spec = build_interactive_histogram_figure(
+                            weight_series_all,
+                            float(max_weight_limit),
+                            interactive_hist_config,
+                        )
+                        if fig is None:
+                            target_ui.info(histogram_config["labels"]["unavailable"])
+                            return False
+
+                        height_override = int(interactive_render_layer["override_height"])
+                        selected_points = []
+                        try:
+                            selected_points = run_in_target_context(
+                                lambda: plotly_events(
+                                    fig,
+                                    click_event=True,
+                                    hover_event=False,
+                                    select_event=False,
+                                    override_height=height_override,
+                                    key=click_key,
+                                )
+                            )
+                        except Exception as interactive_err:
+                            retry_points = None
+                            if "enter" in str(interactive_err).strip("'\" ").lower():
+                                try:
+                                    retry_points = run_in_target_context(
+                                        lambda: plotly_events(
+                                            fig,
+                                            click_event=True,
+                                            hover_event=True,
+                                            select_event=False,
+                                            override_height=height_override,
+                                            key=f"{click_key}_compat",
+                                        )
+                                    )
+                                except Exception:
+                                    retry_points = None
+
+                            if retry_points is None:
+                                target_ui.warning(
+                                    "Interactive click capture is unavailable in this session; showing non-clickable interactive chart."
+                                )
+                                target_ui.plotly_chart(
+                                    fig,
+                                    use_container_width=True,
+                                    key=f"{click_key}_fallback",
+                                )
+                                return False
+                            selected_points = retry_points
+
+                        new_weight = get_clicked_weight(
+                            selected_points,
+                            float(max_weight_limit),
+                            spec=interactive_spec,
+                        )
+                        if new_weight is not None:
+                            st.session_state["_pending_max_weight_limit"] = new_weight
+                            st.rerun()
+                        return True
+                    except Exception:
+                        target_ui.warning(
+                            "Interactive histogram hit an internal error; falling back to classic view for this panel."
+                        )
+                        render_classic_histogram(
+                            target_ui,
+                            weight_series_all,
+                            float(max_weight_limit),
+                            classic_hist_config,
+                        )
+                        return False
+
+                if hist_view_mode == "Classic":
+                    render_classic_histogram(st, weight_series_all, float(max_weight_limit), classic_hist_config)
+                    render_histogram_tuning_controls(st, "classic")
+                elif hist_view_mode == "Interactive (click-to-set)":
+                    if interactive_available:
+                        interactive_enabled = render_interactive_plot(
+                            st,
+                            click_key=build_hist_click_key(
+                                "single",
+                                dataset,
+                                armor_piece_type,
+                                hist_view_mode,
+                                max_weight_limit,
+                            ),
+                        )
+                        if interactive_enabled:
+                            st.caption(histogram_config["labels"]["interactive_tip"])
+                        render_histogram_tuning_controls(st, "interactive")
+                    else:
+                        st.info(histogram_config["labels"]["unavailable"])
+                        render_classic_histogram(st, weight_series_all, float(max_weight_limit), classic_hist_config)
+                else:
+                    left_col, right_col = place_one_by_two_grid(st)
+
+                    place_graphical_object_in_grid_cell(
+                        left_col,
+                        label=histogram_config["labels"]["classic_label"],
+                        render_fn=lambda target_ui: render_classic_histogram(
+                            target_ui,
+                            weight_series_all,
+                            float(max_weight_limit),
+                            classic_hist_config,
+                        ),
+                        controls_fn=lambda target_ui: render_histogram_tuning_controls(
+                            target_ui,
+                            "classic",
+                        ),
+                    )
+
+                    if interactive_available:
+                        interactive_side_enabled = {"value": True}
+
+                        def _render_side_interactive(target_ui):
+                            interactive_side_enabled["value"] = render_interactive_plot(
+                                target_ui,
+                                click_key=build_hist_click_key(
+                                    "side",
+                                    dataset,
+                                    armor_piece_type,
+                                    hist_view_mode,
+                                    max_weight_limit,
+                                ),
+                            )
+
+                        place_graphical_object_in_grid_cell(
+                            right_col,
+                            label=histogram_config["labels"]["interactive_label"],
+                            render_fn=_render_side_interactive,
+                            controls_fn=lambda target_ui: render_histogram_tuning_controls(
+                                target_ui,
+                                "interactive",
+                            ),
+                        )
+                    else:
+                        place_graphical_object_in_grid_cell(
+                            right_col,
+                            label=histogram_config["labels"]["interactive_label"],
+                            render_fn=lambda target_ui: (
+                                target_ui.info(histogram_config["labels"]["unavailable"]),
+                                render_classic_histogram(
+                                    target_ui,
+                                    weight_series_all,
+                                    float(max_weight_limit),
+                                    classic_hist_config,
+                                ),
+                            )[-1],
+                        )
+                    if interactive_available:
+                        if interactive_side_enabled["value"]:
+                            st.caption(histogram_config["labels"]["interactive_side_tip"])
+
+                if min_weight_available is not None and max_weight_available is not None:
+                    st.caption(
+                        f"Available weight range in this category: {min_weight_available:.2f} to {max_weight_available:.2f}."
+                    )
+            except Exception as err:
+                st.error(f"Histogram render error: {err}")
+                if min_weight_available is not None:
+                    st.caption(
+                        f"Lowest available weight in this category is {min_weight_available:.2f}."
+                    )
+
+    # Persist current UI state to query params for refresh/share.
+    qp_update(
+        {
+            "show_all": str(show_all).lower(),
+            "dataset": selected_dataset_label,
+            "armor_mode": str(st.session_state.get("armor_mode", ARMOR_MODE_SINGLE_PIECE)),
+            "piece_type": str(armor_piece_type) if armor_piece_type else "",
+            "stats": "|".join(highlighted_stats),
+            "lock_order": str(lock_stat_order).lower(),
+            "sort": sort_choice,
+            "rows": str(per_page),
+            "dev": str(show_raw_dev).lower(),
+            "single_stat": highlighted_stats[0] if highlighted_stats else "",
+            "method": optimizer_method,
+            "use_max_weight": str(use_max_weight).lower(),
+            "hist_view": hist_view_mode,
+            "max_weight": str(max_weight_limit) if max_weight_limit is not None else "",
+            "hist_tune_interactive": str(bool(st.session_state.get("enable_hist_tuning_interactive", False))).lower(),
+            "hist_tune_classic": str(bool(st.session_state.get("enable_hist_tuning_classic", False))).lower(),
+            "hist_width_ratio": str(float(st.session_state.get("interactive_width_ratio", interactive_width_ratio))),
+            "hist_width_default_ratio": str(float(st.session_state.get("hist_default_interactive_width_ratio", default_hist_width_ratio))),
+            "hist_height_ratio": str(float(st.session_state.get("interactive_height_ratio", interactive_height_ratio))),
+            "hist_height_default_ratio": str(float(st.session_state.get("hist_default_interactive_height_ratio", default_hist_height_ratio))),
+            "hist_interactive_x_offset": str(float(st.session_state.get("interactive_x_offset_px", 0.0))),
+            "hist_interactive_y_offset": str(float(st.session_state.get("interactive_y_offset_px", 0.0))),
+            "hist_classic_width_ratio": str(float(st.session_state.get("classic_width_ratio", classic_width_ratio))),
+            "hist_classic_width_default_ratio": str(float(st.session_state.get("hist_default_classic_width_ratio", 1.0))),
+            "hist_classic_height_ratio": str(float(st.session_state.get("classic_height_ratio", classic_height_ratio))),
+            "hist_classic_height_default_ratio": str(default_classic_height_ratio),
+            "hist_classic_x_offset": str(float(st.session_state.get("classic_x_offset_px", 0.0))),
+            "hist_classic_y_offset": str(float(st.session_state.get("classic_y_offset_px", 0.0))),
+            "hist_debug_border": str(show_plot_debug_border).lower(),
+        }
+    )
+
+    sampled_mode = False
+    if len(highlighted_stats) >= 6 and len(display_df) > 1200:
+        sampled_mode = True
+        if "name" in display_df.columns:
+            display_df = display_df.sort_values(by="name").head(1200)
+        else:
+            display_df = display_df.head(1200)
+        st.info("Sampled ranking mode active for performance (showing first 1200 candidates).")
+
+    # Apply sorting (Highest/Lowest). In single-piece armor mode with 2+ highlighted
+    # stats, rank by multi-stat optimizer; otherwise keep existing single-stat sort.
+    ascending = sort_choice == "Lowest First"
+    if dataset == "armors" and armor_single_piece and len(highlighted_stats) >= 2:
         try:
-            display_df = display_df[display_df[highlight].astype(float) == 0]
-        except Exception:
-            display_df = display_df[display_df[highlight] == 0]
-    # (removed: optional filter to only rows where highlighted stat > 0)
+            cache_key = (
+                dataset,
+                armor_piece_type,
+                tuple(highlighted_stats),
+                optimizer_method,
+                ascending,
+                sampled_mode,
+                use_max_weight,
+                float(max_weight_limit) if max_weight_limit is not None else None,
+                frame_signature(display_df, ["name", "type", "weight", *highlighted_stats]),
+            )
+            rank_cache = st.session_state.setdefault("_optimizer_cache", {})
+            if cache_key in rank_cache:
+                cached_df = rank_cache[cache_key].copy()
+                if "__opt_score" in cached_df.columns and "__opt_tiebreak" in cached_df.columns:
+                    display_df = cached_df
+                else:
+                    display_df = optimize_single_piece(
+                        display_df,
+                        selected_stats=highlighted_stats,
+                        method=optimizer_method,
+                        config={
+                            "weights": {stat: 1.0 for stat in highlighted_stats},
+                            "lock_stat_order": lock_stat_order,
+                        },
+                    )
+                    rank_cache[cache_key] = display_df.copy()
+            else:
+                display_df = optimize_single_piece(
+                    display_df,
+                    selected_stats=highlighted_stats,
+                    method=optimizer_method,
+                    config={
+                        "weights": {stat: 1.0 for stat in highlighted_stats},
+                        "lock_stat_order": lock_stat_order,
+                    },
+                )
+                rank_cache[cache_key] = display_df.copy()
 
-    # Apply sorting (Highest/Lowest). Default is Highest First.
-    if highlight:
-        ascending = sort_choice == "Lowest First"
-        if highlight in display_df.columns:
-            display_df = display_df.sort_values(by=highlight, ascending=ascending)
+            if "__opt_score" in display_df.columns and "__opt_tiebreak" in display_df.columns:
+                display_df = display_df.sort_values(
+                    by=["__opt_score", "__opt_tiebreak"],
+                    ascending=[ascending, ascending],
+                )
+            elif primary_highlight and primary_highlight in display_df.columns:
+                display_df = display_df.sort_values(by=primary_highlight, ascending=ascending)
+        except ValueError:
+            pass
+    elif primary_highlight:
+        if primary_highlight in display_df.columns:
+            display_df = display_df.sort_values(by=primary_highlight, ascending=ascending)
 
-    display_df = display_df.head(per_page)
+    # Overall score in current filtered category: best available candidate = 100.
+    if "__opt_score" in display_df.columns:
+        opt_series = pd.to_numeric(display_df["__opt_score"], errors="coerce")
+        max_opt = opt_series.max()
+        min_opt = opt_series.min()
+        if pd.notna(max_opt) and pd.notna(min_opt):
+            if max_opt > min_opt:
+                display_df["__overall_score_100"] = (
+                    (opt_series - min_opt) / (max_opt - min_opt)
+                ) * 100.0
+            else:
+                display_df["__overall_score_100"] = 100.0
+
+    display_rows = display_df.head(per_page)
+
+    if "weight" in highlighted_stats:
+        st.info("Optimization note: `weight` is minimized; all other selected stats are maximized.")
+
+    csv_payload = display_rows.to_csv(index=False)
+    st.download_button(
+        label="📥 Export current ranked rows (CSV)",
+        data=csv_payload,
+        file_name=f"{dataset}_ranked_view.csv",
+        mime="text/csv",
+    )
+
+    if show_raw_dev:
+        st.markdown("---")
+        st.subheader("🧪 Raw data (dev view)")
+
+        dev_view_df = display_rows.copy()
+        if "__opt_score" not in dev_view_df.columns:
+            dev_view_df["__opt_score"] = None
+        if "__opt_tiebreak" not in dev_view_df.columns:
+            dev_view_df["__opt_tiebreak"] = None
+        if "__opt_method" not in dev_view_df.columns:
+            dev_view_df["__opt_method"] = None
+        if "__opt_length" not in dev_view_df.columns:
+            dev_view_df["__opt_length"] = len(highlighted_stats)
+
+        dev_columns = list(dev_view_df.columns)
+        contribution_columns = [f"Norm: {s}" for s in highlighted_stats if f"Norm: {s}" in dev_columns]
+        fixed_dev_columns = [
+            c
+            for c in [
+                "name",
+                "type",
+                "__opt_score",
+                "__opt_method",
+                *highlighted_stats,
+                *contribution_columns,
+            ]
+            if c in dev_columns
+        ]
+
+        if fixed_dev_columns:
+            render_dev_table(dev_view_df[fixed_dev_columns])
+        else:
+            st.info("No dev-view columns available for current data.")
+
+    if dataset == "armors" and armor_single_piece and len(highlighted_stats) >= 2:
+        st.caption(
+            f"Ranking single pieces by highlighted stats: {', '.join(highlighted_stats)} "
+            f"(method: {optimizer_method})"
+        )
+    elif primary_highlight:
+        st.caption(f"Highlight stat: {primary_highlight}")
+
+    if dataset == "armors" and armor_single_piece and len(highlighted_stats) >= 2 and len(display_rows) >= 1:
+        st.markdown("---")
+        with st.expander("Why this is #1", expanded=False):
+            top_1 = display_rows.iloc[0]
+            st.write(f"Top item: **{top_1.get('name', 'Unknown')}**")
+            if len(display_rows) >= 2:
+                top_2 = display_rows.iloc[1]
+                st.write(f"Compared against #2: **{top_2.get('name', 'Unknown')}**")
+                for stat in highlighted_stats:
+                    if stat in display_rows.columns:
+                        v1 = pd.to_numeric(top_1.get(stat), errors="coerce")
+                        v2 = pd.to_numeric(top_2.get(stat), errors="coerce")
+                        if pd.notna(v1) and pd.notna(v2):
+                            delta = v1 - v2
+                            if str(stat).strip().lower() == "weight":
+                                delta_text = f"{delta:.2f} (lower is better)"
+                            else:
+                                delta_text = f"{delta:.2f} (higher is better)"
+                            st.write(f"- {stat}: {v1:.2f} vs {v2:.2f} | Δ {delta_text}")
+            if "__opt_score" in display_rows.columns:
+                st.write(f"Score: {float(top_1['__opt_score']):.4f}")
+            if "__opt_method" in display_rows.columns:
+                st.write(f"Method: {top_1['__opt_method']}")
+
+    display_df = display_rows
 
     # Render rows: image, name, description, highlighted stat, stats
     for _, row in display_df.iterrows():
         # compute color
         color_style = ""
-        if highlight and highlight in df.columns:
+        if primary_highlight and primary_highlight in df.columns:
             # compute normalized using whole dataset for consistent coloring
-            col_vals = df[highlight].astype(float)
+            col_vals = df[primary_highlight].astype(float)
             mn, mx = col_vals.min(), col_vals.max()
-            val = float(row.get(highlight, 0))
+            val = float(row.get(primary_highlight, 0))
             norm = (val - mn) / (mx - mn) if mx > mn else 0
             if norm > 0.66:
                 color_style = "background-color: rgba(76, 175, 80, 0.18);"
@@ -316,17 +1565,20 @@ def main():
                     st.write("📦")
             else:
                 st.write("📦")
-            if highlight and highlight in row:
-                # display the exact CSV column name and use the exact data value from the row
-                val_h = row.get(highlight)
-                try:
-                    display_h = f"{float(val_h):.2f}"
-                except Exception:
-                    display_h = str(val_h)
-                st.metric(f"⭐ {highlight}", display_h)
+            for hs in highlighted_stats:
+                if hs in row:
+                    val_h = row.get(hs)
+                    display_h = format_metric_value(val_h)
+                    st.metric(f"⭐ {hs}", display_h)
         with c2:
-            if "name" in df.columns:
-                st.markdown(f"### {row['name']}")
+            title_left, title_right = st.columns([4, 1])
+            with title_left:
+                if "name" in df.columns:
+                    st.markdown(f"### {row['name']}")
+            with title_right:
+                if "__overall_score_100" in row and pd.notna(row.get("__overall_score_100")):
+                    overall_val = float(row.get("__overall_score_100", 0.0))
+                    st.metric("Overall", f"{overall_val:.2f}")
             if "description" in df.columns and pd.notna(row.get("description")):
                 st.caption(row["description"])
 
@@ -348,10 +1600,10 @@ def main():
                 display_stats = [
                     s
                     for s in found_cols
-                    if s in stats and not (highlight and s == highlight)
+                    if s in stats and s not in highlighted_stats
                 ]
             else:
-                display_stats = [s for s in stats if not (highlight and s == highlight)]
+                display_stats = [s for s in stats if s not in highlighted_stats]
 
             if display_stats:
                 cols_per_row = 4
@@ -370,11 +1622,11 @@ def main():
                             except Exception:
                                 num_val = None
 
-                            # Default behavior: hide zero-value stats (unless it's the highlighted stat)
-                            if num_val is not None and num_val == 0 and s != highlight:
+                            # Default behavior: hide zero-value stats (unless it's highlighted)
+                            if num_val is not None and num_val == 0 and s not in highlighted_stats:
                                 p.write('')
                             else:
-                                display_val = f"{num_val:.2f}" if num_val is not None else val
+                                display_val = format_metric_value(val)
                                 p.metric(label, display_val)
             # Debug expanders removed for clean UI
         st.markdown("</div>", unsafe_allow_html=True)

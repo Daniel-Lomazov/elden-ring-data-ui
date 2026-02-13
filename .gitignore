@@ -53,10 +53,9 @@ data_backup_*.zip
 data_checksums.txt
 .mypy_cache/
 
-# Generated or helper files not needed in minimal repo
-environment.yml
-setup.ps1
-final_check.py
-secure_data.py
+# Generated local helper artifacts
 armor_column_map.json
 data_checksums.json
+
+# Optional local workspace file
+*.code-workspace

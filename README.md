@@ -6,6 +6,8 @@ A modular Streamlit application for loading, comparing, filtering, and optimizin
 
 This repository contains a compact Streamlit app focused on ranking and sorting Elden Ring datasets (armors, weapons, items). The trimmed project keeps only the app, data loader, parsing helpers, and dataset CSVs.
 
+For optimization behavior (including objective directions and scoring), see [Best Armor Optimization (ALMOPs)](#best-armor-optimization-almops).
+
 Windows (Conda, recommended):
 
 ```powershell
@@ -28,6 +30,7 @@ streamlit run app.py
 ```
 elden_ring_data_ui/
 ├── app.py                  # Main minimal Streamlit application (ranking/sorting)
+├── histogram_views.py      # Centralized histogram config + render helpers for all views
 ├── data_loader.py          # Data loading helper
 ├── ui_components.py        # Minimal parsing helpers
 ├── requirements.txt        # Python dependencies
@@ -62,10 +65,200 @@ elden_ring_data_ui/
    streamlit run app.py
    ```
 
+## PowerShell Automation (Reset + Setup + Verify + Run)
+
+Use the script suite in [scripts/](scripts/) for clean, repeatable CLI control.
+
+- [scripts/reset-dev-session.ps1](scripts/reset-dev-session.ps1)
+   - Stops local Streamlit processes (including port `8501`) for this workspace.
+   - Optional cache cleanup (`-RemovePycache`, `-ClearRuffCache`).
+- [scripts/ensure-conda-env.ps1](scripts/ensure-conda-env.ps1)
+   - Ensures `elden_ring_ui` exists (creates if missing).
+   - Installs/updates `requirements.txt` via `conda run`.
+- [scripts/verify-workspace.ps1](scripts/verify-workspace.ps1)
+   - Verifies required files exist.
+   - Runs `final_check.py` and `optimizer_check.py`.
+- [scripts/run-all.ps1](scripts/run-all.ps1)
+   - Orchestrator that runs reset → env setup → verification.
+   - Optionally starts app with `-RunApp` via `start-app.ps1`.
+   - Use `-OpenBrowser` to open the app URL automatically.
+- [scripts/start-app.ps1](scripts/start-app.ps1)
+   - Starts Streamlit in background using the selected env `python -m streamlit` and prints `APP_URL`, `START_PID`, `LISTENER_PID`, and `READY`.
+   - Waits for listener + HTTP readiness (`-WaitForReadySeconds`, default `45`).
+   - Optional `-OpenBrowser` opens the app URL automatically after readiness.
+- [scripts/recover-app.ps1](scripts/recover-app.ps1)
+   - Fast recovery shortcut: reset running app processes and immediately restart in background.
+   - Optional `-OpenBrowser` opens the app URL automatically.
+
+### One-command full bootstrap
+
+```powershell
+./scripts/run-all.ps1 -RunApp
+```
+
+Optionally customize launch port/readiness wait:
+
+```powershell
+./scripts/run-all.ps1 -RunApp -Port 8501 -WaitForReadySeconds 60
+```
+
+Seamless startup (auto-open browser):
+
+```powershell
+./scripts/run-all.ps1 -RunApp -OpenBrowser -WaitForReadySeconds 60
+```
+
+### Common commands
+
+```powershell
+# reset only
+./scripts/reset-dev-session.ps1
+
+# setup/repair environment only
+./scripts/ensure-conda-env.ps1
+
+# verify app checks only
+./scripts/verify-workspace.ps1
+
+# start app in background with URL + PID output
+./scripts/start-app.ps1 -ResetFirst
+
+# recover from a stuck/nonresponsive app terminal
+./scripts/recover-app.ps1
+
+# recover and auto-open browser
+./scripts/recover-app.ps1 -OpenBrowser
+
+# full flow without launching Streamlit
+./scripts/run-all.ps1
+```
+
+### Legacy setup entrypoint
+
+`setup.ps1` now delegates to `scripts/ensure-conda-env.ps1` for conda flows and still supports `-UseVenv`.
+
 ## Notes
 
 - This trimmed project focuses on the ranking/sorting UI. Some earlier modules (filtering, optimization helpers, and tests) were removed during cleanup to keep the codebase minimal and focused.
 - If you need the removed features restored, I can add them back or provide separate branches for experimental tooling.
+
+## Session Documentation Artifacts
+
+- [docs/session/2026-02-13_request_catalog.md](docs/session/2026-02-13_request_catalog.md)
+   - Normalized list of user asks and request classifications for this session.
+- [docs/session/2026-02-13_timeline.md](docs/session/2026-02-13_timeline.md)
+   - Detailed timeline of intent, code touchpoints, and outcomes.
+- [docs/session/2026-02-13_nuanced_change_review.md](docs/session/2026-02-13_nuanced_change_review.md)
+   - Focused review of high-impact/nuanced implementation decisions.
+- [docs/session/2026-02-13_sanity_checks.md](docs/session/2026-02-13_sanity_checks.md)
+   - Current sanity-check coverage, commands, and alignment-debug posture.
+
+## Best Armor Optimization (ALMOPs)
+
+In **Single piece** armor mode, users can choose multiple highlighted stats and the app ranks candidate pieces to find the best armor options (ALMOPs) under those selected objectives.
+
+- **Objective directions:**
+   - `weight` is **minimized**.
+   - All other selected stats are **maximized**.
+- **What “best” means now:** the app currently uses `maximin_normalized` as the default method (configured in code), and returns a ranked list where rank 1 is the strongest current candidate.
+- **UI behavior:**
+   - 2+ selected stats → optimizer ranking is used.
+   - 1 selected stat → legacy single-stat sort behavior is used.
+   - Sidebar includes method selection, optional max-weight constraint, and reset action.
+   - Current ranked rows can be exported to CSV from the main view.
+
+### Where this is implemented
+
+- **Optimizer module:** `optimizer.py`
+   - `_is_minimize_stat(stat)`: marks `weight` as a minimize objective.
+   - `_normalized_view(df, stats)`: min-max normalizes selected stats and inverts `weight` so higher normalized value is always better for scoring.
+   - `_score_maximin_normalized(...)`: computes primary score and tie-break.
+   - `optimize_single_piece(...)`: strategy entry point used by the UI.
+- **UI entry point:** `app.py` in `main()` where single-piece armor results call `optimize_single_piece(...)` when 2+ stats are selected.
+
+### Input/output contract
+
+- **Inputs (`optimize_single_piece`)**
+   - `df`: filtered candidate armor pieces (already narrowed by dataset/piece type/UI filters).
+   - `selected_stats`: list of selected stat column names (2+ valid stats required).
+   - `method`: optimization strategy key (default `maximin_normalized`).
+   - `config`: optional method config (e.g., weights for weighted-sum strategy).
+- **Output**
+   - Ranked `DataFrame` of candidates, including metadata columns:
+      - `__opt_score` (primary score)
+      - `__opt_tiebreak` (secondary score)
+      - `__opt_method` (method label)
+      - `__opt_length` (number of selected stats)
+      - `__opt_rank` (1-based ranking)
+
+### Current method details (`maximin_normalized`)
+
+- Conceptually: for each selected stat, values are min-max normalized; `weight` is inverted after normalization so lower weight improves score.
+- Primary score: maximum of the **minimum normalized stat** per candidate (best worst-case stat balance).
+- Tie-break: mean normalized stat (`__opt_tiebreak`) to prefer stronger overall profiles.
+- Output meaning: a full ranked list is produced; UI shows top N according to “Rows to show”.
+
+**Mini example**
+- Selected stats: `weight`, `Res: Fir`.
+- Piece A: lower weight, medium fire resistance.
+- Piece B: higher weight, high fire resistance.
+- Because `weight` is minimized (inverted) and fire resistance is maximized, the winner is the piece with the better balanced worst normalized value; ties go to higher mean normalized score.
+
+## Optimization methods
+
+- ✅ **Implemented now (default in UI):** `maximin_normalized`.
+- ⏳ **Recommended next methods to add/expose**
+   - **Pareto frontier (non-dominated set):** useful when you want trade-off options instead of a single total order.
+   - **Weighted sum (user-configurable weights):** useful when users want explicit preference strength by stat.
+   - **Maximin variants:** useful for stricter fairness-style ranking (e.g., floors/thresholds per stat).
+   - **Alternative normalization (z-score/robust scaling):** useful when stat distributions are skewed or have outliers.
+   - **Constraint-based selection (e.g., `weight <= X`, then maximize Y):** useful when hard gameplay limits must be respected first.
+
+### Lightweight optimizer check
+
+Run:
+
+```bash
+python optimizer_check.py
+```
+
+This verifies baseline optimizer behavior without requiring a full test suite.
+
+### UI smoke checklist
+
+Use [ui_smoke_checklist.md](ui_smoke_checklist.md) for quick manual verification of sort, row limits, dev table columns, constraints, and export behavior.
+
+## Histogram Customization (Single Control Surface)
+
+All histogram behavior is centralized in [histogram_views.py](histogram_views.py), so developers can make one change and have it propagate to:
+
+- Classic view
+- Interactive (click-to-set) view
+- Side-by-side view
+
+### Where to edit
+
+- `HISTOGRAM_CONFIG` in [histogram_views.py](histogram_views.py): visual labels, colors, fonts, spacing, axes, cutoff line style, and compute defaults.
+- `build_histogram_spec(...)` in [histogram_views.py](histogram_views.py): shared computational logic (bin count, bin size, y-axis headroom/ticks).
+- `render_classic_histogram(...)` in [histogram_views.py](histogram_views.py): classic renderer using the shared config/spec.
+- `build_interactive_histogram_figure(...)` in [histogram_views.py](histogram_views.py): interactive renderer figure using the same shared config/spec.
+- `get_clicked_weight(...)` in [histogram_views.py](histogram_views.py): click-to-weight behavior for interactive mode.
+
+### Common global tweaks
+
+Edit `HISTOGRAM_CONFIG` keys once to affect all views:
+
+- `compute.bin_count`: number of histogram intervals.
+- `layout.bargap`: spacing between bars.
+- `layout.height`, `layout.margin`: chart size and padding.
+- `fonts.bold`, `fonts.axis_label_size`, `fonts.axis_title_size`: text appearance.
+- `colors.within`, `colors.above`, `colors.cutoff`, `colors.grid`: visual palette.
+- `x_axis.*`, `y_axis.*`: tick spacing, tick thickness, axis standoff.
+- `cutoff.*`: vertical max-weight marker line style.
+
+### Integration point in app
+
+The app only orchestrates mode selection and interaction in [app.py](app.py); rendering and shared styling/math come from [histogram_views.py](histogram_views.py).
 
 ## Troubleshooting
 
