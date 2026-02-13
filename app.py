@@ -59,6 +59,13 @@ ARMOR_MODE_LABELS = {
     ARMOR_MODE_COMPLETE_ARMOR_SET: "Complete armor set",
 }
 
+ARMOR_PIECE_ORDER = [
+    "Helm",
+    "Chest Armor",
+    "Gauntlets",
+    "Leg Armor",
+]
+
 HIST_VIEW_OPTIONS = [
     "Classic",
     "Interactive (click-to-set)",
@@ -688,8 +695,47 @@ def main():
 
     # Additional armor-specific UI: single-piece vs set and piece-type filter
     armor_single_piece = False
+    armor_full_set = False
     armor_piece_type = None
     armor_placeholder_mode = False
+    type_label_map = {}
+    armor_piece_labels = []
+
+    def resolve_armor_piece_types(arm_df: pd.DataFrame | None):
+        fallback_map = {
+            "Helm": "Helm",
+            "Chest Armor": "Chest",
+            "Gauntlets": "Arms",
+            "Leg Armor": "Legs",
+        }
+        try:
+            if arm_df is not None and "type" in arm_df.columns:
+                raw_types = [str(t) for t in arm_df["type"].dropna().unique()]
+                if (
+                    armor_col_map
+                    and "piece_type_map" in armor_col_map
+                    and armor_col_map["piece_type_map"]
+                ):
+                    pt_map = armor_col_map["piece_type_map"]
+                    label_map = {v: k for k, v in pt_map.items()}
+                    labels = list(label_map.keys())
+                else:
+                    def to_camel(value: str) -> str:
+                        parts = re.split(r"[^0-9a-zA-Z]+", value.strip())
+                        return " ".join(p.capitalize() for p in parts if p)
+
+                    label_map = {to_camel(t): t for t in raw_types}
+                    labels = list(label_map.keys())
+            else:
+                label_map = fallback_map
+                labels = list(label_map.keys())
+        except Exception:
+            label_map = fallback_map
+            labels = list(label_map.keys())
+
+        ordered = [label for label in ARMOR_PIECE_ORDER if label in labels]
+        ordered.extend([label for label in labels if label not in ordered])
+        return label_map, ordered
     if dataset == "armors":
         st.sidebar.markdown("---")
         st.sidebar.subheader("Armor View")
@@ -703,67 +749,22 @@ def main():
         )
         if armor_mode == ARMOR_MODE_SINGLE_PIECE:
             armor_single_piece = True
-            # try to get piece types from the armors dataframe
-            try:
-                arm_df = df
-                if "type" in arm_df.columns:
-                    raw_types = [str(t) for t in arm_df["type"].dropna().unique()]
-                    # prefer piece-type mapping from armor_column_map.json if available
-                    if (
-                        armor_col_map
-                        and "piece_type_map" in armor_col_map
-                        and armor_col_map["piece_type_map"]
-                    ):
-                        # armor_col_map['piece_type_map'] is raw -> display
-                        pt_map = armor_col_map["piece_type_map"]
-                        # build display -> raw mapping for selectbox
-                        type_label_map = {v: k for k, v in pt_map.items()}
-                        types = sorted(type_label_map.keys())
-                    else:
-                        # create spaced Title Case display labels but keep mapping to original values
-                        def to_camel(s: str) -> str:
-                            parts = re.split(r"[^0-9a-zA-Z]+", s.strip())
-                            # join with spaces for better readability (e.g., 'Chest Armor')
-                            return " ".join(p.capitalize() for p in parts if p)
+            type_label_map, armor_piece_labels = resolve_armor_piece_types(df)
 
-                        type_label_map = {to_camel(t): t for t in raw_types}
-                        types = sorted(type_label_map.keys())
-                else:
-                    type_label_map = {
-                        "Head": "Head",
-                        "Chest": "Chest",
-                        "Arms": "Arms",
-                        "Legs": "Legs",
-                    }
-                    types = ["Head", "Chest", "Arms", "Legs"]
-            except Exception:
-                type_label_map = {
-                    "Head": "Head",
-                    "Chest": "Chest",
-                    "Arms": "Arms",
-                    "Legs": "Legs",
-                }
-                types = ["Head", "Chest", "Arms", "Legs"]
-
-            # show CamelCase labels in the selectbox and map back to original values
-            if types:
-                ensure_state_in_options("armor_piece_type", types, types[0])
+            if armor_piece_labels:
+                ensure_state_in_options(
+                    "armor_piece_type", armor_piece_labels, armor_piece_labels[0]
+                )
             selected_label = st.sidebar.selectbox(
-                "Piece type:", options=types, key="armor_piece_type"
+                "Piece type:", options=armor_piece_labels, key="armor_piece_type"
             )
             armor_piece_type = type_label_map.get(selected_label, selected_label)
         elif armor_mode == ARMOR_MODE_FULL_ARMOR_SET:
-            armor_placeholder_mode = True
-            st.sidebar.info(
-                "Full armor set is planned as a fast assembly mode from top single-piece picks. "
-                "It is not implemented yet, so no results are shown in this mode."
-            )
+            armor_full_set = True
+            type_label_map, armor_piece_labels = resolve_armor_piece_types(df)
         elif armor_mode == ARMOR_MODE_COMPLETE_ARMOR_SET:
-            armor_placeholder_mode = True
-            st.sidebar.info(
-                "Complete armor set is planned as a meticulous full-set optimizer. "
-                "It is not implemented yet, so no results are shown in this mode."
-            )
+            armor_full_set = True
+            type_label_map, armor_piece_labels = resolve_armor_piece_types(df)
 
     # determine possible highlight stats
     numeric_cols = df.select_dtypes(include=["number"]).columns.tolist()
@@ -827,7 +828,7 @@ def main():
     st.sidebar.markdown("---")
     st.sidebar.subheader("Ranking Controls")
     # In single-piece armor mode, allow selecting many highlighted stats.
-    if dataset == "armors" and armor_single_piece:
+    if dataset == "armors" and (armor_single_piece or armor_full_set):
         default_highlights = (
             options_labels[:2] if len(options_labels) >= 2 else options_labels[:1]
         )
@@ -1008,7 +1009,7 @@ def main():
             f"Y: {float(st.session_state.get(f'hist_default_{prefix}_y_offset_px', 0.0)):.0f}px"
         )
 
-    if dataset == "armors" and armor_single_piece:
+    if dataset == "armors" and (armor_single_piece or armor_full_set):
         st.sidebar.markdown("---")
         st.sidebar.subheader("Optimization")
         method_options = list(OPTIMIZER_METHODS.keys())
@@ -1421,45 +1422,56 @@ def main():
         }
     )
 
-    sampled_mode = False
-    if len(highlighted_stats) >= 6 and len(display_df) > 1200:
-        sampled_mode = True
-        if "name" in display_df.columns:
-            display_df = display_df.sort_values(by="name").head(1200)
-        else:
-            display_df = display_df.head(1200)
-        st.info("Sampled ranking mode active for performance (showing first 1200 candidates).")
+    def rank_display_df(source_df: pd.DataFrame, piece_key: str | None):
+        working_df = source_df.copy()
+        sampled_mode = False
+        if len(highlighted_stats) >= 6 and len(working_df) > 1200:
+            sampled_mode = True
+            if "name" in working_df.columns:
+                working_df = working_df.sort_values(by="name").head(1200)
+            else:
+                working_df = working_df.head(1200)
+            st.info("Sampled ranking mode active for performance (showing first 1200 candidates).")
 
-    # Apply sorting (Highest/Lowest). In single-piece armor mode with 2+ highlighted
-    # stats, rank by multi-stat optimizer; otherwise keep existing single-stat sort.
-    ascending = sort_choice == "Lowest First"
-    if dataset == "armors" and armor_single_piece and len(highlighted_stats) >= 2:
-        try:
-            cache_key = (
-                dataset,
-                armor_piece_type,
-                tuple(highlighted_stats),
-                optimizer_method,
-                optimizer_weight_signature,
-                ascending,
-                sampled_mode,
-                use_max_weight,
-                float(max_weight_limit) if max_weight_limit is not None else None,
-                frame_signature(display_df, ["name", "type", "weight", *highlighted_stats]),
-            )
-            weight_payload = (
-                optimizer_weights
-                if optimizer_method == "weighted_sum_normalized" and optimizer_weights
-                else {stat: 1.0 for stat in highlighted_stats}
-            )
-            rank_cache = st.session_state.setdefault("_optimizer_cache", {})
-            if cache_key in rank_cache:
-                cached_df = rank_cache[cache_key].copy()
-                if "__opt_score" in cached_df.columns and "__opt_tiebreak" in cached_df.columns:
-                    display_df = cached_df
+        ascending = sort_choice == "Lowest First"
+        if dataset == "armors" and len(highlighted_stats) >= 2:
+            try:
+                cache_key = (
+                    dataset,
+                    piece_key,
+                    tuple(highlighted_stats),
+                    optimizer_method,
+                    optimizer_weight_signature,
+                    ascending,
+                    sampled_mode,
+                    use_max_weight,
+                    float(max_weight_limit) if max_weight_limit is not None else None,
+                    frame_signature(working_df, ["name", "type", "weight", *highlighted_stats]),
+                )
+                weight_payload = (
+                    optimizer_weights
+                    if optimizer_method == "weighted_sum_normalized" and optimizer_weights
+                    else {stat: 1.0 for stat in highlighted_stats}
+                )
+                rank_cache = st.session_state.setdefault("_optimizer_cache", {})
+                if cache_key in rank_cache:
+                    cached_df = rank_cache[cache_key].copy()
+                    if "__opt_score" in cached_df.columns and "__opt_tiebreak" in cached_df.columns:
+                        working_df = cached_df
+                    else:
+                        working_df = optimize_single_piece(
+                            working_df,
+                            selected_stats=highlighted_stats,
+                            method=optimizer_method,
+                            config={
+                                "weights": weight_payload,
+                                "lock_stat_order": lock_stat_order,
+                            },
+                        )
+                        rank_cache[cache_key] = working_df.copy()
                 else:
-                    display_df = optimize_single_piece(
-                        display_df,
+                    working_df = optimize_single_piece(
+                        working_df,
                         selected_stats=highlighted_stats,
                         method=optimizer_method,
                         config={
@@ -1467,229 +1479,247 @@ def main():
                             "lock_stat_order": lock_stat_order,
                         },
                     )
-                    rank_cache[cache_key] = display_df.copy()
-            else:
-                display_df = optimize_single_piece(
-                    display_df,
-                    selected_stats=highlighted_stats,
-                    method=optimizer_method,
-                    config={
-                        "weights": weight_payload,
-                        "lock_stat_order": lock_stat_order,
-                    },
-                )
-                rank_cache[cache_key] = display_df.copy()
+                    rank_cache[cache_key] = working_df.copy()
 
-            if "__opt_score" in display_df.columns and "__opt_tiebreak" in display_df.columns:
-                display_df = display_df.sort_values(
-                    by=["__opt_score", "__opt_tiebreak"],
-                    ascending=[ascending, ascending],
-                )
-            elif primary_highlight and primary_highlight in display_df.columns:
-                display_df = display_df.sort_values(by=primary_highlight, ascending=ascending)
-        except ValueError:
-            pass
-    elif primary_highlight:
-        if primary_highlight in display_df.columns:
-            display_df = display_df.sort_values(by=primary_highlight, ascending=ascending)
+                if "__opt_score" in working_df.columns and "__opt_tiebreak" in working_df.columns:
+                    working_df = working_df.sort_values(
+                        by=["__opt_score", "__opt_tiebreak"],
+                        ascending=[ascending, ascending],
+                    )
+                elif primary_highlight and primary_highlight in working_df.columns:
+                    working_df = working_df.sort_values(by=primary_highlight, ascending=ascending)
+            except ValueError:
+                pass
+        elif primary_highlight:
+            if primary_highlight in working_df.columns:
+                working_df = working_df.sort_values(by=primary_highlight, ascending=ascending)
 
-    # Overall score in current filtered category: best available candidate = 100.
-    if "__opt_score" in display_df.columns:
-        opt_series = pd.to_numeric(display_df["__opt_score"], errors="coerce")
-        max_opt = opt_series.max()
-        min_opt = opt_series.min()
-        if pd.notna(max_opt) and pd.notna(min_opt):
-            if max_opt > min_opt:
-                display_df["__overall_score_100"] = (
-                    (opt_series - min_opt) / (max_opt - min_opt)
-                ) * 100.0
-            else:
-                display_df["__overall_score_100"] = 100.0
+        if "__opt_score" in working_df.columns:
+            opt_series = pd.to_numeric(working_df["__opt_score"], errors="coerce")
+            max_opt = opt_series.max()
+            min_opt = opt_series.min()
+            if pd.notna(max_opt) and pd.notna(min_opt):
+                if max_opt > min_opt:
+                    working_df["__overall_score_100"] = (
+                        (opt_series - min_opt) / (max_opt - min_opt)
+                    ) * 100.0
+                else:
+                    working_df["__overall_score_100"] = 100.0
 
-    display_rows = display_df.head(per_page)
+        return working_df, sampled_mode
 
-    if "weight" in highlighted_stats:
-        st.info("Optimization note: `weight` is minimized; all other selected stats are maximized.")
+    def render_ranked_cards(
+        source_df: pd.DataFrame,
+        section_label: str,
+        piece_key: str | None,
+        show_weight_note: bool = True,
+    ):
+        if source_df.empty:
+            st.info(f"No candidates found for {section_label}.")
+            return
 
-    csv_payload = display_rows.to_csv(index=False)
-    st.download_button(
-        label="📥 Export current ranked rows (CSV)",
-        data=csv_payload,
-        file_name=f"{dataset}_ranked_view.csv",
-        mime="text/csv",
-    )
+        ranked_df, sampled_mode = rank_display_df(source_df, piece_key)
+        display_rows = ranked_df.head(per_page)
 
-    if show_raw_dev:
-        st.markdown("---")
-        st.subheader("🧪 Raw data (dev view)")
+        if show_weight_note and "weight" in highlighted_stats:
+            st.info("Optimization note: `weight` is minimized; all other selected stats are maximized.")
 
-        dev_view_df = display_rows.copy()
-        if "__opt_score" not in dev_view_df.columns:
-            dev_view_df["__opt_score"] = None
-        if "__opt_tiebreak" not in dev_view_df.columns:
-            dev_view_df["__opt_tiebreak"] = None
-        if "__opt_method" not in dev_view_df.columns:
-            dev_view_df["__opt_method"] = None
-        if "__opt_length" not in dev_view_df.columns:
-            dev_view_df["__opt_length"] = len(highlighted_stats)
-
-        dev_columns = list(dev_view_df.columns)
-        contribution_columns = [f"Norm: {s}" for s in highlighted_stats if f"Norm: {s}" in dev_columns]
-        fixed_dev_columns = [
-            c
-            for c in [
-                "name",
-                "type",
-                "__opt_score",
-                "__opt_method",
-                *highlighted_stats,
-                *contribution_columns,
-            ]
-            if c in dev_columns
-        ]
-
-        if fixed_dev_columns:
-            render_dev_table(dev_view_df[fixed_dev_columns])
-        else:
-            st.info("No dev-view columns available for current data.")
-
-    if dataset == "armors" and armor_single_piece and len(highlighted_stats) >= 2:
-        caption_line = (
-            f"Ranking single pieces by highlighted stats: {', '.join(highlighted_stats)} "
-            f"(method: {optimizer_method})"
+        csv_payload = display_rows.to_csv(index=False)
+        safe_label = re.sub(r"[^A-Za-z0-9_\-]+", "_", section_label.strip())
+        st.download_button(
+            label="📥 Export current ranked rows (CSV)",
+            data=csv_payload,
+            file_name=f"{dataset}_{safe_label}_ranked_view.csv",
+            mime="text/csv",
+            key=f"download_{safe_label}",
         )
-        if optimizer_method == "weighted_sum_normalized" and optimizer_weights:
-            weight_tokens = [
-                f"{stat}={float(optimizer_weights.get(stat, 1.0)):.2f}"
-                for stat in highlighted_stats
+
+        if show_raw_dev:
+            st.markdown("---")
+            st.subheader(f"🧪 Raw data (dev view) — {section_label}")
+
+            dev_view_df = display_rows.copy()
+            if "__opt_score" not in dev_view_df.columns:
+                dev_view_df["__opt_score"] = None
+            if "__opt_tiebreak" not in dev_view_df.columns:
+                dev_view_df["__opt_tiebreak"] = None
+            if "__opt_method" not in dev_view_df.columns:
+                dev_view_df["__opt_method"] = None
+            if "__opt_length" not in dev_view_df.columns:
+                dev_view_df["__opt_length"] = len(highlighted_stats)
+
+            dev_columns = list(dev_view_df.columns)
+            contribution_columns = [
+                f"Norm: {s}"
+                for s in highlighted_stats
+                if f"Norm: {s}" in dev_columns
             ]
-            caption_line += f" | weights: {', '.join(weight_tokens)}"
-        st.caption(caption_line)
-    elif primary_highlight:
-        st.caption(f"Highlight stat: {primary_highlight}")
-
-    if dataset == "armors" and armor_single_piece and len(highlighted_stats) >= 2 and len(display_rows) >= 1:
-        st.markdown("---")
-        with st.expander("Why this is #1", expanded=False):
-            top_1 = display_rows.iloc[0]
-            st.write(f"Top item: **{top_1.get('name', 'Unknown')}**")
-            if len(display_rows) >= 2:
-                top_2 = display_rows.iloc[1]
-                st.write(f"Compared against #2: **{top_2.get('name', 'Unknown')}**")
-                for stat in highlighted_stats:
-                    if stat in display_rows.columns:
-                        v1 = pd.to_numeric(top_1.get(stat), errors="coerce")
-                        v2 = pd.to_numeric(top_2.get(stat), errors="coerce")
-                        if pd.notna(v1) and pd.notna(v2):
-                            delta = v1 - v2
-                            if str(stat).strip().lower() == "weight":
-                                delta_text = f"{delta:.2f} (lower is better)"
-                            else:
-                                delta_text = f"{delta:.2f} (higher is better)"
-                            st.write(f"- {stat}: {v1:.2f} vs {v2:.2f} | Δ {delta_text}")
-            if "__opt_score" in display_rows.columns:
-                st.write(f"Score: {float(top_1['__opt_score']):.4f}")
-            if "__opt_method" in display_rows.columns:
-                st.write(f"Method: {top_1['__opt_method']}")
-
-    display_df = display_rows
-
-    # Render rows: image, name, description, highlighted stat, stats
-    for _, row in display_df.iterrows():
-        # compute color
-        color_style = ""
-        if primary_highlight and primary_highlight in df.columns:
-            # compute normalized using whole dataset for consistent coloring
-            col_vals = df[primary_highlight].astype(float)
-            mn, mx = col_vals.min(), col_vals.max()
-            val = float(row.get(primary_highlight, 0))
-            norm = (val - mn) / (mx - mn) if mx > mn else 0
-            if norm > 0.66:
-                color_style = "background-color: rgba(76, 175, 80, 0.18);"
-            elif norm > 0.33:
-                color_style = "background-color: rgba(255, 193, 7, 0.18);"
-            else:
-                color_style = "background-color: rgba(244, 67, 54, 0.18);"
-
-        st.markdown(
-            f"<div style='{color_style} padding:12px; border-radius:8px;'>",
-            unsafe_allow_html=True,
-        )
-        c1, c2 = st.columns([1, 3])
-        with c1:
-            if "image" in df.columns and pd.notna(row.get("image")):
-                try:
-                    st.image(row["image"], width=140)
-                except Exception:
-                    st.write("📦")
-            else:
-                st.write("📦")
-            for hs in highlighted_stats:
-                if hs in row:
-                    val_h = row.get(hs)
-                    display_h = format_metric_value(val_h)
-                    st.metric(f"⭐ {hs}", display_h)
-        with c2:
-            title_left, title_right = st.columns([4, 1])
-            with title_left:
-                if "name" in df.columns:
-                    st.markdown(f"### {row['name']}")
-            with title_right:
-                if "__overall_score_100" in row and pd.notna(row.get("__overall_score_100")):
-                    overall_val = float(row.get("__overall_score_100", 0.0))
-                    st.metric("Overall", f"{overall_val:.2f}")
-            if "description" in df.columns and pd.notna(row.get("description")):
-                st.caption(row["description"])
-
-            stats = [c for c in numeric_cols if c not in ["id"]]
-            # For armors, restrict and order visible stats to an explicit list of CSV column names
-            if dataset == "armors":
-                # Use only exact CSV column names here (no friendly renaming or fuzzy matching)
-                desired_cols = ["weight", "Dmg: Phy", "bleed", "frost", "Res: Poi."]
-                # Include desired columns only if they exist exactly in the dataframe
-                found_cols = [c for c in desired_cols if c in numeric_cols]
-
-                # fallback: include any remaining Dmg:/Res: columns not already included
-                for c in numeric_cols:
-                    if (
-                        c.startswith("Dmg:") or c.startswith("Res:")
-                    ) and c not in found_cols:
-                        found_cols.append(c)
-
-                display_stats = [
-                    s
-                    for s in found_cols
-                    if s in stats and s not in highlighted_stats
+            fixed_dev_columns = [
+                c
+                for c in [
+                    "name",
+                    "type",
+                    "__opt_score",
+                    "__opt_method",
+                    *highlighted_stats,
+                    *contribution_columns,
                 ]
+                if c in dev_columns
+            ]
+
+            if fixed_dev_columns:
+                render_dev_table(dev_view_df[fixed_dev_columns])
             else:
-                display_stats = [s for s in stats if s not in highlighted_stats]
+                st.info("No dev-view columns available for current data.")
 
-            if display_stats:
-                cols_per_row = 4
-                for i in range(0, len(display_stats), cols_per_row):
-                    parts = st.columns(cols_per_row)
-                    for j, p in enumerate(parts):
-                        if i + j < len(display_stats):
-                            s = display_stats[i + j]
-                            # Display exact CSV column name as label
-                            label = s
-                            val = row.get(s, 0)
-                            # determine numeric value (if possible)
-                            num_val = None
-                            try:
-                                num_val = float(val)
-                            except Exception:
+        if dataset == "armors" and len(highlighted_stats) >= 2:
+            caption_line = (
+                f"Ranking single pieces by highlighted stats: {', '.join(highlighted_stats)} "
+                f"(method: {optimizer_method})"
+            )
+            if optimizer_method == "weighted_sum_normalized" and optimizer_weights:
+                weight_tokens = [
+                    f"{stat}={float(optimizer_weights.get(stat, 1.0)):.2f}"
+                    for stat in highlighted_stats
+                ]
+                caption_line += f" | weights: {', '.join(weight_tokens)}"
+            st.caption(caption_line)
+        elif primary_highlight:
+            st.caption(f"Highlight stat: {primary_highlight}")
+
+        if dataset == "armors" and len(highlighted_stats) >= 2 and len(display_rows) >= 1:
+            st.markdown("---")
+            with st.expander(f"Why this is #1 — {section_label}", expanded=False):
+                top_1 = display_rows.iloc[0]
+                st.write(f"Top item: **{top_1.get('name', 'Unknown')}**")
+                if len(display_rows) >= 2:
+                    top_2 = display_rows.iloc[1]
+                    st.write(f"Compared against #2: **{top_2.get('name', 'Unknown')}**")
+                    for stat in highlighted_stats:
+                        if stat in display_rows.columns:
+                            v1 = pd.to_numeric(top_1.get(stat), errors="coerce")
+                            v2 = pd.to_numeric(top_2.get(stat), errors="coerce")
+                            if pd.notna(v1) and pd.notna(v2):
+                                delta = v1 - v2
+                                if str(stat).strip().lower() == "weight":
+                                    delta_text = f"{delta:.2f} (lower is better)"
+                                else:
+                                    delta_text = f"{delta:.2f} (higher is better)"
+                                st.write(f"- {stat}: {v1:.2f} vs {v2:.2f} | Δ {delta_text}")
+                if "__opt_score" in display_rows.columns:
+                    st.write(f"Score: {float(top_1['__opt_score']):.4f}")
+                if "__opt_method" in display_rows.columns:
+                    st.write(f"Method: {top_1['__opt_method']}")
+
+        for _, row in display_rows.iterrows():
+            color_style = ""
+            if primary_highlight and primary_highlight in df.columns:
+                col_vals = df[primary_highlight].astype(float)
+                mn, mx = col_vals.min(), col_vals.max()
+                val = float(row.get(primary_highlight, 0))
+                norm = (val - mn) / (mx - mn) if mx > mn else 0
+                if norm > 0.66:
+                    color_style = "background-color: rgba(76, 175, 80, 0.18);"
+                elif norm > 0.33:
+                    color_style = "background-color: rgba(255, 193, 7, 0.18);"
+                else:
+                    color_style = "background-color: rgba(244, 67, 54, 0.18);"
+
+            st.markdown(
+                f"<div style='{color_style} padding:12px; border-radius:8px;'>",
+                unsafe_allow_html=True,
+            )
+            c1, c2 = st.columns([1, 3])
+            with c1:
+                if "image" in df.columns and pd.notna(row.get("image")):
+                    try:
+                        st.image(row["image"], width=140)
+                    except Exception:
+                        st.write("📦")
+                else:
+                    st.write("📦")
+                for hs in highlighted_stats:
+                    if hs in row:
+                        val_h = row.get(hs)
+                        display_h = format_metric_value(val_h)
+                        st.metric(f"⭐ {hs}", display_h)
+            with c2:
+                title_left, title_right = st.columns([4, 1])
+                with title_left:
+                    if "name" in df.columns:
+                        st.markdown(f"### {row['name']}")
+                with title_right:
+                    if "__overall_score_100" in row and pd.notna(row.get("__overall_score_100")):
+                        overall_val = float(row.get("__overall_score_100", 0.0))
+                        st.metric("Overall", f"{overall_val:.2f}")
+                if "description" in df.columns and pd.notna(row.get("description")):
+                    st.caption(row["description"])
+
+                stats = [c for c in numeric_cols if c not in ["id"]]
+                if dataset == "armors":
+                    desired_cols = ["weight", "Dmg: Phy", "bleed", "frost", "Res: Poi."]
+                    found_cols = [c for c in desired_cols if c in numeric_cols]
+                    for c in numeric_cols:
+                        if (
+                            c.startswith("Dmg:") or c.startswith("Res:")
+                        ) and c not in found_cols:
+                            found_cols.append(c)
+
+                    display_stats = [
+                        s
+                        for s in found_cols
+                        if s in stats and s not in highlighted_stats
+                    ]
+                else:
+                    display_stats = [s for s in stats if s not in highlighted_stats]
+
+                if display_stats:
+                    cols_per_row = 4
+                    for i in range(0, len(display_stats), cols_per_row):
+                        parts = st.columns(cols_per_row)
+                        for j, p in enumerate(parts):
+                            if i + j < len(display_stats):
+                                s = display_stats[i + j]
+                                label = s
+                                val = row.get(s, 0)
                                 num_val = None
+                                try:
+                                    num_val = float(val)
+                                except Exception:
+                                    num_val = None
 
-                            # Default behavior: hide zero-value stats (unless it's highlighted)
-                            if num_val is not None and num_val == 0 and s not in highlighted_stats:
-                                p.write('')
-                            else:
-                                display_val = format_metric_value(val)
-                                p.metric(label, display_val)
-            # Debug expanders removed for clean UI
-        st.markdown("</div>", unsafe_allow_html=True)
-        st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
+                                if num_val is not None and num_val == 0 and s not in highlighted_stats:
+                                    p.write("")
+                                else:
+                                    display_val = format_metric_value(val)
+                                    p.metric(label, display_val)
+            st.markdown("</div>", unsafe_allow_html=True)
+            st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
+
+    if dataset == "armors" and armor_full_set:
+        st.markdown("---")
+        st.subheader("Full armor set preview")
+        if not armor_piece_labels:
+            st.info("No armor piece types available for full set preview.")
+        else:
+            if "weight" in highlighted_stats:
+                st.info("Optimization note: `weight` is minimized; all other selected stats are maximized.")
+            columns = st.columns(4)
+            for idx, label in enumerate(armor_piece_labels[:4]):
+                raw_type = type_label_map.get(label, label)
+                piece_df = display_df
+                if "type" in piece_df.columns:
+                    piece_df = piece_df[piece_df["type"].astype(str) == str(raw_type)]
+                with columns[idx % 4]:
+                    st.subheader(label)
+                    render_ranked_cards(piece_df, label, raw_type, show_weight_note=False)
+        return
+
+    if dataset == "armors" and armor_single_piece:
+        render_ranked_cards(display_df, "Single piece", armor_piece_type)
+        return
+
+    render_ranked_cards(display_df, "Results", None)
 
 
 if __name__ == "__main__":
