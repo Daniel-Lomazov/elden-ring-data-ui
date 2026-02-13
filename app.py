@@ -66,6 +66,13 @@ ARMOR_PIECE_ORDER = [
     "Leg Armor",
 ]
 
+FULL_SET_LABELS = {
+    "Helm": "Helm",
+    "Chest Armor": "Armor",
+    "Gauntlets": "Gauntlets",
+    "Leg Armor": "Greaves",
+}
+
 HIST_VIEW_OPTIONS = [
     "Classic",
     "Interactive (click-to-set)",
@@ -1511,12 +1518,48 @@ def main():
 
         return working_df, sampled_mode
 
+    def build_ranking_caption() -> str | None:
+        if dataset == "armors" and len(highlighted_stats) >= 2:
+            caption_line = (
+                f"Ranking single pieces by highlighted stats: {', '.join(highlighted_stats)} "
+                f"(method: {optimizer_method})"
+            )
+            if optimizer_method == "weighted_sum_normalized" and optimizer_weights:
+                weight_tokens = [
+                    f"{stat}={float(optimizer_weights.get(stat, 1.0)):.2f}"
+                    for stat in highlighted_stats
+                ]
+                caption_line += f" | weights: {', '.join(weight_tokens)}"
+            return caption_line
+        if primary_highlight:
+            return f"Highlight stat: {primary_highlight}"
+        return None
+
+    def render_download_button_for_rows(
+        display_rows: pd.DataFrame,
+        section_label: str,
+        key_suffix: str,
+    ):
+        csv_payload = display_rows.to_csv(index=False)
+        safe_label = re.sub(r"[^A-Za-z0-9_\-]+", "_", section_label.strip())
+        st.download_button(
+            label=f"📥 Export {section_label} rows (CSV)",
+            data=csv_payload,
+            file_name=f"{dataset}_{safe_label}_ranked_view.csv",
+            mime="text/csv",
+            key=f"download_{safe_label}_{key_suffix}",
+        )
+
+    def render_card_rows(display_rows: pd.DataFrame, compact_mode: bool = False):
+        render_card_rows(display_rows, compact_mode=compact_mode)
+
     def render_ranked_cards(
         source_df: pd.DataFrame,
         section_label: str,
         piece_key: str | None,
         show_weight_note: bool = True,
         compact_mode: bool = False,
+        show_controls: bool = True,
     ):
         if source_df.empty:
             st.info(f"No candidates found for {section_label}.")
@@ -1525,18 +1568,15 @@ def main():
         ranked_df, sampled_mode = rank_display_df(source_df, piece_key)
         display_rows = ranked_df.head(per_page)
 
-        if show_weight_note and "weight" in highlighted_stats:
-            st.info("Optimization note: `weight` is minimized; all other selected stats are maximized.")
+        if show_controls:
+            if show_weight_note and "weight" in highlighted_stats:
+                st.info("Optimization note: `weight` is minimized; all other selected stats are maximized.")
 
-        csv_payload = display_rows.to_csv(index=False)
-        safe_label = re.sub(r"[^A-Za-z0-9_\-]+", "_", section_label.strip())
-        st.download_button(
-            label="📥 Export current ranked rows (CSV)",
-            data=csv_payload,
-            file_name=f"{dataset}_{safe_label}_ranked_view.csv",
-            mime="text/csv",
-            key=f"download_{safe_label}",
-        )
+            caption = build_ranking_caption()
+            if caption:
+                st.caption(caption)
+
+            render_download_button_for_rows(display_rows, section_label, "main")
 
         if show_raw_dev:
             st.markdown("---")
@@ -1576,22 +1616,7 @@ def main():
             else:
                 st.info("No dev-view columns available for current data.")
 
-        if dataset == "armors" and len(highlighted_stats) >= 2:
-            caption_line = (
-                f"Ranking single pieces by highlighted stats: {', '.join(highlighted_stats)} "
-                f"(method: {optimizer_method})"
-            )
-            if optimizer_method == "weighted_sum_normalized" and optimizer_weights:
-                weight_tokens = [
-                    f"{stat}={float(optimizer_weights.get(stat, 1.0)):.2f}"
-                    for stat in highlighted_stats
-                ]
-                caption_line += f" | weights: {', '.join(weight_tokens)}"
-            st.caption(caption_line)
-        elif primary_highlight:
-            st.caption(f"Highlight stat: {primary_highlight}")
-
-        if dataset == "armors" and len(highlighted_stats) >= 2 and len(display_rows) >= 1:
+        if show_controls and dataset == "armors" and len(highlighted_stats) >= 2 and len(display_rows) >= 1:
             st.markdown("---")
             with st.expander(f"Why this is #1 — {section_label}", expanded=False):
                 top_1 = display_rows.iloc[0]
@@ -1761,21 +1786,32 @@ def main():
         else:
             if "weight" in highlighted_stats:
                 st.info("Optimization note: `weight` is minimized; all other selected stats are maximized.")
-            columns = st.columns(4)
-            for idx, label in enumerate(armor_piece_labels[:4]):
+
+            caption = build_ranking_caption()
+            if caption:
+                st.caption(caption)
+
+            ranked_columns = []
+            for label in armor_piece_labels[:4]:
                 raw_type = type_label_map.get(label, label)
                 piece_df = display_df
                 if "type" in piece_df.columns:
                     piece_df = piece_df[piece_df["type"].astype(str) == str(raw_type)]
+                ranked_df, _ = rank_display_df(piece_df, raw_type)
+                ranked_columns.append((label, raw_type, ranked_df.head(per_page)))
+
+            export_row = st.columns(4)
+            for idx, (label, _raw_type, display_rows) in enumerate(ranked_columns):
+                export_label = FULL_SET_LABELS.get(label, label)
+                with export_row[idx % 4]:
+                    render_download_button_for_rows(display_rows, export_label, export_label)
+
+            columns = st.columns(4)
+            for idx, (label, raw_type, display_rows) in enumerate(ranked_columns):
+                header_label = FULL_SET_LABELS.get(label, label)
                 with columns[idx % 4]:
-                    st.subheader(label)
-                    render_ranked_cards(
-                        piece_df,
-                        label,
-                        raw_type,
-                        show_weight_note=False,
-                        compact_mode=True,
-                    )
+                    st.subheader(header_label)
+                    render_card_rows(display_rows, compact_mode=True)
         return
 
     if dataset == "armors" and armor_single_piece:
