@@ -36,6 +36,7 @@ from histogram_views import (
     get_clicked_weight,
 )
 from histogram_layout import (
+    UNIFORM_HISTOGRAM_PARAMS,
     place_one_by_two_grid,
     place_graphical_object_in_grid_cell,
     resolve_auto_render_layer,
@@ -908,6 +909,8 @@ def main():
     def render_histogram_tuning_controls(ui, view_kind: str):
         is_classic = view_kind == "classic"
         prefix = "classic" if is_classic else "interactive"
+        ratio_limits = UNIFORM_HISTOGRAM_PARAMS.get("ratio_limits", {})
+        offset_limits = UNIFORM_HISTOGRAM_PARAMS.get("offset_limits", {})
         enable_key = f"enable_hist_tuning_{prefix}"
         prev_enable_key = f"_prev_enable_hist_tuning_{prefix}"
         defaults_map = {
@@ -936,8 +939,8 @@ def main():
                 input_key=f"{prefix}_width_ratio_input",
                 canonical_key=f"{prefix}_width_ratio",
                 default_key=f"hist_default_{prefix}_width_ratio",
-                min_value=0.3,
-                max_value=4.0,
+                min_value=float(ratio_limits.get("width_min", 0.05)),
+                max_value=float(ratio_limits.get("width_max", 12.0)),
                 help_text="Width multiplier relative to the generated base width.",
             )
             height_value, height_auto = render_transport_number_input(
@@ -947,8 +950,8 @@ def main():
                 input_key=f"{prefix}_height_ratio_input",
                 canonical_key=f"{prefix}_height_ratio",
                 default_key=f"hist_default_{prefix}_height_ratio",
-                min_value=0.4,
-                max_value=3.0,
+                min_value=float(ratio_limits.get("height_min", 0.1)),
+                max_value=float(ratio_limits.get("height_max", 12.0)),
                 help_text="Height multiplier relative to the generated base height.",
             )
             ui.caption("Offset")
@@ -959,8 +962,8 @@ def main():
                 input_key=f"{prefix}_x_offset_px_input",
                 canonical_key=f"{prefix}_x_offset_px",
                 default_key=f"hist_default_{prefix}_x_offset_px",
-                min_value=-160.0,
-                max_value=160.0,
+                min_value=float(offset_limits.get("x_min", -600)),
+                max_value=float(offset_limits.get("x_max", 600)),
                 help_text="Horizontal offset in pixels.",
                 step=1.0,
                 display_format="%.0f",
@@ -973,8 +976,8 @@ def main():
                 input_key=f"{prefix}_y_offset_px_input",
                 canonical_key=f"{prefix}_y_offset_px",
                 default_key=f"hist_default_{prefix}_y_offset_px",
-                min_value=-120.0,
-                max_value=120.0,
+                min_value=float(offset_limits.get("y_min", -400)),
+                max_value=float(offset_limits.get("y_max", 400)),
                 help_text="Vertical offset in pixels.",
                 step=1.0,
                 display_format="%.0f",

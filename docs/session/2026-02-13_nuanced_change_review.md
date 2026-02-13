@@ -127,3 +127,29 @@ This preserves current behavior while eliminating repeated failure patterns.
 
 ### Why this matters
 - Prevents stale or misleading weights from leaking into new runs.
+
+---
+
+## 10) Histogram Tuning Range Expansion
+
+### Problem shape
+- The tuning controls were too constrained to correct outlier alignment issues.
+
+### Nuanced adjustment
+- Expanded width/height ratio bounds and offset bounds uniformly for classic and interactive panels.
+
+### Why this matters
+- Enables deeper alignment corrections without code edits.
+
+---
+
+## 11) Interactive Embed Height Trim
+
+### Problem shape
+- Interactive panels rendered slightly taller due to extra component padding.
+
+### Nuanced adjustment
+- Applied a small, view-specific trim to the interactive embed height override.
+
+### Why this matters
+- Reduces subtle visual height drift between classic and interactive panels.

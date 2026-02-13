@@ -13,10 +13,16 @@ UNIFORM_HISTOGRAM_PARAMS: Dict[str, Any] = {
         "embed_height_key": "embed_height",
     },
     "offset_limits": {
-        "x_min": -160,
-        "x_max": 160,
-        "y_min": -120,
-        "y_max": 120,
+        "x_min": -600,
+        "x_max": 600,
+        "y_min": -400,
+        "y_max": 400,
+    },
+    "ratio_limits": {
+        "width_min": 0.05,
+        "width_max": 12.0,
+        "height_min": 0.1,
+        "height_max": 12.0,
     },
 }
 
@@ -24,10 +30,12 @@ UNIFORM_HISTOGRAM_PARAMS: Dict[str, Any] = {
 VIEW_SPECIFIC_HISTOGRAM_PARAMS: Dict[str, Dict[str, Any]] = {
     "classic": {
         "width_mode": "pixel",
+        "embed_height_trim": 0,
     },
     "interactive": {
         "width_mode": "container",
         "container_width_value": "100%",
+        "embed_height_trim": 12,
     },
 }
 
@@ -123,9 +131,11 @@ def resolve_auto_render_layer(
         layout_cfg["width"] = width_px
         layout_cfg["embed_width"] = width_px
 
+    render_height = int(
+        layout_cfg.get(dims_cfg["embed_height_key"], layout_cfg[dims_cfg["height_key"]])
+    )
+    trim = int(custom.get("embed_height_trim", 0) or 0)
     render_layer = {
-        "override_height": layout_cfg.get(
-            dims_cfg["embed_height_key"], layout_cfg[dims_cfg["height_key"]]
-        ),
+        "override_height": max(120, render_height - trim),
     }
     return config, render_layer

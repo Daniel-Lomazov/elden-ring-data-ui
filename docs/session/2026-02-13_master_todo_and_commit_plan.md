@@ -14,6 +14,7 @@ This is the consolidated, actionable list of all major issues encountered from s
 - [x] Add safer interactive fallback behavior instead of full block failure.
 - [x] Resolve root cause for `Histogram render error: enter` by avoiding unconditional context-manager usage on non-container targets.
 - [x] Final visual alignment polishing across all modes under browser resize conditions (unified embed height).
+- [x] Expand tuning ranges and trim interactive embed height to reduce subtle panel drift.
 
 ### 2) State and UX Consistency
 
