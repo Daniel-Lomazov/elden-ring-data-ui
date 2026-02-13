@@ -1562,6 +1562,7 @@ def main():
     ):
         for _, row in display_rows.iterrows():
             color_style = ""
+            bar_color = None
             if primary_highlight and primary_highlight in df.columns:
                 col_vals = df[primary_highlight].astype(float)
                 mn, mx = col_vals.min(), col_vals.max()
@@ -1569,12 +1570,17 @@ def main():
                 norm = (val - mn) / (mx - mn) if mx > mn else 0
                 if norm > 0.66:
                     color_style = "background-color: rgba(76, 175, 80, 0.18);"
+                    bar_color = "#4CAF50"
                 elif norm > 0.33:
                     color_style = "background-color: rgba(255, 193, 7, 0.18);"
+                    bar_color = "#FFC107"
                 else:
                     color_style = "background-color: rgba(244, 67, 54, 0.18);"
+                    bar_color = "#F44336"
 
             wrapper_style = f"{color_style} padding:12px; border-radius:8px;"
+            if full_set_mode and compact_mode:
+                wrapper_style = "padding:12px; border-radius:8px;"
             wrapper_class = "full-set-card" if full_set_mode and compact_mode else ""
             if wrapper_class:
                 st.markdown(
@@ -1587,6 +1593,11 @@ def main():
                     unsafe_allow_html=True,
                 )
             if compact_mode:
+                if full_set_mode and bar_color:
+                    st.markdown(
+                        f"<div class='full-set-bar' style='background:{bar_color};'></div>",
+                        unsafe_allow_html=True,
+                    )
                 if "image" in df.columns and pd.notna(row.get("image")):
                     try:
                         st.image(row["image"], width=140)
@@ -1777,12 +1788,33 @@ def main():
                 min-height: {FULL_SET_CARD_HEIGHT_PX}px;
                 height: {FULL_SET_CARD_HEIGHT_PX}px;
                 overflow: hidden;
+                border-bottom: 1px solid rgba(255, 255, 255, 0.08);
             }}
             .full-set-title {{
                 display: -webkit-box;
                 -webkit-line-clamp: 2;
                 -webkit-box-orient: vertical;
                 overflow: hidden;
+            }}
+            .full-set-bar {{
+                height: 6px;
+                border-radius: 6px;
+                margin: 0 0 8px 0;
+            }}
+            .full-set-legend {{
+                display: flex;
+                align-items: center;
+                gap: 12px;
+                margin: 6px 0 12px 0;
+                font-size: 0.9rem;
+                color: rgba(255, 255, 255, 0.8);
+            }}
+            .full-set-swatch {{
+                width: 16px;
+                height: 8px;
+                border-radius: 6px;
+                display: inline-block;
+                margin-right: 6px;
             }}
             </style>
             """,
@@ -1797,6 +1829,19 @@ def main():
             caption = build_ranking_caption()
             if caption:
                 st.caption(caption)
+
+            if primary_highlight:
+                st.markdown(
+                    """
+                    <div class='full-set-legend'>
+                        <span><span class='full-set-swatch' style='background:#4CAF50;'></span>Higher</span>
+                        <span><span class='full-set-swatch' style='background:#FFC107;'></span>Mid</span>
+                        <span><span class='full-set-swatch' style='background:#F44336;'></span>Lower</span>
+                        <span>Color bar reflects relative value of the primary highlighted stat.</span>
+                    </div>
+                    """,
+                    unsafe_allow_html=True,
+                )
 
             ranked_columns = []
             for label in armor_piece_labels[:FULL_SET_COLUMN_COUNT]:
