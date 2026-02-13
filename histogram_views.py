@@ -43,7 +43,7 @@ HISTOGRAM_CONFIG = {
     },
     "layout": {
         "height": 236,
-        "embed_height": 268,
+        "embed_height": 236,
         "margin": {"l": 0, "r": 0, "t": 8, "b": 56},
         "bargap": 0.22,
         "background": "rgba(0,0,0,0)",
@@ -130,8 +130,9 @@ def render_classic_histogram(target, weight_series: pd.Series, max_weight_limit:
     y_offset_px = int(config.get("layout", {}).get("y_offset_px", 0) or 0)
     chart_width = config.get("layout", {}).get("width")
 
+    chart_height = config["layout"].get("embed_height", config["layout"]["height"])
     chart_props = {
-        "height": config["layout"]["height"],
+        "height": chart_height,
     }
     if chart_width is not None:
         chart_props["width"] = int(chart_width)
@@ -270,7 +271,7 @@ def build_interactive_histogram_figure(
 
     layout_kwargs = {
         "barmode": "stack",
-        "height": config["layout"]["height"],
+        "height": config["layout"].get("embed_height", config["layout"]["height"]),
         "autosize": config["layout"].get("autosize", True),
         "margin": adjusted_margin,
         "xaxis_title": config["labels"]["x"],
