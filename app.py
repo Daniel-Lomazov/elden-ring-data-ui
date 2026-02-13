@@ -61,16 +61,16 @@ ARMOR_MODE_LABELS = {
 
 ARMOR_PIECE_ORDER = [
     "Helm",
-    "Chest Armor",
+    "Armor",
     "Gauntlets",
-    "Leg Armor",
+    "Greaves",
 ]
 
 FULL_SET_LABELS = {
     "Helm": "Helm",
-    "Chest Armor": "Armor",
+    "Armor": "Armor",
     "Gauntlets": "Gauntlets",
-    "Leg Armor": "Greaves",
+    "Greaves": "Greaves",
 }
 
 HIST_VIEW_OPTIONS = [
@@ -709,12 +709,13 @@ def main():
     armor_piece_labels = []
 
     def resolve_armor_piece_types(arm_df: pd.DataFrame | None):
-        fallback_map = {
-            "Helm": "Helm",
-            "Chest Armor": "Chest",
-            "Gauntlets": "Arms",
-            "Leg Armor": "Legs",
+        raw_to_display = {
+            "helm": "Helm",
+            "chest armor": "Armor",
+            "gauntlets": "Gauntlets",
+            "leg armor": "Greaves",
         }
+        fallback_map = {v: k for k, v in raw_to_display.items()}
         try:
             if arm_df is not None and "type" in arm_df.columns:
                 raw_types = [str(t) for t in arm_df["type"].dropna().unique()]
@@ -723,15 +724,16 @@ def main():
                     and "piece_type_map" in armor_col_map
                     and armor_col_map["piece_type_map"]
                 ):
-                    pt_map = armor_col_map["piece_type_map"]
-                    label_map = {v: k for k, v in pt_map.items()}
+                    label_map = {
+                        raw_to_display.get(str(k).strip().lower(), v): k
+                        for k, v in armor_col_map["piece_type_map"].items()
+                    }
                     labels = list(label_map.keys())
                 else:
-                    def to_camel(value: str) -> str:
-                        parts = re.split(r"[^0-9a-zA-Z]+", value.strip())
-                        return " ".join(p.capitalize() for p in parts if p)
-
-                    label_map = {to_camel(t): t for t in raw_types}
+                    label_map = {
+                        raw_to_display.get(str(t).strip().lower(), str(t)): t
+                        for t in raw_types
+                    }
                     labels = list(label_map.keys())
             else:
                 label_map = fallback_map
@@ -1551,95 +1553,6 @@ def main():
         )
 
     def render_card_rows(display_rows: pd.DataFrame, compact_mode: bool = False):
-        render_card_rows(display_rows, compact_mode=compact_mode)
-
-    def render_ranked_cards(
-        source_df: pd.DataFrame,
-        section_label: str,
-        piece_key: str | None,
-        show_weight_note: bool = True,
-        compact_mode: bool = False,
-        show_controls: bool = True,
-    ):
-        if source_df.empty:
-            st.info(f"No candidates found for {section_label}.")
-            return
-
-        ranked_df, sampled_mode = rank_display_df(source_df, piece_key)
-        display_rows = ranked_df.head(per_page)
-
-        if show_controls:
-            if show_weight_note and "weight" in highlighted_stats:
-                st.info("Optimization note: `weight` is minimized; all other selected stats are maximized.")
-
-            caption = build_ranking_caption()
-            if caption:
-                st.caption(caption)
-
-            render_download_button_for_rows(display_rows, section_label, "main")
-
-        if show_raw_dev:
-            st.markdown("---")
-            st.subheader(f"🧪 Raw data (dev view) — {section_label}")
-
-            dev_view_df = display_rows.copy()
-            if "__opt_score" not in dev_view_df.columns:
-                dev_view_df["__opt_score"] = None
-            if "__opt_tiebreak" not in dev_view_df.columns:
-                dev_view_df["__opt_tiebreak"] = None
-            if "__opt_method" not in dev_view_df.columns:
-                dev_view_df["__opt_method"] = None
-            if "__opt_length" not in dev_view_df.columns:
-                dev_view_df["__opt_length"] = len(highlighted_stats)
-
-            dev_columns = list(dev_view_df.columns)
-            contribution_columns = [
-                f"Norm: {s}"
-                for s in highlighted_stats
-                if f"Norm: {s}" in dev_columns
-            ]
-            fixed_dev_columns = [
-                c
-                for c in [
-                    "name",
-                    "type",
-                    "__opt_score",
-                    "__opt_method",
-                    *highlighted_stats,
-                    *contribution_columns,
-                ]
-                if c in dev_columns
-            ]
-
-            if fixed_dev_columns:
-                render_dev_table(dev_view_df[fixed_dev_columns])
-            else:
-                st.info("No dev-view columns available for current data.")
-
-        if show_controls and dataset == "armors" and len(highlighted_stats) >= 2 and len(display_rows) >= 1:
-            st.markdown("---")
-            with st.expander(f"Why this is #1 — {section_label}", expanded=False):
-                top_1 = display_rows.iloc[0]
-                st.write(f"Top item: **{top_1.get('name', 'Unknown')}**")
-                if len(display_rows) >= 2:
-                    top_2 = display_rows.iloc[1]
-                    st.write(f"Compared against #2: **{top_2.get('name', 'Unknown')}**")
-                    for stat in highlighted_stats:
-                        if stat in display_rows.columns:
-                            v1 = pd.to_numeric(top_1.get(stat), errors="coerce")
-                            v2 = pd.to_numeric(top_2.get(stat), errors="coerce")
-                            if pd.notna(v1) and pd.notna(v2):
-                                delta = v1 - v2
-                                if str(stat).strip().lower() == "weight":
-                                    delta_text = f"{delta:.2f} (lower is better)"
-                                else:
-                                    delta_text = f"{delta:.2f} (higher is better)"
-                                st.write(f"- {stat}: {v1:.2f} vs {v2:.2f} | Δ {delta_text}")
-                if "__opt_score" in display_rows.columns:
-                    st.write(f"Score: {float(top_1['__opt_score']):.4f}")
-                if "__opt_method" in display_rows.columns:
-                    st.write(f"Method: {top_1['__opt_method']}")
-
         for _, row in display_rows.iterrows():
             color_style = ""
             if primary_highlight and primary_highlight in df.columns:
@@ -1777,6 +1690,95 @@ def main():
                                         p.metric(label, display_val)
             st.markdown("</div>", unsafe_allow_html=True)
             st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
+
+    def render_ranked_cards(
+        source_df: pd.DataFrame,
+        section_label: str,
+        piece_key: str | None,
+        show_weight_note: bool = True,
+        compact_mode: bool = False,
+        show_controls: bool = True,
+    ):
+        if source_df.empty:
+            st.info(f"No candidates found for {section_label}.")
+            return
+
+        ranked_df, _ = rank_display_df(source_df, piece_key)
+        display_rows = ranked_df.head(per_page)
+
+        if show_controls:
+            if show_weight_note and "weight" in highlighted_stats:
+                st.info("Optimization note: `weight` is minimized; all other selected stats are maximized.")
+
+            caption = build_ranking_caption()
+            if caption:
+                st.caption(caption)
+
+            render_download_button_for_rows(display_rows, section_label, "main")
+
+        if show_raw_dev:
+            st.markdown("---")
+            st.subheader(f"🧪 Raw data (dev view) — {section_label}")
+
+            dev_view_df = display_rows.copy()
+            if "__opt_score" not in dev_view_df.columns:
+                dev_view_df["__opt_score"] = None
+            if "__opt_tiebreak" not in dev_view_df.columns:
+                dev_view_df["__opt_tiebreak"] = None
+            if "__opt_method" not in dev_view_df.columns:
+                dev_view_df["__opt_method"] = None
+            if "__opt_length" not in dev_view_df.columns:
+                dev_view_df["__opt_length"] = len(highlighted_stats)
+
+            dev_columns = list(dev_view_df.columns)
+            contribution_columns = [
+                f"Norm: {s}"
+                for s in highlighted_stats
+                if f"Norm: {s}" in dev_columns
+            ]
+            fixed_dev_columns = [
+                c
+                for c in [
+                    "name",
+                    "type",
+                    "__opt_score",
+                    "__opt_method",
+                    *highlighted_stats,
+                    *contribution_columns,
+                ]
+                if c in dev_columns
+            ]
+
+            if fixed_dev_columns:
+                render_dev_table(dev_view_df[fixed_dev_columns])
+            else:
+                st.info("No dev-view columns available for current data.")
+
+        if show_controls and dataset == "armors" and len(highlighted_stats) >= 2 and len(display_rows) >= 1:
+            st.markdown("---")
+            with st.expander(f"Why this is #1 — {section_label}", expanded=False):
+                top_1 = display_rows.iloc[0]
+                st.write(f"Top item: **{top_1.get('name', 'Unknown')}**")
+                if len(display_rows) >= 2:
+                    top_2 = display_rows.iloc[1]
+                    st.write(f"Compared against #2: **{top_2.get('name', 'Unknown')}**")
+                    for stat in highlighted_stats:
+                        if stat in display_rows.columns:
+                            v1 = pd.to_numeric(top_1.get(stat), errors="coerce")
+                            v2 = pd.to_numeric(top_2.get(stat), errors="coerce")
+                            if pd.notna(v1) and pd.notna(v2):
+                                delta = v1 - v2
+                                if str(stat).strip().lower() == "weight":
+                                    delta_text = f"{delta:.2f} (lower is better)"
+                                else:
+                                    delta_text = f"{delta:.2f} (higher is better)"
+                                st.write(f"- {stat}: {v1:.2f} vs {v2:.2f} | Δ {delta_text}")
+                if "__opt_score" in display_rows.columns:
+                    st.write(f"Score: {float(top_1['__opt_score']):.4f}")
+                if "__opt_method" in display_rows.columns:
+                    st.write(f"Method: {top_1['__opt_method']}")
+
+        render_card_rows(display_rows, compact_mode=compact_mode)
 
     if dataset == "armors" and armor_full_set:
         st.markdown("---")
