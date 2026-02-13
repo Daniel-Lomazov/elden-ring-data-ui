@@ -1581,48 +1581,11 @@ def main():
                     st.write("📦")
                 if "name" in df.columns:
                     st.markdown(f"### {row['name']}")
-                if "__overall_score_100" in row and pd.notna(row.get("__overall_score_100")):
-                    overall_val = float(row.get("__overall_score_100", 0.0))
-                    st.metric("Overall", f"{overall_val:.2f}")
-                if "description" in df.columns and pd.notna(row.get("description")):
-                    st.caption(row["description"])
                 for hs in highlighted_stats:
                     if hs in row:
                         val_h = row.get(hs)
                         display_h = format_metric_value(val_h)
                         st.metric(f"⭐ {hs}", display_h)
-
-                stats = [c for c in numeric_cols if c not in ["id"]]
-                if dataset == "armors":
-                    desired_cols = ["weight", "Dmg: Phy", "bleed", "frost", "Res: Poi."]
-                    found_cols = [c for c in desired_cols if c in numeric_cols]
-                    for c in numeric_cols:
-                        if (
-                            c.startswith("Dmg:") or c.startswith("Res:")
-                        ) and c not in found_cols:
-                            found_cols.append(c)
-
-                    display_stats = [
-                        s
-                        for s in found_cols
-                        if s in stats and s not in highlighted_stats
-                    ]
-                else:
-                    display_stats = [s for s in stats if s not in highlighted_stats]
-
-                if display_stats:
-                    stat_lines = []
-                    for stat in display_stats:
-                        val = row.get(stat, 0)
-                        try:
-                            num_val = float(val)
-                        except Exception:
-                            num_val = None
-                        if num_val is not None and num_val == 0:
-                            continue
-                        stat_lines.append(f"{stat}: {format_metric_value(val)}")
-                    if stat_lines:
-                        st.caption(" | ".join(stat_lines))
             else:
                 c1, c2 = st.columns([1, 3])
                 with c1:
