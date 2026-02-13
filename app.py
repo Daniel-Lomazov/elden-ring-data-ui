@@ -73,6 +73,9 @@ FULL_SET_LABELS = {
     "Greaves": "Greaves",
 }
 
+FULL_SET_COLUMN_COUNT = 4
+FULL_SET_CARD_HEIGHT_PX = 280
+
 HIST_VIEW_OPTIONS = [
     "Classic",
     "Interactive (click-to-set)",
@@ -1552,7 +1555,11 @@ def main():
             key=f"download_{safe_label}_{key_suffix}",
         )
 
-    def render_card_rows(display_rows: pd.DataFrame, compact_mode: bool = False):
+    def render_card_rows(
+        display_rows: pd.DataFrame,
+        compact_mode: bool = False,
+        full_set_mode: bool = False,
+    ):
         for _, row in display_rows.iterrows():
             color_style = ""
             if primary_highlight and primary_highlight in df.columns:
@@ -1567,10 +1574,18 @@ def main():
                 else:
                     color_style = "background-color: rgba(244, 67, 54, 0.18);"
 
-            st.markdown(
-                f"<div style='{color_style} padding:12px; border-radius:8px;'>",
-                unsafe_allow_html=True,
-            )
+            wrapper_style = f"{color_style} padding:12px; border-radius:8px;"
+            wrapper_class = "full-set-card" if full_set_mode and compact_mode else ""
+            if wrapper_class:
+                st.markdown(
+                    f"<div class='{wrapper_class}' style='{wrapper_style}'>",
+                    unsafe_allow_html=True,
+                )
+            else:
+                st.markdown(
+                    f"<div style='{wrapper_style}'>",
+                    unsafe_allow_html=True,
+                )
             if compact_mode:
                 if "image" in df.columns and pd.notna(row.get("image")):
                     try:
@@ -1580,7 +1595,15 @@ def main():
                 else:
                     st.write("📦")
                 if "name" in df.columns:
-                    st.markdown(f"### {row['name']}")
+                    title_class = "full-set-title" if full_set_mode else ""
+                    if title_class:
+                        safe_name = html.escape(str(row.get("name", "")))
+                        st.markdown(
+                            f"<div class='{title_class}'><strong>{safe_name}</strong></div>",
+                            unsafe_allow_html=True,
+                        )
+                    else:
+                        st.markdown(f"### {row['name']}")
                 for hs in highlighted_stats:
                     if hs in row:
                         val_h = row.get(hs)
@@ -1661,6 +1684,7 @@ def main():
         show_weight_note: bool = True,
         compact_mode: bool = False,
         show_controls: bool = True,
+        full_set_mode: bool = False,
     ):
         if source_df.empty:
             st.info(f"No candidates found for {section_label}.")
@@ -1741,11 +1765,29 @@ def main():
                 if "__opt_method" in display_rows.columns:
                     st.write(f"Method: {top_1['__opt_method']}")
 
-        render_card_rows(display_rows, compact_mode=compact_mode)
+        render_card_rows(display_rows, compact_mode=compact_mode, full_set_mode=full_set_mode)
 
     if dataset == "armors" and armor_full_set:
         st.markdown("---")
         st.subheader("Full armor set preview")
+        st.markdown(
+            f"""
+            <style>
+            .full-set-card {{
+                min-height: {FULL_SET_CARD_HEIGHT_PX}px;
+                height: {FULL_SET_CARD_HEIGHT_PX}px;
+                overflow: hidden;
+            }}
+            .full-set-title {{
+                display: -webkit-box;
+                -webkit-line-clamp: 2;
+                -webkit-box-orient: vertical;
+                overflow: hidden;
+            }}
+            </style>
+            """,
+            unsafe_allow_html=True,
+        )
         if not armor_piece_labels:
             st.info("No armor piece types available for full set preview.")
         else:
@@ -1757,7 +1799,7 @@ def main():
                 st.caption(caption)
 
             ranked_columns = []
-            for label in armor_piece_labels[:4]:
+            for label in armor_piece_labels[:FULL_SET_COLUMN_COUNT]:
                 raw_type = type_label_map.get(label, label)
                 piece_df = display_df
                 if "type" in piece_df.columns:
@@ -1765,18 +1807,18 @@ def main():
                 ranked_df, _ = rank_display_df(piece_df, raw_type)
                 ranked_columns.append((label, raw_type, ranked_df.head(per_page)))
 
-            export_row = st.columns(4)
+            export_row = st.columns(FULL_SET_COLUMN_COUNT)
             for idx, (label, _raw_type, display_rows) in enumerate(ranked_columns):
                 export_label = FULL_SET_LABELS.get(label, label)
-                with export_row[idx % 4]:
+                with export_row[idx % FULL_SET_COLUMN_COUNT]:
                     render_download_button_for_rows(display_rows, export_label, export_label)
 
-            columns = st.columns(4)
+            columns = st.columns(FULL_SET_COLUMN_COUNT)
             for idx, (label, raw_type, display_rows) in enumerate(ranked_columns):
                 header_label = FULL_SET_LABELS.get(label, label)
-                with columns[idx % 4]:
+                with columns[idx % FULL_SET_COLUMN_COUNT]:
                     st.subheader(header_label)
-                    render_card_rows(display_rows, compact_mode=True)
+                    render_card_rows(display_rows, compact_mode=True, full_set_mode=True)
         return
 
     if dataset == "armors" and armor_single_piece:
