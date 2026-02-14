@@ -3,10 +3,10 @@
 Use this quick checklist after running `streamlit run app.py`.
 
 1. Select `armors` dataset and `Single piece` mode (default piece type should be `Armor`).
-2. Pick 2+ highlighted stats including `weight`.
+2. Pick highlighted stats from the dropdown (weight should not appear there).
 3. Confirm `Reset` appears at the top of ranking controls and resets filters/stats while preserving armor mode.
 4. Use the highlighted-stat add/remove flow and verify each action applies cleanly.
-5. Toggle `Optimize with weight` off; verify ranking caption indicates weight is ignored when `weight` is highlighted.
+5. Toggle `Optimize with weight` off; verify ranking excludes weight objective.
 6. Toggle `Optimize with weight` on; confirm info note appears: weight minimized, others maximized.
 7. Enable `Use max weight constraint`, set a low value, verify candidate count/ranking changes.
 8. Confirm histogram view defaults to `Interactive (click-to-set)`; switch to `Classic` and back; check axis labels are fully visible.

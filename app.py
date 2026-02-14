@@ -600,6 +600,8 @@ def main():
     for s in ["weight", "poise"]:
         if s in numeric_cols and s not in stat_options:
             stat_options.insert(0, s)
+    if dataset == "armors":
+        stat_options = [s for s in stat_options if str(s).strip().lower() != "weight"]
 
     col1, col2 = st.columns([3, 1])
     with col1:
@@ -745,10 +747,8 @@ def main():
         sync_optimizer_weight_state(highlighted_stats)
 
     ranking_stats = list(highlighted_stats)
-    if not optimize_with_weight:
-        ranking_stats = [
-            stat for stat in ranking_stats if str(stat).strip().lower() != "weight"
-        ]
+    if optimize_with_weight and "weight" in numeric_cols and "weight" not in ranking_stats:
+        ranking_stats = [*ranking_stats, "weight"]
 
     # default sort: Highest First (no None option)
     sort_options = ["Highest First", "Lowest First"]
@@ -1109,10 +1109,6 @@ def main():
                 f"Ranking single pieces by highlighted stats: {', '.join(ranking_stats)} "
                 f"(method: {optimizer_method})"
             )
-            if not optimize_with_weight and any(
-                str(stat).strip().lower() == "weight" for stat in highlighted_stats
-            ):
-                caption_line += " | weight ignored by optimizer"
             if optimizer_method == "weighted_sum_normalized" and optimizer_weights:
                 weight_tokens = [
                     f"{stat}={float(optimizer_weights.get(stat, 1.0)):.2f}"
@@ -1351,7 +1347,7 @@ def main():
 
         if show_controls:
             if dataset == "armors" and (armor_single_piece or armor_full_set):
-                controls_left, controls_right = st.columns([3, 2], gap="small")
+                controls_left, controls_right = st.columns([3, 2], gap="medium")
                 with controls_right:
                     method_options = list(OPTIMIZER_METHODS.keys())
                     ensure_state_in_options(
@@ -1368,6 +1364,7 @@ def main():
                     optimizer_weights = None
                     optimizer_weight_signature = None
                     if optimizer_method == "weighted_sum_normalized" and ranking_stats:
+                        st.markdown("<div style='height: 0.25rem;'></div>", unsafe_allow_html=True)
                         optimizer_weights = {}
                         for stat in ranking_stats:
                             weight_key = f"opt_weight_{safe_stat_key(stat)}"
@@ -1392,6 +1389,7 @@ def main():
                     if caption:
                         st.caption(caption)
 
+                    st.markdown("<div style='height: 0.25rem;'></div>", unsafe_allow_html=True)
                     render_download_button_for_rows(display_rows, section_label, "main")
             else:
                 if show_weight_note and "weight" in ranking_stats:
