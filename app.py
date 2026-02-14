@@ -1040,6 +1040,90 @@ def main():
 
             filtered_armor_df = apply_armor_detail_filter(df)
 
+            piece_names_by_label = {}
+            for piece_label in ARMOR_PIECE_ORDER:
+                raw_type = type_label_map.get(piece_label, piece_label)
+                piece_names_by_label[piece_label] = sorted(
+                    {
+                        str(name).strip()
+                        for name in filtered_armor_df.loc[
+                            filtered_armor_df["type"].astype(str) == str(raw_type), "name"
+                        ].dropna().tolist()
+                        if str(name).strip()
+                    }
+                )
+
+            armor_piece_name_tokens = {
+                "helm",
+                "hood",
+                "hat",
+                "mask",
+                "crown",
+                "headband",
+                "armor",
+                "mail",
+                "robe",
+                "garb",
+                "gown",
+                "coat",
+                "vest",
+                "chest",
+                "cuirass",
+                "gauntlets",
+                "gloves",
+                "manchettes",
+                "bracers",
+                "greaves",
+                "leggings",
+                "trousers",
+                "boots",
+                "shoes",
+                "altered",
+            }
+
+            def armor_family_key(piece_name: str) -> str:
+                base = re.sub(r"\([^)]*\)", "", str(piece_name or "").strip())
+                tokens = re.findall(r"[A-Za-z0-9']+", base.lower())
+                kept = [tok for tok in tokens if tok and tok not in armor_piece_name_tokens]
+                if not kept:
+                    kept = tokens
+                return " ".join(kept[:3]).strip()
+
+            family_index_by_piece = {}
+            for piece_label, names in piece_names_by_label.items():
+                fam_index = {}
+                for piece_name in names:
+                    fam_key = armor_family_key(piece_name)
+                    fam_index.setdefault(fam_key, []).append(piece_name)
+                family_index_by_piece[piece_label] = fam_index
+
+            def resolve_complement_piece_name(source_name: str, target_label: str) -> str | None:
+                target_names = piece_names_by_label.get(target_label, [])
+                if not target_names:
+                    return None
+                fam_key = armor_family_key(source_name)
+                fam_matches = family_index_by_piece.get(target_label, {}).get(fam_key, [])
+                if fam_matches:
+                    return fam_matches[0]
+                source_tokens = {
+                    token
+                    for token in re.findall(r"[A-Za-z0-9']+", str(source_name or "").lower())
+                    if token not in armor_piece_name_tokens
+                }
+                best_name = None
+                best_score = -1
+                for candidate in target_names:
+                    candidate_tokens = {
+                        token
+                        for token in re.findall(r"[A-Za-z0-9']+", candidate.lower())
+                        if token not in armor_piece_name_tokens
+                    }
+                    score = len(source_tokens.intersection(candidate_tokens))
+                    if score > best_score:
+                        best_score = score
+                        best_name = candidate
+                return best_name if best_name else target_names[0]
+
             if armor_detailed_scope_mode == DETAILED_SCOPE_SINGLE:
                 single_armor_names = sorted(
                     {
@@ -1060,35 +1144,62 @@ def main():
                         key="armor_detail_single_item",
                     )
             elif armor_detailed_scope_mode == DETAILED_SCOPE_FULL:
-                placeholder_sets = ["Not implemented yet"]
-                ensure_state_in_options(
-                    "armor_detail_full_set",
-                    placeholder_sets,
-                    placeholder_sets[0],
-                )
-                st.sidebar.selectbox(
-                    "Choose set:",
-                    options=placeholder_sets,
-                    key="armor_detail_full_set",
-                )
-                st.sidebar.info(
-                    "Armor set families are not implemented yet. "
-                    "This selector is ready for upcoming set-based grouping."
-                )
+                st.sidebar.markdown("---")
+                st.sidebar.subheader("Armor pieces (full scope)")
+                full_scope_current = {}
+                for piece_label in ARMOR_PIECE_ORDER:
+                    piece_names = piece_names_by_label.get(piece_label, [])
+                    if not piece_names:
+                        continue
+                    key = f"armor_full_set_{safe_stat_key(piece_label)}"
+                    ensure_state_in_options(key, piece_names, piece_names[0])
+                    selected_piece_name = st.sidebar.selectbox(
+                        f"{piece_label}:",
+                        options=piece_names,
+                        key=key,
+                    )
+                    full_scope_current[piece_label] = selected_piece_name
+
+                if full_scope_current:
+                    previous_full_scope = st.session_state.get("armor_full_scope_last", {})
+                    changed_label = None
+                    for piece_label in ARMOR_PIECE_ORDER:
+                        current_value = full_scope_current.get(piece_label)
+                        if current_value and previous_full_scope.get(piece_label) != current_value:
+                            changed_label = piece_label
+                            break
+
+                    if changed_label:
+                        source_name = full_scope_current.get(changed_label)
+                        synced_any = False
+                        if source_name:
+                            for piece_label in ARMOR_PIECE_ORDER:
+                                if piece_label == changed_label:
+                                    continue
+                                target_key = f"armor_full_set_{safe_stat_key(piece_label)}"
+                                resolved_name = resolve_complement_piece_name(
+                                    source_name,
+                                    piece_label,
+                                )
+                                if (
+                                    resolved_name
+                                    and st.session_state.get(target_key) != resolved_name
+                                ):
+                                    st.session_state[target_key] = resolved_name
+                                    full_scope_current[piece_label] = resolved_name
+                                    synced_any = True
+                        st.session_state["armor_full_scope_last"] = dict(full_scope_current)
+                        if synced_any:
+                            st.rerun()
+                    else:
+                        st.session_state["armor_full_scope_last"] = dict(full_scope_current)
+
+                    armor_detail_set_selection = dict(full_scope_current)
             else:
                 st.sidebar.markdown("---")
-                st.sidebar.subheader(f"Scope: {armor_detailed_scope_mode}")
+                st.sidebar.subheader("Armor pieces (custom scope)")
                 for piece_label in ARMOR_PIECE_ORDER:
-                    raw_type = type_label_map.get(piece_label, piece_label)
-                    piece_names = sorted(
-                        {
-                            str(name).strip()
-                            for name in filtered_armor_df.loc[
-                                filtered_armor_df["type"].astype(str) == str(raw_type), "name"
-                            ].dropna().tolist()
-                            if str(name).strip()
-                        }
-                    )
+                    piece_names = piece_names_by_label.get(piece_label, [])
                     if not piece_names:
                         continue
                     key = f"armor_detail_set_{safe_stat_key(piece_label)}"
@@ -1158,7 +1269,7 @@ def main():
                 )
             else:
                 st.sidebar.markdown("---")
-                st.sidebar.subheader(f"Scope: {talisman_detailed_scope_mode}")
+                st.sidebar.subheader("All pieces (Custom scope)")
                 for idx, slot_label in enumerate(TALISMAN_SLOT_LABELS, start=1):
                     if not talisman_names:
                         continue
@@ -1179,7 +1290,7 @@ def main():
         if generic_view_mode == VIEW_MODE_DETAILED:
             detailed_view_active = True
             st.sidebar.markdown("---")
-            st.sidebar.subheader("Scope: Custom")
+            st.sidebar.subheader("All pieces (Custom scope)")
             ensure_state_in_options(
                 "generic_custom_stack_view",
                 custom_stack_view_options,
@@ -2095,10 +2206,22 @@ def main():
                 else:
                     st.info("No armor item available for single item view.")
             elif armor_detailed_scope_mode == DETAILED_SCOPE_FULL:
-                st.info(
-                    "Full set view is not implemented yet for armors. "
-                    "Choose Custom view to use per-slot controls for now."
-                )
+                custom_items = []
+                for piece_label in ARMOR_PIECE_ORDER:
+                    selected_name = armor_detail_set_selection.get(piece_label)
+                    if not selected_name:
+                        continue
+                    slot_rows = df[df["name"].astype(str) == str(selected_name)].head(1)
+                    if slot_rows.empty:
+                        continue
+                    custom_items.append((piece_label, slot_rows))
+                if custom_items:
+                    render_detail_items(
+                        custom_items,
+                        str(st.session_state.get("armor_custom_stack_view", STACK_VIEW_VERTICAL)),
+                    )
+                else:
+                    st.info("No full armor set selection available.")
             else:
                 custom_items = []
                 for piece_label in ARMOR_PIECE_ORDER:
