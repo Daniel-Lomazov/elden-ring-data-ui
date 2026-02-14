@@ -172,10 +172,17 @@ In **Single piece** armor mode, users can choose multiple highlighted stats and 
 - **UI behavior:**
    - 2+ selected stats → optimizer ranking is used.
    - 1 selected stat → legacy single-stat sort behavior is used.
-   - Sidebar includes method selection, optional max-weight constraint, and reset action.
+   - Sidebar includes highlighted-stat controls, reset, weight-optimization toggle, and optional max-weight constraint.
+   - Optimization method selection appears in the main view (right side above results).
    - Reset filters/stats preserves the current armor mode.
-   - When `weighted_sum_normalized` is selected, per-stat weight inputs appear in the sidebar.
+   - When `weighted_sum_normalized` is selected, per-stat weight inputs appear in the main view.
    - Current ranked rows can be exported to CSV from the main view.
+
+## Dataset Coverage (Current)
+
+- `armors` is the fully implemented interaction pipeline.
+- Other datasets are intentionally shown as placeholder views when `Show all datasets` is enabled.
+- This keeps behavior explicit while dataset-specific skeleton flows are rolled out incrementally.
 
 ## Full Armor Set Preview (Armors)
 
