@@ -1355,10 +1355,13 @@ def main():
                         method_options,
                         DEFAULT_OPTIMIZATION_METHOD,
                     )
+                    st.caption("Optimization method")
+                    st.markdown("<div style='height: 0.25rem;'></div>", unsafe_allow_html=True)
                     optimizer_method = st.selectbox(
                         "Optimization method",
                         options=method_options,
                         key="optimizer_method",
+                        label_visibility="collapsed",
                     )
 
                     optimizer_weights = None
@@ -1389,7 +1392,6 @@ def main():
                     if caption:
                         st.caption(caption)
 
-                    st.markdown("<div style='height: 0.25rem;'></div>", unsafe_allow_html=True)
                     render_download_button_for_rows(display_rows, section_label, "main")
             else:
                 if show_weight_note and "weight" in ranking_stats:
