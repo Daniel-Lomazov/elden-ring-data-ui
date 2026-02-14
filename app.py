@@ -334,7 +334,6 @@ def main():
         st.session_state["optimizer_method"] = qp_get(
             "method", DEFAULT_OPTIMIZATION_METHOD
         )
-        st.session_state["keep_stats_selector_open"] = qp_get_bool("keep_stats_open", False)
         st.session_state["optimize_with_weight"] = qp_get_bool("opt_with_weight", False)
         st.session_state["use_max_weight"] = qp_get_bool("use_max_weight", False)
         st.session_state["hist_view_mode"] = normalize_hist_view_mode(
@@ -675,19 +674,13 @@ def main():
 
     st.sidebar.markdown("---")
     st.sidebar.subheader("Ranking Controls")
-    reset_col_spacer, reset_col_button = st.sidebar.columns([3, 1])
+    reset_col_spacer, reset_col_button = st.sidebar.columns([2, 2])
     with reset_col_button:
         st.button(
             "Reset",
             key="reset_filters",
             on_click=reset_ui_state,
         )
-
-    keep_stats_selector_open = st.sidebar.checkbox(
-        "Keep highlighted stats menu open",
-        key="keep_stats_selector_open",
-        help="Turn off to close selection flow after each add/remove action.",
-    )
 
     def add_highlighted_stat():
         candidate = st.session_state.get("highlighted_stat_picker", "")
@@ -706,43 +699,36 @@ def main():
             options_labels[:2] if len(options_labels) >= 2 else options_labels[:1]
         )
         ensure_state_multiselect("highlighted_stats", options_labels, default_highlights)
-        if keep_stats_selector_open:
-            highlighted_stats = st.sidebar.multiselect(
-                "Highlighted stats:",
-                options=options_labels,
-                key="highlighted_stats",
-            )
-        else:
-            add_options = [
-                stat for stat in options_labels
-                if stat not in st.session_state.get("highlighted_stats", [])
-            ]
-            if not add_options:
-                add_options = options_labels
+        add_options = [
+            stat for stat in options_labels
+            if stat not in st.session_state.get("highlighted_stats", [])
+        ]
+        if not add_options:
+            add_options = options_labels
+        st.sidebar.selectbox(
+            "Highlighted stats:",
+            options=add_options,
+            key="highlighted_stat_picker",
+        )
+        st.sidebar.button(
+            "Add highlighted stat",
+            key="add_highlighted_stat",
+            on_click=add_highlighted_stat,
+        )
+
+        current_selected = st.session_state.get("highlighted_stats", [])
+        if current_selected:
             st.sidebar.selectbox(
-                "Highlighted stats:",
-                options=add_options,
-                key="highlighted_stat_picker",
+                "Remove highlighted stat:",
+                options=current_selected,
+                key="highlighted_stat_remove_picker",
             )
             st.sidebar.button(
-                "Add highlighted stat",
-                key="add_highlighted_stat",
-                on_click=add_highlighted_stat,
+                "Remove selected stat",
+                key="remove_highlighted_stat",
+                on_click=remove_highlighted_stat,
             )
-
-            current_selected = st.session_state.get("highlighted_stats", [])
-            if current_selected:
-                st.sidebar.selectbox(
-                    "Remove highlighted stat:",
-                    options=current_selected,
-                    key="highlighted_stat_remove_picker",
-                )
-                st.sidebar.button(
-                    "Remove selected stat",
-                    key="remove_highlighted_stat",
-                    on_click=remove_highlighted_stat,
-                )
-            highlighted_stats = st.session_state.get("highlighted_stats", [])
+        highlighted_stats = st.session_state.get("highlighted_stats", [])
 
         lock_stat_order = st.sidebar.checkbox(
             "Lock stat order",
@@ -811,31 +797,9 @@ def main():
     if dataset == "armors" and (armor_single_piece or armor_full_set):
         method_options = list(OPTIMIZER_METHODS.keys())
         ensure_state_in_options("optimizer_method", method_options, DEFAULT_OPTIMIZATION_METHOD)
-        method_col_left, method_col_right = st.columns([3, 2])
-        with method_col_right:
-            st.markdown("##### Optimization")
-            optimizer_method = st.selectbox(
-                "Method:", options=method_options, key="optimizer_method"
-            )
-
-            if optimizer_method == "weighted_sum_normalized" and ranking_stats:
-                st.caption(
-                    "Set weights for each selected stat (higher weight = stronger preference)."
-                )
-                optimizer_weights = {}
-                for stat in ranking_stats:
-                    weight_key = f"opt_weight_{safe_stat_key(stat)}"
-                    if weight_key not in st.session_state:
-                        st.session_state[weight_key] = 1.0
-                    optimizer_weights[stat] = st.number_input(
-                        f"Weight: {stat}",
-                        min_value=0.0,
-                        step=0.1,
-                        key=weight_key,
-                    )
-                optimizer_weight_signature = tuple(
-                    float(optimizer_weights.get(stat, 1.0)) for stat in ranking_stats
-                )
+        optimizer_method = str(
+            st.session_state.get("optimizer_method", DEFAULT_OPTIMIZATION_METHOD)
+        )
 
     # perform sorting and show rows using internal rendering
     # Inline minimal renderer to avoid external dependencies
@@ -1061,7 +1025,6 @@ def main():
             "sort": sort_choice,
             "rows": str(per_page),
             "dev": "false",
-            "keep_stats_open": str(keep_stats_selector_open).lower(),
             "opt_with_weight": str(optimize_with_weight).lower(),
             "single_stat": highlighted_stats[0] if highlighted_stats else "",
             "method": optimizer_method,
@@ -1085,12 +1048,26 @@ def main():
         ascending = sort_choice == "Lowest First"
         if dataset == "armors" and len(ranking_stats) >= 2:
             try:
+                local_optimizer_weights = None
+                local_weight_signature = None
+                if optimizer_method == "weighted_sum_normalized" and ranking_stats:
+                    local_optimizer_weights = {}
+                    for stat in ranking_stats:
+                        weight_key = f"opt_weight_{safe_stat_key(stat)}"
+                        local_optimizer_weights[stat] = float(
+                            st.session_state.get(weight_key, 1.0)
+                        )
+                    local_weight_signature = tuple(
+                        float(local_optimizer_weights.get(stat, 1.0))
+                        for stat in ranking_stats
+                    )
+
                 cache_key = (
                     dataset,
                     piece_key,
                     tuple(ranking_stats),
                     optimizer_method,
-                    optimizer_weight_signature,
+                    local_weight_signature,
                     ascending,
                     sampled_mode,
                     use_max_weight,
@@ -1098,8 +1075,8 @@ def main():
                     frame_signature(working_df, ["name", "type", "weight", *ranking_stats]),
                 )
                 weight_payload = (
-                    optimizer_weights
-                    if optimizer_method == "weighted_sum_normalized" and optimizer_weights
+                    local_optimizer_weights
+                    if optimizer_method == "weighted_sum_normalized" and local_optimizer_weights
                     else {stat: 1.0 for stat in ranking_stats}
                 )
                 rank_cache = st.session_state.setdefault("_optimizer_cache", {})
@@ -1397,22 +1374,63 @@ def main():
         show_controls: bool = True,
         full_set_mode: bool = False,
     ):
+        nonlocal optimizer_method, optimizer_weights, optimizer_weight_signature
         if source_df.empty:
             st.info(f"No candidates found for {section_label}.")
             return
+
+        controls_left = None
+        controls_right = None
+        if show_controls and dataset == "armors" and (armor_single_piece or armor_full_set):
+            controls_left, controls_right = st.columns([3, 2])
+            with controls_right:
+                st.markdown("##### Optimization")
+                method_options = list(OPTIMIZER_METHODS.keys())
+                ensure_state_in_options(
+                    "optimizer_method",
+                    method_options,
+                    DEFAULT_OPTIMIZATION_METHOD,
+                )
+                optimizer_method = st.selectbox(
+                    "Method:", options=method_options, key="optimizer_method"
+                )
+
+                optimizer_weights = None
+                optimizer_weight_signature = None
+                if optimizer_method == "weighted_sum_normalized" and ranking_stats:
+                    st.caption(
+                        "Set weights for each selected stat (higher weight = stronger preference)."
+                    )
+                    optimizer_weights = {}
+                    for stat in ranking_stats:
+                        weight_key = f"opt_weight_{safe_stat_key(stat)}"
+                        if weight_key not in st.session_state:
+                            st.session_state[weight_key] = 1.0
+                        optimizer_weights[stat] = st.number_input(
+                            f"Weight: {stat}",
+                            min_value=0.0,
+                            step=0.1,
+                            key=weight_key,
+                        )
+                    optimizer_weight_signature = tuple(
+                        float(optimizer_weights.get(stat, 1.0))
+                        for stat in ranking_stats
+                    )
 
         ranked_df, _ = rank_display_df(source_df, piece_key)
         display_rows = ranked_df.head(per_page)
 
         if show_controls:
-            if show_weight_note and "weight" in ranking_stats:
-                st.info("Optimization note: `weight` is minimized; all other selected stats are maximized.")
+            info_container = controls_left if controls_left is not None else st
+            with info_container:
+                if show_weight_note and "weight" in ranking_stats:
+                    st.info("Optimization note: `weight` is minimized; all other selected stats are maximized.")
 
-            caption = build_ranking_caption()
-            if caption:
-                st.caption(caption)
+                caption = build_ranking_caption()
+                if caption:
+                    st.caption(caption)
 
-            render_download_button_for_rows(display_rows, section_label, "main")
+                render_download_button_for_rows(display_rows, section_label, "main")
 
         if show_controls and dataset == "armors" and len(ranking_stats) >= 2 and len(display_rows) >= 1:
             st.markdown("---")
