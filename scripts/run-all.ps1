@@ -35,7 +35,7 @@ if (-not $SkipVerify) {
 
 if ($RunApp) {
     Write-Step "Starting Streamlit app..."
-    & "$PSScriptRoot\start-app.ps1" -EnvName $EnvName -Port $Port -WaitForReadySeconds $WaitForReadySeconds -OpenBrowser:$OpenBrowser
+    & "$PSScriptRoot\start-app.ps1" -EnvName $EnvName -Port $Port -WaitForReadySeconds $WaitForReadySeconds -OpenBrowser
 } else {
     Write-Step "Done. App not started (use -RunApp to launch)."
 }

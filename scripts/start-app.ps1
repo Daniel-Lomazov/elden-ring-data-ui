@@ -53,7 +53,7 @@ $process = Start-Process -FilePath $pythonExe -ArgumentList @(
     "$Port",
     "--server.headless",
     "true"
-) -WorkingDirectory $repoRoot -PassThru
+) -WorkingDirectory $repoRoot -WindowStyle Minimized -PassThru
 
 Start-Sleep -Milliseconds 500
 
@@ -84,6 +84,36 @@ function Test-UrlReady([string]$TargetUrl) {
     }
 }
 
+function Open-OrRefreshBrowser([string]$TargetUrl, [int]$TargetPort) {
+    try {
+        $wshell = New-Object -ComObject WScript.Shell
+    } catch {
+        Start-Process $TargetUrl | Out-Null
+        return "opened"
+    }
+
+    $titleToken = "localhost:$TargetPort"
+    $activated = $false
+    try {
+        $activated = $wshell.AppActivate($titleToken)
+    } catch {
+        $activated = $false
+    }
+
+    if ($activated) {
+        Start-Sleep -Milliseconds 200
+        try {
+            $wshell.SendKeys("{F5}")
+            return "refreshed"
+        } catch {
+            # fall through and open URL if send keys fails
+        }
+    }
+
+    Start-Process $TargetUrl | Out-Null
+    return "opened"
+}
+
 $listenerPid = $null
 $ready = $false
 $deadline = (Get-Date).AddSeconds([Math]::Max(1, $WaitForReadySeconds))
@@ -112,8 +142,12 @@ if (-not $ready) {
 
 if ($ready -and $OpenBrowser) {
     try {
-        Start-Process $url | Out-Null
-        Write-Host "BROWSER_OPENED=True"
+        $browserAction = Open-OrRefreshBrowser -TargetUrl $url -TargetPort $Port
+        if ($browserAction -eq "refreshed") {
+            Write-Host "BROWSER_REFRESHED=True"
+        } else {
+            Write-Host "BROWSER_OPENED=True"
+        }
     } catch {
         Write-Host "BROWSER_OPENED=False"
         Write-Step "Could not open browser automatically: $($_.Exception.Message)"
