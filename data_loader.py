@@ -3,6 +3,7 @@ Data loading module for Elden Ring datasets.
 Handles loading CSV files from the data directory.
 """
 
+import json
 import pandas as pd
 from pathlib import Path
 from typing import Dict, Optional, Sequence
@@ -46,6 +47,76 @@ class DataLoader:
             "upgradeMaterials.csv",
             "whetblades.csv",
         ]
+
+    @staticmethod
+    @st.cache_data
+    def load_column_instructions(filepath: str) -> dict:
+        """Load JSON instructions describing dataset column-load profiles."""
+        try:
+            with open(filepath, "r", encoding="utf-8") as handle:
+                data = json.load(handle)
+                return data if isinstance(data, dict) else {}
+        except Exception:
+            return {}
+
+    def resolve_dataset_path(self, dataset_key: str) -> Path:
+        """Map a dataset key (e.g., armors or items/ammos) to CSV path."""
+        key = str(dataset_key or "").strip()
+        if key.startswith("items/"):
+            filename = key.split("/", 1)[1]
+            return self.data_dir / "items" / f"{filename}.csv"
+        return self.data_dir / f"{key}.csv"
+
+    def build_profile_columns(
+        self,
+        dataset_key: str,
+        profile_name: str = "id_name",
+        instructions_path: str = "data/column_loading_instructions.json",
+        extra_columns: Optional[Sequence[str]] = None,
+    ) -> tuple[str, ...]:
+        """Resolve include columns from profile + dataset overrides + extras."""
+        spec = DataLoader.load_column_instructions(instructions_path)
+        always = spec.get("always_include", ["id", "name"])
+        profiles = spec.get("profiles", {})
+        profile = profiles.get(profile_name, {}) if isinstance(profiles, dict) else {}
+        include = list(always) + list(profile.get("include", []))
+
+        overrides = spec.get("dataset_overrides", {})
+        dataset_cfg = overrides.get(dataset_key, {}) if isinstance(overrides, dict) else {}
+        include.extend(dataset_cfg.get("always_include", []))
+        profile_includes = dataset_cfg.get("profile_includes", {})
+        if isinstance(profile_includes, dict):
+            include.extend(profile_includes.get(profile_name, []))
+
+        if extra_columns:
+            include.extend(list(extra_columns))
+
+        deduped = DataLoader._sanitize_column_sequence(include) or []
+        return tuple(deduped)
+
+    def load_dataset_by_profile(
+        self,
+        dataset_key: str,
+        profile_name: str = "id_name",
+        instructions_path: str = "data/column_loading_instructions.json",
+        extra_columns: Optional[Sequence[str]] = None,
+        dtype_overrides: Optional[dict] = None,
+    ) -> Optional[pd.DataFrame]:
+        """Load dataset using a named column profile from instructions JSON."""
+        filepath = self.resolve_dataset_path(dataset_key)
+        if not filepath.exists():
+            return None
+        include = self.build_profile_columns(
+            dataset_key=dataset_key,
+            profile_name=profile_name,
+            instructions_path=instructions_path,
+            extra_columns=extra_columns,
+        )
+        return DataLoader.load_file(
+            str(filepath),
+            include_columns=include,
+            dtype_overrides=dtype_overrides,
+        )
 
     @staticmethod
     @st.cache_data

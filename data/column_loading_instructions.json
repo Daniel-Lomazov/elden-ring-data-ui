@@ -1,0 +1,56 @@
+{
+  "version": 1,
+  "goal": "Control which columns are loaded first (fast baseline), and which are loaded for optimization or visual views.",
+  "always_include": [
+    "id",
+    "name"
+  ],
+  "profiles": {
+    "id_name": {
+      "description": "Fast lookup and identity verification only.",
+      "include": []
+    },
+    "optimization_core": {
+      "description": "Columns needed for stat parsing and ranking/optimization.",
+      "include": [
+        "type",
+        "weight",
+        "damage negation",
+        "resistance"
+      ]
+    },
+    "single_piece_visual": {
+      "description": "Columns needed for single-piece cards and sidebar details.",
+      "include": [
+        "type",
+        "weight",
+        "image",
+        "description",
+        "special effect",
+        "how to acquire",
+        "in-game section",
+        "dlc",
+        "damage negation",
+        "resistance"
+      ]
+    },
+    "full_set_visual": {
+      "description": "Columns needed for full-set card rendering and stat totals.",
+      "include": [
+        "type",
+        "weight",
+        "image",
+        "description",
+        "special effect",
+        "dlc",
+        "damage negation",
+        "resistance"
+      ]
+    }
+  },
+  "dataset_overrides": {
+    "armors": {
+      "notes": "Armors rely on parsing damage negation/resistance into derived Dmg:/Res: columns."
+    }
+  }
+}
