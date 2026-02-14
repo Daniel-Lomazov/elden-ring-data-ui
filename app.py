@@ -2524,7 +2524,8 @@ def main():
                                 st.metric(format_stat_metric_label(stat_name), format_metric_value(raw_value))
             else:
                 for label, rows in items:
-                    st.markdown(f"#### {label}")
+                    label_text = str(label or "").strip()
+                    st.markdown(f"#### {slot_icon(label_text)} {label_text}")
                     render_card_rows(rows, compact_mode=False, full_set_mode=False)
 
         if dataset == "armors":
