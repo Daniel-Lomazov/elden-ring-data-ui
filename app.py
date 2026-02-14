@@ -126,7 +126,8 @@ def apply_post_parse_column_pruning(dataset_key: str, frame: pd.DataFrame) -> pd
 
 
 @st.cache_resource
-def get_loader():
+def get_loader(loader_version: str = "v2_profile_loader"):
+    _ = loader_version
     return DataLoader(data_dir="data")
 
 
@@ -439,7 +440,7 @@ def main():
         unsafe_allow_html=True,
     )
 
-    loader = get_loader()
+    loader = get_loader("v2_profile_loader")
     datasets = loader.get_available_datasets()
 
     # Sidebar dataset chooser
@@ -477,10 +478,14 @@ def main():
     df = None
     if dataset:
         if dataset == "armors":
-            df = loader.load_dataset_by_profile(
-                dataset_key=dataset,
-                profile_name="single_piece_visual",
-            )
+            if hasattr(loader, "load_dataset_by_profile"):
+                df = loader.load_dataset_by_profile(
+                    dataset_key=dataset,
+                    profile_name="single_piece_visual",
+                )
+            else:
+                filepath = f"data/{dataset}.csv"
+                df = DataLoader.load_file(filepath)
             if df is None:
                 filepath = f"data/{dataset}.csv"
                 df = DataLoader.load_file(filepath)
