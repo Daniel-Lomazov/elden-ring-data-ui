@@ -60,9 +60,11 @@ TALISMAN_SLOT_LABELS = ["Slot 1", "Slot 2", "Slot 3", "Slot 4"]
 
 VIEW_MODE_OPTIMIZATION = "Optimization view"
 VIEW_MODE_DETAILED = "Detailed view"
-DETAILED_SCOPE_SINGLE = "Single item view"
-DETAILED_SCOPE_FULL = "Full set view"
-DETAILED_SCOPE_CUSTOM = "Custom set view"
+DETAILED_SCOPE_SINGLE = "Single"
+DETAILED_SCOPE_FULL = "Full"
+DETAILED_SCOPE_CUSTOM = "Custom"
+STACK_VIEW_VERTICAL = "Vertical"
+STACK_VIEW_HORIZONTAL = "Horizontal"
 
 ARMOR_PIECE_ORDER = [
     "Helm",
@@ -831,6 +833,7 @@ def main():
     selected_armor_filter_stat = "All"
     armor_detailed_scope_mode = DETAILED_SCOPE_CUSTOM
     talisman_detailed_scope_mode = DETAILED_SCOPE_CUSTOM
+    custom_stack_view_options = [STACK_VIEW_VERTICAL, STACK_VIEW_HORIZONTAL]
 
     def resolve_armor_piece_types(arm_df: pd.DataFrame | None):
         raw_to_display = {
@@ -903,7 +906,7 @@ def main():
             DETAILED_SCOPE_CUSTOM,
         )
         armor_detailed_scope_mode = st.sidebar.selectbox(
-            "Choose scope view:",
+            "Choose scope:",
             options=detail_scope_options,
             key="armor_detailed_scope_mode",
         )
@@ -946,7 +949,7 @@ def main():
             DETAILED_SCOPE_CUSTOM,
         )
         talisman_detailed_scope_mode = st.sidebar.selectbox(
-            "Choose scope view:",
+            "Choose scope:",
             options=detail_scope_options,
             key="talisman_detailed_scope_mode",
         )
@@ -1052,6 +1055,16 @@ def main():
                 )
             else:
                 st.sidebar.subheader("Scope view")
+                ensure_state_in_options(
+                    "armor_custom_stack_view",
+                    custom_stack_view_options,
+                    STACK_VIEW_VERTICAL,
+                )
+                st.sidebar.selectbox(
+                    "Choose view:",
+                    options=custom_stack_view_options,
+                    key="armor_custom_stack_view",
+                )
                 for piece_label in ARMOR_PIECE_ORDER:
                     raw_type = type_label_map.get(piece_label, piece_label)
                     piece_names = sorted(
@@ -1132,6 +1145,16 @@ def main():
                 )
             else:
                 st.sidebar.subheader("Scope view")
+                ensure_state_in_options(
+                    "talisman_custom_stack_view",
+                    custom_stack_view_options,
+                    STACK_VIEW_VERTICAL,
+                )
+                st.sidebar.selectbox(
+                    "Choose view:",
+                    options=custom_stack_view_options,
+                    key="talisman_custom_stack_view",
+                )
                 for idx, slot_label in enumerate(TALISMAN_SLOT_LABELS, start=1):
                     if not talisman_names:
                         continue
@@ -1152,6 +1175,16 @@ def main():
         if generic_view_mode == VIEW_MODE_DETAILED:
             detailed_view_active = True
             st.sidebar.subheader("Scope view")
+            ensure_state_in_options(
+                "generic_custom_stack_view",
+                custom_stack_view_options,
+                STACK_VIEW_VERTICAL,
+            )
+            st.sidebar.selectbox(
+                "Choose view:",
+                options=custom_stack_view_options,
+                key="generic_custom_stack_view",
+            )
             generic_names = sorted(
                 {
                     str(name).strip()
@@ -2031,6 +2064,20 @@ def main():
         st.markdown("---")
         st.subheader("Detailed view")
 
+        def render_detail_items(items: list[tuple[str, pd.DataFrame]], stack_view: str):
+            if not items:
+                return
+            if stack_view == STACK_VIEW_HORIZONTAL:
+                columns = st.columns(len(items))
+                for col, (label, rows) in zip(columns, items):
+                    with col:
+                        st.markdown(f"#### {label}")
+                        render_card_rows(rows, compact_mode=False, full_set_mode=False)
+            else:
+                for label, rows in items:
+                    st.markdown(f"#### {label}")
+                    render_card_rows(rows, compact_mode=False, full_set_mode=False)
+
         if dataset == "armors":
             if armor_detailed_scope_mode == DETAILED_SCOPE_SINGLE:
                 if armor_detail_item_name:
@@ -2045,10 +2092,10 @@ def main():
             elif armor_detailed_scope_mode == DETAILED_SCOPE_FULL:
                 st.info(
                     "Full set view is not implemented yet for armors. "
-                    "Choose Custom set view to use per-slot controls for now."
+                    "Choose Custom view to use per-slot controls for now."
                 )
             else:
-                shown_any = False
+                custom_items = []
                 for piece_label in ARMOR_PIECE_ORDER:
                     selected_name = armor_detail_set_selection.get(piece_label)
                     if not selected_name:
@@ -2056,10 +2103,13 @@ def main():
                     slot_rows = df[df["name"].astype(str) == str(selected_name)].head(1)
                     if slot_rows.empty:
                         continue
-                    shown_any = True
-                    st.markdown(f"#### {piece_label}")
-                    render_card_rows(slot_rows, compact_mode=False, full_set_mode=False)
-                if not shown_any:
+                    custom_items.append((piece_label, slot_rows))
+                if custom_items:
+                    render_detail_items(
+                        custom_items,
+                        str(st.session_state.get("armor_custom_stack_view", STACK_VIEW_VERTICAL)),
+                    )
+                else:
                     st.info("No complete armor set selection available.")
 
         elif dataset == "talismans":
@@ -2076,23 +2126,26 @@ def main():
             elif talisman_detailed_scope_mode == DETAILED_SCOPE_FULL:
                 st.info(
                     "Full set view by family is not implemented yet. "
-                    "Choose Custom set view to use current slot controls."
+                    "Choose Custom view to use current slot controls."
                 )
             else:
-                shown_any = False
+                custom_items = []
                 for slot_label, selected_name in talisman_detail_set_selection:
                     if not selected_name:
                         continue
                     slot_rows = df[df["name"].astype(str) == str(selected_name)].head(1)
                     if slot_rows.empty:
                         continue
-                    shown_any = True
-                    st.markdown(f"#### {slot_label}")
-                    render_card_rows(slot_rows, compact_mode=False, full_set_mode=False)
-                if not shown_any:
+                    custom_items.append((slot_label, slot_rows))
+                if custom_items:
+                    render_detail_items(
+                        custom_items,
+                        str(st.session_state.get("talisman_custom_stack_view", STACK_VIEW_VERTICAL)),
+                    )
+                else:
                     st.info("No complete talisman set selection available.")
         else:
-            shown_any = False
+            custom_items = []
             for idx in range(1, 5):
                 key = f"generic_detail_slot_{idx}"
                 selected_name = st.session_state.get(key)
@@ -2101,10 +2154,13 @@ def main():
                 slot_rows = df[df["name"].astype(str) == str(selected_name)].head(1)
                 if slot_rows.empty:
                     continue
-                shown_any = True
-                st.markdown(f"#### Slot {idx}")
-                render_card_rows(slot_rows, compact_mode=False, full_set_mode=False)
-            if not shown_any:
+                custom_items.append((f"Slot {idx}", slot_rows))
+            if custom_items:
+                render_detail_items(
+                    custom_items,
+                    str(st.session_state.get("generic_custom_stack_view", STACK_VIEW_VERTICAL)),
+                )
+            else:
                 st.info("No complete set selection available for detailed view.")
         return
 
