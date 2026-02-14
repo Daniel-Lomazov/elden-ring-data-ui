@@ -887,6 +887,20 @@ def main():
         )
         return sorted_candidates[0]
 
+    def slot_icon_for_label(label: str) -> str:
+        token = str(label or "").strip().lower()
+        if "helm" in token or "hat" in token or "hood" in token:
+            return "🪖"
+        if "armor" in token or "chest" in token or "robe" in token or "garb" in token:
+            return "🛡️"
+        if "gaunt" in token or "glove" in token or "bracer" in token:
+            return "🧤"
+        if "greave" in token or "leg" in token or "boot" in token or "trouser" in token:
+            return "👢"
+        if token.startswith("slot"):
+            return "🔹"
+        return "🧩"
+
     FULL_SCOPE_OVERRIDE_PATH = ROOT / "data" / "armor_full_scope_overrides.json"
 
     def resolve_variant_mode_for_names(names: list[str]) -> str:
@@ -2428,20 +2442,6 @@ def main():
             if not items:
                 return
 
-            def slot_icon(label: str) -> str:
-                token = str(label or "").strip().lower()
-                if "helm" in token or "hat" in token or "hood" in token:
-                    return "🪖"
-                if "armor" in token or "chest" in token or "robe" in token or "garb" in token:
-                    return "🛡️"
-                if "gaunt" in token or "glove" in token or "bracer" in token:
-                    return "🧤"
-                if "greave" in token or "leg" in token or "boot" in token or "trouser" in token:
-                    return "👢"
-                if token.startswith("slot"):
-                    return "🔹"
-                return "🧩"
-
             def resolve_detail_stat_columns() -> list[str]:
                 stats = [c for c in numeric_cols if c not in ["id"]]
                 if dataset == "armors":
@@ -2480,7 +2480,7 @@ def main():
                     with col:
                         slot_name = str(label or "").strip()
                         if slot_name:
-                            st.markdown(f"**{slot_icon(slot_name)} {slot_name}**")
+                            st.markdown(f"**{slot_icon_for_label(slot_name)} {slot_name}**")
 
                 st.markdown(section_gap, unsafe_allow_html=True)
                 image_cols = st.columns(len(valid_items))
@@ -2525,7 +2525,7 @@ def main():
             else:
                 for label, rows in items:
                     label_text = str(label or "").strip()
-                    st.markdown(f"#### {slot_icon(label_text)} {label_text}")
+                    st.markdown(f"#### {slot_icon_for_label(label_text)} {label_text}")
                     render_card_rows(rows, compact_mode=False, full_set_mode=False)
 
         if dataset == "armors":
@@ -2533,7 +2533,13 @@ def main():
                 if armor_detail_item_name:
                     slot_rows = df[df["name"].astype(str) == str(armor_detail_item_name)].head(1)
                     if not slot_rows.empty:
-                        st.markdown("#### Armor")
+                        selected_type_raw = str(slot_rows.iloc[0].get("type", "")).strip().lower()
+                        raw_to_display = {
+                            str(raw).strip().lower(): display
+                            for display, raw in type_label_map.items()
+                        }
+                        selected_slot_label = raw_to_display.get(selected_type_raw, "Armor")
+                        st.markdown(f"#### {slot_icon_for_label(selected_slot_label)} {selected_slot_label}")
                         render_card_rows(slot_rows, compact_mode=False, full_set_mode=False)
                     else:
                         st.info("No armor item matches the current selection.")
