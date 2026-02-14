@@ -241,13 +241,52 @@ def main():
         if lowered == "weight" or "weight" in lowered:
             icon = "⚖️"
         elif token.startswith("Dmg:"):
-            icon = "⚔️"
+            damage_token = lowered
+            if "phy" in damage_token:
+                icon = "🗡️"
+            elif "str" in damage_token:
+                icon = "💥"
+            elif "sla" in damage_token:
+                icon = "🪚"
+            elif "pie" in damage_token:
+                icon = "📌"
+            elif "mag" in damage_token:
+                icon = "🔮"
+            elif "fir" in damage_token:
+                icon = "🔥"
+            elif "lit" in damage_token:
+                icon = "⚡"
+            elif "hol" in damage_token:
+                icon = "✨"
+            else:
+                icon = "⚔️"
         elif token.startswith("Res:") or "resistance" in lowered:
-            icon = "🛡️"
+            resist_token = lowered
+            if "poi" in resist_token:
+                icon = "🧱"
+            elif "imm" in resist_token or "poison" in resist_token or "rot" in resist_token:
+                icon = "☣️"
+            elif "rob" in resist_token or "bleed" in resist_token:
+                icon = "🩸"
+            elif "foc" in resist_token or "mad" in resist_token or "sleep" in resist_token:
+                icon = "🧠"
+            elif "vit" in resist_token or "death" in resist_token:
+                icon = "🕯️"
+            elif "fro" in resist_token:
+                icon = "❄️"
+            else:
+                icon = "🛡️"
         elif "negation" in lowered:
             icon = "🛡️"
         elif any(k in lowered for k in ["bleed", "frost", "poison", "rot", "madness", "sleep"]):
-            icon = "🧪"
+            if "bleed" in lowered:
+                icon = "🩸"
+            elif "frost" in lowered:
+                icon = "❄️"
+            elif "poison" in lowered or "rot" in lowered:
+                icon = "☣️"
+            else:
+                icon = "🧠"
         elif "poise" in lowered:
             icon = "🧱"
 
