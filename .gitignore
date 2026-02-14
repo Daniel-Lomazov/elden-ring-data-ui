@@ -47,6 +47,7 @@ conda-meta/
 
 # Logs
 *.log
+docs/session/*_armor_family_decisions.json
 
 # Local data backups and generated manifests
 data_backup_*.zip
