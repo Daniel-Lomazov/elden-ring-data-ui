@@ -941,11 +941,19 @@ def main():
         family = str(current_entry.get("family", "")).strip()
         pieces = current_entry.get("pieces", {})
 
+        current_piece_names = []
+        for piece_label in ["Helm", "Armor", "Gauntlets", "Greaves"]:
+            current_piece_names.extend([str(x) for x in (pieces.get(piece_label, []) or []) if str(x).strip()])
+        variant_preference = resolve_variant_preference(current_piece_names)
+        variant_preference_label = (
+            "Altered" if variant_preference == "altered" else "Regular" if variant_preference == "regular" else "Any"
+        )
+
         st.caption(f"Audit: {audit_path.name}")
         st.caption(f"Decisions: {decisions_path.name}")
         st.write(f"Review item {queue_index + 1} / {len(queue)}")
         st.markdown(f"### Family: {family}")
-        st.info(f"Missing piece: {missing_piece}")
+        st.info(f"Missing piece: {missing_piece} · Target variant: {variant_preference_label}")
 
         st.markdown("**Current pieces**")
         for piece_name in ["Helm", "Armor", "Gauntlets", "Greaves"]:
@@ -962,11 +970,6 @@ def main():
                     st.image(row.get("image"), width=110)
                 except Exception:
                     pass
-
-        current_piece_names = []
-        for piece_label in ["Helm", "Armor", "Gauntlets", "Greaves"]:
-            current_piece_names.extend([str(x) for x in (pieces.get(piece_label, []) or []) if str(x).strip()])
-        variant_preference = resolve_variant_preference(current_piece_names)
 
         def token_score(source: str, candidate: str) -> int:
             src_tokens = set(re.findall(r"[A-Za-z0-9']+", source.lower()))
