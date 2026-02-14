@@ -233,6 +233,27 @@ def main():
         except Exception:
             return str(value)
 
+    def format_stat_metric_label(stat_name: str, highlighted: bool = False) -> str:
+        token = str(stat_name or "").strip()
+        lowered = token.lower()
+        icon = "📊"
+
+        if lowered == "weight" or "weight" in lowered:
+            icon = "⚖️"
+        elif token.startswith("Dmg:"):
+            icon = "⚔️"
+        elif token.startswith("Res:") or "resistance" in lowered:
+            icon = "🛡️"
+        elif "negation" in lowered:
+            icon = "🛡️"
+        elif any(k in lowered for k in ["bleed", "frost", "poison", "rot", "madness", "sleep"]):
+            icon = "🧪"
+        elif "poise" in lowered:
+            icon = "🧱"
+
+        prefix = "⭐ " if highlighted else ""
+        return f"{prefix}{icon} {token}"
+
     def is_truthy_flag(value) -> bool:
         if value is None:
             return False
@@ -2150,7 +2171,7 @@ def main():
                     if hs in row:
                         val_h = row.get(hs)
                         display_h = format_metric_value(val_h)
-                        st.metric(f"⭐ {hs}", display_h)
+                        st.metric(format_stat_metric_label(hs, highlighted=True), display_h)
             else:
                 if not allow_nested_columns:
                     if "image" in df.columns and pd.notna(row.get("image")):
@@ -2174,7 +2195,7 @@ def main():
                         if hs in row:
                             val_h = row.get(hs)
                             display_h = format_metric_value(val_h)
-                            st.metric(f"⭐ {hs}", display_h)
+                            st.metric(format_stat_metric_label(hs, highlighted=True), display_h)
 
                     stats = [c for c in numeric_cols if c not in ["id"]]
                     if dataset == "armors":
@@ -2211,7 +2232,7 @@ def main():
                         if num_val is not None and num_val == 0 and s not in highlighted_stats:
                             continue
                         display_val = format_metric_value(val)
-                        st.metric(s, display_val)
+                        st.metric(format_stat_metric_label(s), display_val)
                     st.markdown("</div>", unsafe_allow_html=True)
                     gap_px = FULL_SET_ROW_GAP_PX if full_set_mode and compact_mode else 8
                     st.markdown(f"<div style='height:{gap_px}px'></div>", unsafe_allow_html=True)
@@ -2230,7 +2251,7 @@ def main():
                         if hs in row:
                             val_h = row.get(hs)
                             display_h = format_metric_value(val_h)
-                            st.metric(f"⭐ {hs}", display_h)
+                            st.metric(format_stat_metric_label(hs, highlighted=True), display_h)
                 with c2:
                     title_left, title_right = st.columns([4, 1])
                     with title_left:
@@ -2292,7 +2313,7 @@ def main():
                                         p.write("")
                                     else:
                                         display_val = format_metric_value(val)
-                                        p.metric(label, display_val)
+                                        p.metric(format_stat_metric_label(label), display_val)
             st.markdown("</div>", unsafe_allow_html=True)
             gap_px = FULL_SET_ROW_GAP_PX if full_set_mode and compact_mode else 8
             st.markdown(f"<div style='height:{gap_px}px'></div>", unsafe_allow_html=True)
@@ -2489,7 +2510,7 @@ def main():
                         for hs in highlighted_stats:
                             if hs in row:
                                 display_h = format_metric_value(row.get(hs))
-                                st.metric(f"⭐ {hs}", display_h)
+                                st.metric(format_stat_metric_label(hs, highlighted=True), display_h)
                         for stat_name in detail_stat_cols:
                             raw_value = row.get(stat_name, None)
                             num_val = None
@@ -2498,9 +2519,9 @@ def main():
                             except Exception:
                                 num_val = None
                             if num_val is not None and num_val == 0 and stat_name not in highlighted_stats:
-                                st.metric(stat_name, "—")
+                                st.metric(format_stat_metric_label(stat_name), "—")
                             else:
-                                st.metric(stat_name, format_metric_value(raw_value))
+                                st.metric(format_stat_metric_label(stat_name), format_metric_value(raw_value))
             else:
                 for label, rows in items:
                     st.markdown(f"#### {label}")
