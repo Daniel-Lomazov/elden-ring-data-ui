@@ -981,16 +981,21 @@ def main():
             options=detail_scope_options,
             key="armor_detailed_scope_mode",
         )
-        if armor_detailed_scope_mode == DETAILED_SCOPE_CUSTOM:
+        if armor_detailed_scope_mode in {DETAILED_SCOPE_FULL, DETAILED_SCOPE_CUSTOM}:
+            stack_view_key = (
+                "armor_full_stack_view"
+                if armor_detailed_scope_mode == DETAILED_SCOPE_FULL
+                else "armor_custom_stack_view"
+            )
             ensure_state_in_options(
-                "armor_custom_stack_view",
+                stack_view_key,
                 custom_stack_view_options,
                 STACK_VIEW_VERTICAL,
             )
             st.sidebar.selectbox(
                 "Choose view:",
                 options=custom_stack_view_options,
-                key="armor_custom_stack_view",
+                key=stack_view_key,
             )
 
     if dataset == "talismans" and str(
@@ -2401,17 +2406,91 @@ def main():
         def render_detail_items(items: list[tuple[str, pd.DataFrame]], stack_view: str):
             if not items:
                 return
+
+            def resolve_detail_stat_columns() -> list[str]:
+                stats = [c for c in numeric_cols if c not in ["id"]]
+                if dataset == "armors":
+                    desired_cols = ["weight", "Dmg: Phy", "bleed", "frost", "Res: Poi."]
+                    found_cols = [c for c in desired_cols if c in numeric_cols]
+                    for c in numeric_cols:
+                        if (
+                            c.startswith("Dmg:") or c.startswith("Res:")
+                        ) and c not in found_cols:
+                            found_cols.append(c)
+                    return [s for s in found_cols if s in stats and s not in highlighted_stats]
+                if dataset == "talismans":
+                    desired_cols = ["weight"]
+                    found_cols = [c for c in desired_cols if c in numeric_cols]
+                    return [
+                        s
+                        for s in found_cols
+                        if s in stats and s not in highlighted_stats and str(s).strip().lower() != "dlc"
+                    ]
+                return [s for s in stats if s not in highlighted_stats]
+
             if stack_view == STACK_VIEW_HORIZONTAL:
-                columns = st.columns(len(items))
-                for col, (label, rows) in zip(columns, items):
+                valid_items = []
+                for label, rows in items:
+                    if rows is None or rows.empty:
+                        continue
+                    valid_items.append((label, rows.iloc[0]))
+                if not valid_items:
+                    return
+
+                section_gap = "<div style='height:10px;'></div>"
+                detail_stat_cols = resolve_detail_stat_columns()
+
+                st.markdown("##### Name")
+                name_cols = st.columns(len(valid_items))
+                for col, (label, row) in zip(name_cols, valid_items):
                     with col:
-                        st.markdown(f"#### {label}")
-                        render_card_rows(
-                            rows,
-                            compact_mode=False,
-                            full_set_mode=False,
-                            allow_nested_columns=False,
-                        )
+                        slot_name = str(label or "").strip()
+                        item_name = str(row.get("name", "")).strip()
+                        if slot_name:
+                            st.caption(slot_name)
+                        st.markdown(f"**{item_name or '—'}**")
+
+                st.markdown(section_gap, unsafe_allow_html=True)
+                st.markdown("##### Image")
+                image_cols = st.columns(len(valid_items))
+                for col, (_, row) in zip(image_cols, valid_items):
+                    with col:
+                        if "image" in df.columns and pd.notna(row.get("image")):
+                            try:
+                                st.image(row.get("image"), width=140)
+                            except Exception:
+                                st.write("📦")
+                        else:
+                            st.write("📦")
+
+                st.markdown(section_gap, unsafe_allow_html=True)
+                st.markdown("##### Description")
+                desc_cols = st.columns(len(valid_items))
+                for col, (_, row) in zip(desc_cols, valid_items):
+                    with col:
+                        description = str(row.get("description", "")).strip()
+                        st.caption(description if description else "—")
+
+                st.markdown(section_gap, unsafe_allow_html=True)
+                st.markdown("##### Stats")
+                stat_cols = st.columns(len(valid_items))
+                for col, (_, row) in zip(stat_cols, valid_items):
+                    with col:
+                        for hs in highlighted_stats:
+                            if hs in row:
+                                display_h = format_metric_value(row.get(hs))
+                                st.metric(f"⭐ {hs}", display_h)
+                        for stat_name in detail_stat_cols:
+                            raw_value = row.get(stat_name, None)
+                            num_val = None
+                            try:
+                                num_val = float(raw_value)
+                            except Exception:
+                                num_val = None
+                            if num_val is not None and num_val == 0 and stat_name not in highlighted_stats:
+                                st.metric(stat_name, "—")
+                            else:
+                                st.metric(stat_name, format_metric_value(raw_value))
             else:
                 for label, rows in items:
                     st.markdown(f"#### {label}")
@@ -2441,7 +2520,7 @@ def main():
                 if custom_items:
                     render_detail_items(
                         custom_items,
-                        str(st.session_state.get("armor_custom_stack_view", STACK_VIEW_VERTICAL)),
+                        str(st.session_state.get("armor_full_stack_view", STACK_VIEW_VERTICAL)),
                     )
                 else:
                     st.info("No full armor set selection available.")
