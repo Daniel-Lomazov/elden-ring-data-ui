@@ -804,11 +804,6 @@ def main():
     df = parse_armor_stats(df)
     df = apply_post_parse_column_pruning(dataset, df)
 
-    def find_latest_armor_audit_path() -> Path | None:
-        session_dir = ROOT / "docs" / "session"
-        candidates = sorted(session_dir.glob("*_armor_family_audit.json"))
-        return candidates[-1] if candidates else None
-
     def load_json_file(path: Path, fallback):
         try:
             if path.exists():
@@ -871,305 +866,34 @@ def main():
         )
         return sorted_candidates[0]
 
-    def render_inline_set_review():
-        st.markdown("---")
-        st.subheader("Armor Set Review")
+    FULL_SCOPE_OVERRIDE_PATH = ROOT / "data" / "armor_full_scope_overrides.json"
 
-        audit_path = find_latest_armor_audit_path()
-        if not audit_path:
-            st.info("No armor audit file found. Generate one first to start interactive review.")
-            return
-
-        decisions_path = ROOT / "docs" / "session" / "2026-02-15_armor_family_decisions.json"
-        audit_payload = load_json_file(audit_path, {})
-        decisions_payload = load_json_file(decisions_path, {"version": 1, "decisions": []})
-        decisions_payload.setdefault("decisions", [])
-
-        arm_df = None
-        if hasattr(loader, "load_dataset_by_profile"):
-            arm_df = loader.load_dataset_by_profile(
-                dataset_key="armors",
-                profile_name="single_piece_visual",
-            )
-        if arm_df is None:
-            arm_df = DataLoader.load_file("data/armors.csv")
-        if arm_df is None or arm_df.empty:
-            st.info("Could not load armor dataset for review.")
-            return
-        arm_df = parse_armor_stats(arm_df)
-        name_to_row = {}
-        if "name" in arm_df.columns:
-            for _, row in arm_df.iterrows():
-                name_to_row[str(row.get("name", ""))] = row
-
-        incomplete = audit_payload.get("incomplete", [])
-        if not incomplete:
-            st.info("No incomplete families in the current audit payload.")
-            return
-
-        reviewed = {
-            (entry.get("family"), entry.get("missing_piece"))
-            for entry in decisions_payload.get("decisions", [])
-            if entry.get("family") and entry.get("missing_piece")
-        }
-
-        queue = []
-        for entry in incomplete:
-            pieces = entry.get("pieces", {})
-            missing = [piece for piece in ["Helm", "Armor", "Gauntlets", "Greaves"] if not (pieces.get(piece) or [])]
-            present_count = 4 - len(missing)
-            if present_count != 3 or len(missing) != 1:
-                continue
-            key = (entry.get("family"), missing[0])
-            if key in reviewed:
-                continue
-            queue.append((entry, missing[0]))
-
-        queue = sorted(queue, key=lambda item: item[0].get("family", ""))
-        if not queue:
-            st.success("No pending 3-piece families left in the review queue.")
-            return
-
-        if "review_queue_index" not in st.session_state:
-            st.session_state["review_queue_index"] = 0
-        queue_index = int(st.session_state.get("review_queue_index", 0))
-        if queue_index >= len(queue):
-            queue_index = 0
-            st.session_state["review_queue_index"] = 0
-
-        current_entry, missing_piece = queue[queue_index]
-        family = str(current_entry.get("family", "")).strip()
-        pieces = current_entry.get("pieces", {})
-
-        current_piece_names = []
-        for piece_label in ["Helm", "Armor", "Gauntlets", "Greaves"]:
-            current_piece_names.extend([str(x) for x in (pieces.get(piece_label, []) or []) if str(x).strip()])
-
+    def resolve_variant_mode_for_names(names: list[str]) -> str:
+        normalized = [str(item).strip() for item in names if str(item).strip()]
+        if not normalized:
+            return "any"
         base_variant_map = {}
-        for piece_name in current_piece_names:
-            base_key = normalize_variant_base_name(piece_name)
+        for item in normalized:
+            base_key = normalize_variant_base_name(item)
             base_variant_map.setdefault(base_key, set()).add(
-                "altered" if is_altered_variant_name(piece_name) else "regular"
+                "altered" if is_altered_variant_name(item) else "regular"
             )
-        has_mixed_variants = any(len(variant_set) > 1 for variant_set in base_variant_map.values())
+        if any(len(variant_set) > 1 for variant_set in base_variant_map.values()):
+            return "paired"
+        return resolve_variant_preference(normalized)
 
-        variant_preference = "paired" if has_mixed_variants else resolve_variant_preference(current_piece_names)
-        variant_preference_label = (
-            "Paired (Regular + Altered)"
-            if variant_preference == "paired"
-            else "Altered"
-            if variant_preference == "altered"
-            else "Regular"
-            if variant_preference == "regular"
-            else "Any"
-        )
+    def load_full_scope_overrides() -> dict:
+        payload = load_json_file(FULL_SCOPE_OVERRIDE_PATH, {"version": 1, "entries": {}})
+        if not isinstance(payload, dict):
+            return {"version": 1, "entries": {}}
+        payload.setdefault("version", 1)
+        payload.setdefault("entries", {})
+        if not isinstance(payload["entries"], dict):
+            payload["entries"] = {}
+        return payload
 
-        st.caption(f"Audit: {audit_path.name}")
-        st.caption(f"Decisions: {decisions_path.name}")
-        st.write(f"Review item {queue_index + 1} / {len(queue)}")
-        st.markdown(f"### Family: {family}")
-        st.info(f"Missing piece: {missing_piece} · Target variant: {variant_preference_label}")
-
-        st.markdown("**Current pieces**")
-        for piece_name in ["Helm", "Armor", "Gauntlets", "Greaves"]:
-            candidates = pieces.get(piece_name, []) or []
-            if not candidates:
-                st.write(f"- {piece_name}: *(missing)*")
-                continue
-            normalized_candidates = [str(x).strip() for x in candidates if str(x).strip()]
-            preferred_name = choose_variant_preferred_name(normalized_candidates, family)
-            if not preferred_name:
-                preferred_name = normalized_candidates[0]
-            row = name_to_row.get(preferred_name)
-            label = f"{piece_name}: {preferred_name}"
-            st.write(label)
-            if row is not None and "image" in arm_df.columns and pd.notna(row.get("image")):
-                try:
-                    st.image(row.get("image"), width=110)
-                except Exception:
-                    pass
-
-        def token_score(source: str, candidate: str) -> int:
-            src_tokens = set(re.findall(r"[A-Za-z0-9']+", source.lower()))
-            cand_tokens = set(re.findall(r"[A-Za-z0-9']+", candidate.lower()))
-            overlap = len(src_tokens.intersection(cand_tokens))
-            phrase_bonus = 3 if source and source in candidate.lower() else 0
-            candidate_variant = "altered" if is_altered_variant_name(candidate) else "regular"
-            variant_bonus = 0
-            if variant_preference == "altered":
-                variant_bonus = 2 if candidate_variant == "altered" else -1
-            elif variant_preference == "regular":
-                variant_bonus = 1 if candidate_variant == "regular" else -1
-            return overlap * 2 + phrase_bonus + variant_bonus
-
-        lookup = []
-        for entry in incomplete:
-            for candidate_name in (entry.get("pieces", {}).get(missing_piece, []) or []):
-                candidate_name = str(candidate_name)
-                if not candidate_name:
-                    continue
-                score = token_score(family, candidate_name)
-                if score <= 0:
-                    continue
-                lookup.append(
-                    {
-                        "name": candidate_name,
-                        "source_family": str(entry.get("family", "")),
-                        "score": score,
-                    }
-                )
-
-        grouped_candidates = {}
-        for item in lookup:
-            base_key = normalize_variant_base_name(item["name"])
-            grouped_candidates.setdefault(base_key, []).append(item)
-
-        deduped = []
-        for base_key, items in grouped_candidates.items():
-            if variant_preference == "paired":
-                regular_items = [item for item in items if not is_altered_variant_name(item["name"])]
-                altered_items = [item for item in items if is_altered_variant_name(item["name"])]
-                preferred_pool = regular_items if regular_items else altered_items if altered_items else items
-                chosen = sorted(preferred_pool, key=lambda x: (-x["score"], x["name"]))[0]
-                partner = None
-                if regular_items and altered_items:
-                    if is_altered_variant_name(chosen["name"]):
-                        partner = sorted(regular_items, key=lambda x: (-x["score"], x["name"]))[0]
-                    else:
-                        partner = sorted(altered_items, key=lambda x: (-x["score"], x["name"]))[0]
-                chosen = dict(chosen)
-                chosen["variant_base"] = base_key
-                if partner:
-                    chosen["paired_name"] = partner["name"]
-                    chosen["paired_family"] = partner["source_family"]
-                    chosen["pair_score"] = int(chosen["score"]) + int(partner["score"])
-                deduped.append(chosen)
-                continue
-            preferred_items = items
-            if variant_preference in {"altered", "regular"}:
-                preferred_items = [
-                    item
-                    for item in items
-                    if (
-                        (variant_preference == "altered" and is_altered_variant_name(item["name"]))
-                        or (variant_preference == "regular" and not is_altered_variant_name(item["name"]))
-                    )
-                ]
-            chosen_pool = preferred_items if preferred_items else items
-            chosen = dict(sorted(chosen_pool, key=lambda x: (-x["score"], x["name"]))[0])
-            chosen["variant_base"] = base_key
-            deduped.append(chosen)
-
-        deduped = sorted(deduped, key=lambda x: (-x["score"], x["name"]))
-        suggested = deduped[:8]
-
-        st.markdown("**Suggested matches**")
-        if suggested:
-            suggestion_cols = st.columns(2)
-            for idx, suggestion in enumerate(suggested):
-                with suggestion_cols[idx % 2]:
-                    variant_label = "Altered" if is_altered_variant_name(suggestion["name"]) else "Regular"
-                    auto_pair_suffix = ""
-                    if suggestion.get("paired_name"):
-                        auto_pair_suffix = " · auto-pairs counterpart"
-                    st.write(
-                        f"{idx + 1}. {suggestion['name']} "
-                        f"(from {suggestion['source_family']}, {variant_label}, score={suggestion['score']}{auto_pair_suffix})"
-                    )
-                    s_row = name_to_row.get(suggestion["name"])
-                    if s_row is not None and "image" in arm_df.columns and pd.notna(s_row.get("image")):
-                        try:
-                            st.image(s_row.get("image"), width=110)
-                        except Exception:
-                            pass
-                    if st.button(
-                        f"Use #{idx + 1}",
-                        key=f"review_match_{queue_index}_{idx}",
-                        use_container_width=True,
-                    ):
-                        if suggestion.get("paired_name"):
-                            primary_is_altered = is_altered_variant_name(suggestion["name"])
-                            decisions_payload["decisions"].append(
-                                {
-                                    "family": family,
-                                    "missing_piece": missing_piece,
-                                    "action": "match_pair",
-                                    "candidate_regular": suggestion["paired_name"] if primary_is_altered else suggestion["name"],
-                                    "candidate_regular_family": suggestion.get("paired_family") if primary_is_altered else suggestion["source_family"],
-                                    "candidate_altered": suggestion["name"] if primary_is_altered else suggestion["paired_name"],
-                                    "candidate_altered_family": suggestion["source_family"] if primary_is_altered else suggestion.get("paired_family"),
-                                    "pair_score": suggestion.get("pair_score", suggestion["score"]),
-                                }
-                            )
-                        else:
-                            decisions_payload["decisions"].append(
-                                {
-                                    "family": family,
-                                    "missing_piece": missing_piece,
-                                    "action": "match",
-                                    "candidate_name": suggestion["name"],
-                                    "candidate_family": suggestion["source_family"],
-                                    "score": suggestion["score"],
-                                }
-                            )
-                        if save_json_file(decisions_path, decisions_payload):
-                            st.session_state["review_queue_index"] = min(queue_index, max(0, len(queue) - 2))
-                            st.rerun()
-        else:
-            st.caption("No candidate suggestions found by name tokens.")
-
-        action_cols = st.columns(4)
-        with action_cols[0]:
-            if st.button("Keep 3-piece", key=f"review_keep_{queue_index}", use_container_width=True):
-                decisions_payload["decisions"].append(
-                    {
-                        "family": family,
-                        "missing_piece": missing_piece,
-                        "action": "keep",
-                        "note": "kept as three-piece family",
-                    }
-                )
-                if save_json_file(decisions_path, decisions_payload):
-                    st.session_state["review_queue_index"] = min(queue_index, max(0, len(queue) - 2))
-                    st.rerun()
-        with action_cols[1]:
-            if st.button("Hide family", key=f"review_hide_{queue_index}", use_container_width=True):
-                decisions_payload["decisions"].append(
-                    {
-                        "family": family,
-                        "missing_piece": missing_piece,
-                        "action": "hide",
-                        "note": "hidden from full-scope completion",
-                    }
-                )
-                if save_json_file(decisions_path, decisions_payload):
-                    st.session_state["review_queue_index"] = min(queue_index, max(0, len(queue) - 2))
-                    st.rerun()
-        with action_cols[2]:
-            if st.button("Skip", key=f"review_skip_{queue_index}", use_container_width=True):
-                st.session_state["review_queue_index"] = min(queue_index + 1, max(0, len(queue) - 1))
-                st.rerun()
-        with action_cols[3]:
-            if st.button("Reset to first", key="review_reset_queue", use_container_width=True):
-                st.session_state["review_queue_index"] = 0
-                st.rerun()
-
-        if decisions_payload.get("decisions"):
-            st.markdown("---")
-            st.markdown("**Recent decisions**")
-            tail = decisions_payload["decisions"][-10:]
-            st.dataframe(pd.DataFrame(tail), use_container_width=True, hide_index=True)
-
-    context_options = ["Main", "Set review"]
-    ensure_state_in_options("app_context_mode", context_options, "Main")
-    app_context_mode = st.sidebar.selectbox(
-        "Context:",
-        options=context_options,
-        key="app_context_mode",
-    )
-    if app_context_mode == "Set review":
-        render_inline_set_review()
-        return
+    def build_full_scope_override_key(family_key: str, target_label: str, variant_mode: str) -> str:
+        return f"{str(family_key or '').strip()}::{str(target_label or '').strip()}::{str(variant_mode or 'any').strip()}"
 
     # Load armor column mapping (if present) to avoid ambiguous friendly labels
     armor_map_path = ROOT / "armor_column_map.json"
@@ -1430,11 +1154,77 @@ def main():
                     fam_index.setdefault(fam_key, []).append(piece_name)
                 full_scope_family_index_by_piece[piece_label] = fam_index
 
+            full_scope_override_payload = load_full_scope_overrides()
+            full_scope_override_entries = dict(full_scope_override_payload.get("entries", {}))
+
+            def resolve_full_scope_override_name(
+                family_key: str,
+                target_label: str,
+                variant_mode: str,
+                target_names: list[str],
+            ) -> str | None:
+                if not target_names:
+                    return None
+                lookup_modes = [variant_mode, "any"] if variant_mode != "any" else ["any"]
+                for lookup_mode in lookup_modes:
+                    override_key = build_full_scope_override_key(family_key, target_label, lookup_mode)
+                    override_entry = full_scope_override_entries.get(override_key)
+                    if not isinstance(override_entry, dict):
+                        continue
+                    preferred_name = str(override_entry.get("preferred_name", "")).strip()
+                    if preferred_name and preferred_name in target_names:
+                        return preferred_name
+                return None
+
+            def rank_full_scope_suggestions(source_name: str, target_label: str, limit: int = 5) -> list[str]:
+                target_names = full_scope_names_by_label.get(target_label, [])
+                if not target_names:
+                    return []
+                fam_key = armor_family_key(source_name)
+                variant_mode = resolve_variant_mode_for_names([source_name])
+                override_pick = resolve_full_scope_override_name(fam_key, target_label, variant_mode, target_names)
+                fam_matches = full_scope_family_index_by_piece.get(target_label, {}).get(fam_key, [])
+
+                ranked = []
+                if override_pick:
+                    ranked.append(override_pick)
+
+                preferred_fam_pick = choose_variant_preferred_name(fam_matches, source_name)
+                if preferred_fam_pick and preferred_fam_pick not in ranked:
+                    ranked.append(preferred_fam_pick)
+
+                scored = []
+                source_tokens = {
+                    token
+                    for token in re.findall(r"[A-Za-z0-9']+", str(source_name or "").lower())
+                    if token not in armor_piece_name_tokens
+                }
+                for candidate in target_names:
+                    candidate_tokens = {
+                        token
+                        for token in re.findall(r"[A-Za-z0-9']+", candidate.lower())
+                        if token not in armor_piece_name_tokens
+                    }
+                    score = len(source_tokens.intersection(candidate_tokens)) * 2 + rank_variant_match_score(source_name, candidate)
+                    scored.append((score, candidate))
+                scored.sort(key=lambda item: (-item[0], item[1]))
+
+                for _, candidate in scored:
+                    if candidate not in ranked:
+                        ranked.append(candidate)
+                    if len(ranked) >= max(1, int(limit)):
+                        break
+                return ranked[: max(1, int(limit))]
+
             def resolve_complement_piece_name(source_name: str, target_label: str) -> str | None:
                 target_names = full_scope_names_by_label.get(target_label, [])
                 if not target_names:
                     return None
                 fam_key = armor_family_key(source_name)
+                variant_mode = resolve_variant_mode_for_names([source_name])
+                override_pick = resolve_full_scope_override_name(fam_key, target_label, variant_mode, target_names)
+                if override_pick:
+                    return override_pick
                 fam_matches = full_scope_family_index_by_piece.get(target_label, {}).get(fam_key, [])
                 if fam_matches:
                     preferred = choose_variant_preferred_name(fam_matches, source_name)
@@ -1496,6 +1286,7 @@ def main():
                     source_name = st.session_state.get(source_key)
                     if not source_name:
                         return
+                    st.session_state["armor_full_scope_last_source_name"] = source_name
                     sync_updates = {}
                     for piece_label in ARMOR_PIECE_ORDER:
                         if piece_label == changed_piece_label:
@@ -1512,9 +1303,38 @@ def main():
                         continue
                     key = f"armor_full_set_{safe_stat_key(piece_label)}"
                     ensure_state_in_options(key, piece_names, piece_names[0])
+
+                    suggestion_source_name = str(
+                        st.session_state.get("armor_full_scope_last_source_name", "")
+                    ).strip()
+                    if not suggestion_source_name:
+                        for probe_label in ARMOR_PIECE_ORDER:
+                            if probe_label == piece_label:
+                                continue
+                            probe_key = f"armor_full_set_{safe_stat_key(probe_label)}"
+                            probe_name = str(st.session_state.get(probe_key, "")).strip()
+                            if probe_name:
+                                suggestion_source_name = probe_name
+                                break
+
+                    suggested_names = (
+                        rank_full_scope_suggestions(suggestion_source_name, piece_label, limit=5)
+                        if suggestion_source_name
+                        else []
+                    )
+                    suggested_set = set(suggested_names)
+                    ordered_options = suggested_names + [
+                        candidate_name
+                        for candidate_name in piece_names
+                        if candidate_name not in suggested_set
+                    ]
+
                     selected_piece_name = st.sidebar.selectbox(
                         f"{piece_label}:",
-                        options=piece_names,
+                        options=ordered_options,
+                        format_func=lambda name, marks=suggested_set: (
+                            f"★ {name}" if name in marks else name
+                        ),
                         key=key,
                         on_change=on_armor_full_piece_change,
                         args=(piece_label,),
@@ -1523,6 +1343,45 @@ def main():
 
                 if full_scope_current:
                     armor_detail_set_selection = dict(full_scope_current)
+                    st.sidebar.markdown("---")
+                    if st.sidebar.button(
+                        "Save full-scope mapping permanently",
+                        key="armor_full_scope_save_overrides",
+                        use_container_width=True,
+                    ):
+                        current_names = [
+                            str(name).strip()
+                            for name in full_scope_current.values()
+                            if str(name).strip()
+                        ]
+                        variant_mode = resolve_variant_mode_for_names(current_names)
+                        anchor_name = full_scope_current.get("Armor") or next(
+                            iter(full_scope_current.values()),
+                            "",
+                        )
+                        family_key = armor_family_key(anchor_name)
+
+                        for piece_label, selected_name in full_scope_current.items():
+                            override_key = build_full_scope_override_key(
+                                family_key,
+                                piece_label,
+                                variant_mode,
+                            )
+                            full_scope_override_entries[override_key] = {
+                                "family": family_key,
+                                "target_label": piece_label,
+                                "variant_mode": variant_mode,
+                                "preferred_name": selected_name,
+                            }
+
+                        payload = {
+                            "version": 1,
+                            "entries": full_scope_override_entries,
+                        }
+                        if save_json_file(FULL_SCOPE_OVERRIDE_PATH, payload):
+                            st.sidebar.success("Saved full-scope mapping overrides.")
+                        else:
+                            st.sidebar.error("Could not save full-scope mapping overrides.")
                 else:
                     st.sidebar.info(
                         "No complete armor families are available for full scope with the current dataset."
