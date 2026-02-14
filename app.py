@@ -830,7 +830,6 @@ def main():
     talisman_detail_item_name = None
     armor_detail_set_selection = {}
     talisman_detail_set_selection = []
-    selected_armor_filter_stat = "All"
     armor_detailed_scope_mode = DETAILED_SCOPE_CUSTOM
     talisman_detailed_scope_mode = DETAILED_SCOPE_CUSTOM
     custom_stack_view_options = [STACK_VIEW_VERTICAL, STACK_VIEW_HORIZONTAL]
@@ -876,25 +875,6 @@ def main():
     if dataset == "armors" and str(
         st.session_state.get("armor_view_mode", VIEW_MODE_DETAILED)
     ) == VIEW_MODE_DETAILED:
-        armor_filter_options = ["All"]
-        armor_numeric_cols = df.select_dtypes(include=["number"]).columns.tolist()
-        armor_stat_options = [
-            c for c in armor_numeric_cols if c.startswith("Dmg:") or c.startswith("Res:")
-        ]
-        for s in ["weight", "poise"]:
-            if s in armor_numeric_cols and s not in armor_stat_options:
-                armor_stat_options.insert(0, s)
-        armor_filter_options.extend(armor_stat_options)
-        ensure_state_in_options(
-            "armor_detail_filter_stat",
-            armor_filter_options,
-            armor_filter_options[0],
-        )
-        selected_armor_filter_stat = st.sidebar.selectbox(
-            "Choose filter:",
-            options=armor_filter_options,
-            key="armor_detail_filter_stat",
-        )
         detail_scope_options = [
             DETAILED_SCOPE_SINGLE,
             DETAILED_SCOPE_FULL,
@@ -925,30 +905,6 @@ def main():
     if dataset == "talismans" and str(
         st.session_state.get("talisman_view_mode", VIEW_MODE_DETAILED)
     ) == VIEW_MODE_DETAILED:
-        effect_type_options = ["All effects"]
-        if "effect" in df.columns:
-            normalized_effects = [
-                normalize_talisman_effect_type(value)
-                for value in df["effect"].dropna().tolist()
-            ]
-            effect_groups = sorted(
-                {talisman_effect_group(entry) for entry in normalized_effects if entry}
-            )
-            effect_type_options.extend(effect_groups)
-        ensure_state_in_options(
-            "talisman_effect_type",
-            effect_type_options,
-            effect_type_options[0],
-        )
-        selected_effect_type = st.sidebar.selectbox(
-            "Choose filter:",
-            options=effect_type_options,
-            key="talisman_effect_type",
-        )
-        if selected_effect_type != "All effects" and "effect" in df.columns:
-            effect_series = df["effect"].fillna("").map(normalize_talisman_effect_type)
-            effect_group_series = effect_series.map(talisman_effect_group)
-            df = df[effect_group_series == selected_effect_type]
         detail_scope_options = [
             DETAILED_SCOPE_SINGLE,
             DETAILED_SCOPE_FULL,
@@ -1021,21 +977,6 @@ def main():
             type_label_map, armor_piece_labels = resolve_armor_piece_types(df)
 
             def apply_armor_detail_filter(source_df: pd.DataFrame) -> pd.DataFrame:
-                if (
-                    selected_armor_filter_stat != "All"
-                    and selected_armor_filter_stat in source_df.columns
-                ):
-                    filtered_df = source_df.copy()
-                    stat_series = pd.to_numeric(
-                        filtered_df[selected_armor_filter_stat], errors="coerce"
-                    )
-                    filtered_df = filtered_df[stat_series.notna()]
-                    if str(selected_armor_filter_stat).strip().lower() != "weight":
-                        filtered_df = filtered_df[stat_series > 0]
-                    return filtered_df.sort_values(
-                        by=[selected_armor_filter_stat, "name"],
-                        ascending=[False, True],
-                    )
                 return source_df
 
             filtered_armor_df = apply_armor_detail_filter(df)
