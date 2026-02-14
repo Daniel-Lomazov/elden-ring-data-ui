@@ -804,6 +804,244 @@ def main():
     df = parse_armor_stats(df)
     df = apply_post_parse_column_pruning(dataset, df)
 
+    def find_latest_armor_audit_path() -> Path | None:
+        session_dir = ROOT / "docs" / "session"
+        candidates = sorted(session_dir.glob("*_armor_family_audit.json"))
+        return candidates[-1] if candidates else None
+
+    def load_json_file(path: Path, fallback):
+        try:
+            if path.exists():
+                with path.open("r", encoding="utf-8") as fp:
+                    return json.load(fp)
+        except Exception:
+            pass
+        return fallback
+
+    def save_json_file(path: Path, payload) -> bool:
+        try:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            with path.open("w", encoding="utf-8") as fp:
+                json.dump(payload, fp, ensure_ascii=False, indent=2)
+            return True
+        except Exception:
+            return False
+
+    def render_inline_set_review():
+        st.markdown("---")
+        st.subheader("Armor Set Review")
+
+        audit_path = find_latest_armor_audit_path()
+        if not audit_path:
+            st.info("No armor audit file found. Generate one first to start interactive review.")
+            return
+
+        decisions_path = ROOT / "docs" / "session" / "2026-02-15_armor_family_decisions.json"
+        audit_payload = load_json_file(audit_path, {})
+        decisions_payload = load_json_file(decisions_path, {"version": 1, "decisions": []})
+        decisions_payload.setdefault("decisions", [])
+
+        arm_df = None
+        if hasattr(loader, "load_dataset_by_profile"):
+            arm_df = loader.load_dataset_by_profile(
+                dataset_key="armors",
+                profile_name="single_piece_visual",
+            )
+        if arm_df is None:
+            arm_df = DataLoader.load_file("data/armors.csv")
+        if arm_df is None or arm_df.empty:
+            st.info("Could not load armor dataset for review.")
+            return
+        arm_df = parse_armor_stats(arm_df)
+        name_to_row = {}
+        if "name" in arm_df.columns:
+            for _, row in arm_df.iterrows():
+                name_to_row[str(row.get("name", ""))] = row
+
+        incomplete = audit_payload.get("incomplete", [])
+        if not incomplete:
+            st.info("No incomplete families in the current audit payload.")
+            return
+
+        reviewed = {
+            (entry.get("family"), entry.get("missing_piece"))
+            for entry in decisions_payload.get("decisions", [])
+            if entry.get("family") and entry.get("missing_piece")
+        }
+
+        queue = []
+        for entry in incomplete:
+            pieces = entry.get("pieces", {})
+            missing = [piece for piece in ["Helm", "Armor", "Gauntlets", "Greaves"] if not (pieces.get(piece) or [])]
+            present_count = 4 - len(missing)
+            if present_count != 3 or len(missing) != 1:
+                continue
+            key = (entry.get("family"), missing[0])
+            if key in reviewed:
+                continue
+            queue.append((entry, missing[0]))
+
+        queue = sorted(queue, key=lambda item: item[0].get("family", ""))
+        if not queue:
+            st.success("No pending 3-piece families left in the review queue.")
+            return
+
+        if "review_queue_index" not in st.session_state:
+            st.session_state["review_queue_index"] = 0
+        queue_index = int(st.session_state.get("review_queue_index", 0))
+        if queue_index >= len(queue):
+            queue_index = 0
+            st.session_state["review_queue_index"] = 0
+
+        current_entry, missing_piece = queue[queue_index]
+        family = str(current_entry.get("family", "")).strip()
+        pieces = current_entry.get("pieces", {})
+
+        st.caption(f"Audit: {audit_path.name}")
+        st.caption(f"Decisions: {decisions_path.name}")
+        st.write(f"Review item {queue_index + 1} / {len(queue)}")
+        st.markdown(f"### Family: {family}")
+        st.info(f"Missing piece: {missing_piece}")
+
+        st.markdown("**Current pieces**")
+        for piece_name in ["Helm", "Armor", "Gauntlets", "Greaves"]:
+            candidates = pieces.get(piece_name, []) or []
+            if not candidates:
+                st.write(f"- {piece_name}: *(missing)*")
+                continue
+            first_name = str(candidates[0])
+            row = name_to_row.get(first_name)
+            label = f"{piece_name}: {', '.join([str(x) for x in candidates])}"
+            st.write(label)
+            if row is not None and "image" in arm_df.columns and pd.notna(row.get("image")):
+                try:
+                    st.image(row.get("image"), width=110)
+                except Exception:
+                    pass
+
+        def token_score(source: str, candidate: str) -> int:
+            src_tokens = set(re.findall(r"[A-Za-z0-9']+", source.lower()))
+            cand_tokens = set(re.findall(r"[A-Za-z0-9']+", candidate.lower()))
+            overlap = len(src_tokens.intersection(cand_tokens))
+            phrase_bonus = 3 if source and source in candidate.lower() else 0
+            return overlap * 2 + phrase_bonus
+
+        lookup = []
+        for entry in incomplete:
+            for candidate_name in (entry.get("pieces", {}).get(missing_piece, []) or []):
+                candidate_name = str(candidate_name)
+                if not candidate_name:
+                    continue
+                score = token_score(family, candidate_name)
+                if score <= 0:
+                    continue
+                lookup.append(
+                    {
+                        "name": candidate_name,
+                        "source_family": str(entry.get("family", "")),
+                        "score": score,
+                    }
+                )
+
+        seen = set()
+        deduped = []
+        for item in sorted(lookup, key=lambda x: (-x["score"], x["name"])):
+            key = item["name"]
+            if key in seen:
+                continue
+            seen.add(key)
+            deduped.append(item)
+        suggested = deduped[:8]
+
+        st.markdown("**Suggested matches**")
+        if suggested:
+            suggestion_cols = st.columns(2)
+            for idx, suggestion in enumerate(suggested):
+                with suggestion_cols[idx % 2]:
+                    st.write(
+                        f"{idx + 1}. {suggestion['name']} "
+                        f"(from {suggestion['source_family']}, score={suggestion['score']})"
+                    )
+                    s_row = name_to_row.get(suggestion["name"])
+                    if s_row is not None and "image" in arm_df.columns and pd.notna(s_row.get("image")):
+                        try:
+                            st.image(s_row.get("image"), width=110)
+                        except Exception:
+                            pass
+                    if st.button(
+                        f"Use #{idx + 1}",
+                        key=f"review_match_{queue_index}_{idx}",
+                        use_container_width=True,
+                    ):
+                        decisions_payload["decisions"].append(
+                            {
+                                "family": family,
+                                "missing_piece": missing_piece,
+                                "action": "match",
+                                "candidate_name": suggestion["name"],
+                                "candidate_family": suggestion["source_family"],
+                                "score": suggestion["score"],
+                            }
+                        )
+                        if save_json_file(decisions_path, decisions_payload):
+                            st.session_state["review_queue_index"] = min(queue_index, max(0, len(queue) - 2))
+                            st.rerun()
+        else:
+            st.caption("No candidate suggestions found by name tokens.")
+
+        action_cols = st.columns(4)
+        with action_cols[0]:
+            if st.button("Keep 3-piece", key=f"review_keep_{queue_index}", use_container_width=True):
+                decisions_payload["decisions"].append(
+                    {
+                        "family": family,
+                        "missing_piece": missing_piece,
+                        "action": "keep",
+                        "note": "kept as three-piece family",
+                    }
+                )
+                if save_json_file(decisions_path, decisions_payload):
+                    st.session_state["review_queue_index"] = min(queue_index, max(0, len(queue) - 2))
+                    st.rerun()
+        with action_cols[1]:
+            if st.button("Hide family", key=f"review_hide_{queue_index}", use_container_width=True):
+                decisions_payload["decisions"].append(
+                    {
+                        "family": family,
+                        "missing_piece": missing_piece,
+                        "action": "hide",
+                        "note": "hidden from full-scope completion",
+                    }
+                )
+                if save_json_file(decisions_path, decisions_payload):
+                    st.session_state["review_queue_index"] = min(queue_index, max(0, len(queue) - 2))
+                    st.rerun()
+        with action_cols[2]:
+            if st.button("Skip", key=f"review_skip_{queue_index}", use_container_width=True):
+                st.session_state["review_queue_index"] = min(queue_index + 1, max(0, len(queue) - 1))
+                st.rerun()
+        with action_cols[3]:
+            if st.button("Reset to first", key="review_reset_queue", use_container_width=True):
+                st.session_state["review_queue_index"] = 0
+                st.rerun()
+
+        if decisions_payload.get("decisions"):
+            st.markdown("---")
+            st.markdown("**Recent decisions**")
+            tail = decisions_payload["decisions"][-10:]
+            st.dataframe(pd.DataFrame(tail), use_container_width=True, hide_index=True)
+
+    context_options = ["Main", "Set review"]
+    ensure_state_in_options("app_context_mode", context_options, "Main")
+    app_context_mode = st.sidebar.selectbox(
+        "Context:",
+        options=context_options,
+        key="app_context_mode",
+    )
+    if app_context_mode == "Set review":
+        render_inline_set_review()
+        return
+
     # Load armor column mapping (if present) to avoid ambiguous friendly labels
     armor_map_path = ROOT / "armor_column_map.json"
     armor_col_map = None
