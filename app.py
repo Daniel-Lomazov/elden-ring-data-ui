@@ -1054,6 +1054,8 @@ def main():
                     "This selector is ready for upcoming set-based grouping."
                 )
             else:
+                st.sidebar.markdown("---")
+                st.sidebar.subheader("Scope")
                 ensure_state_in_options(
                     "armor_custom_stack_view",
                     custom_stack_view_options,
@@ -1143,6 +1145,8 @@ def main():
                     "This selector will be connected once family definitions are added."
                 )
             else:
+                st.sidebar.markdown("---")
+                st.sidebar.subheader("Scope")
                 ensure_state_in_options(
                     "talisman_custom_stack_view",
                     custom_stack_view_options,
@@ -1172,7 +1176,8 @@ def main():
         )
         if generic_view_mode == VIEW_MODE_DETAILED:
             detailed_view_active = True
-            st.sidebar.subheader("Scope view")
+            st.sidebar.markdown("---")
+            st.sidebar.subheader("Scope")
             ensure_state_in_options(
                 "generic_custom_stack_view",
                 custom_stack_view_options,
