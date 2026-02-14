@@ -31,6 +31,7 @@ streamlit run app.py
 elden_ring_data_ui/
 ├── app.py                  # Main minimal Streamlit application (ranking/sorting)
 ├── histogram_views.py      # Centralized histogram config + render helpers for all views
+├── histogram_layout.py     # Shared histogram sizing/layout utilities
 ├── data_loader.py          # Data loading helper
 ├── ui_components.py        # Minimal parsing helpers
 ├── requirements.txt        # Python dependencies
@@ -165,8 +166,19 @@ In **Single piece** armor mode, users can choose multiple highlighted stats and 
    - 2+ selected stats → optimizer ranking is used.
    - 1 selected stat → legacy single-stat sort behavior is used.
    - Sidebar includes method selection, optional max-weight constraint, and reset action.
+   - Reset filters/stats preserves the current armor mode.
    - When `weighted_sum_normalized` is selected, per-stat weight inputs appear in the sidebar.
    - Current ranked rows can be exported to CSV from the main view.
+
+## Full Armor Set Preview (Armors)
+
+The full armor set preview uses a compact, aligned layout to compare per-piece rankings side by side.
+
+- 5 columns: `Helm`, `Armor`, `Gauntlets`, `Greaves`, plus `Overall` summary.
+- The `Overall` column sums the highlighted stats across the four pieces for each row.
+- Export buttons are available per column.
+- The default single-piece selection is `Armor` when available.
+- The `Overall` column uses a phantom image spacer to keep rows aligned.
 
 ### Where this is implemented
 
@@ -236,7 +248,8 @@ All histogram behavior is centralized in [histogram_views.py](histogram_views.py
 
 - Classic view
 - Interactive (click-to-set) view
-- Side-by-side view
+
+Manual tuning controls have been removed; histogram sizing now uses fixed defaults from [histogram_layout.py](histogram_layout.py). Interactive render height is padded and margins are adjusted to avoid axis-label clipping.
 
 ### Where to edit
 

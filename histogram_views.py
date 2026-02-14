@@ -265,8 +265,8 @@ def build_interactive_histogram_figure(
     adjusted_margin = {
         "l": int(max(56, base_margin.get("l", 0) + max(0, x_offset_px))),
         "r": int(max(20, base_margin.get("r", 0) + max(0, -x_offset_px))),
-        "t": int(max(12, base_margin.get("t", 0) + max(0, y_offset_px))),
-        "b": int(max(56, base_margin.get("b", 0) + max(0, -y_offset_px))),
+        "t": int(max(14, base_margin.get("t", 0) + max(0, y_offset_px))),
+        "b": int(max(72, base_margin.get("b", 0) + max(0, -y_offset_px))),
     }
 
     layout_kwargs = {

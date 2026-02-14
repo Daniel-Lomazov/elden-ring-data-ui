@@ -35,7 +35,8 @@ VIEW_SPECIFIC_HISTOGRAM_PARAMS: Dict[str, Dict[str, Any]] = {
     "interactive": {
         "width_mode": "container",
         "container_width_value": "100%",
-        "embed_height_trim": 12,
+        "embed_height_trim": 0,
+        "extra_height_px": 28,
     },
 }
 
@@ -116,6 +117,10 @@ def resolve_auto_render_layer(
     layout_cfg[dims_cfg["embed_height_key"]] = int(
         round(base_embed_height * float(height_ratio))
     )
+    extra_height = int(custom.get("extra_height_px", 0) or 0)
+    if extra_height:
+        layout_cfg[dims_cfg["height_key"]] += extra_height
+        layout_cfg[dims_cfg["embed_height_key"]] += extra_height
     layout_cfg["x_offset_px"] = x_offset
     layout_cfg["y_offset_px"] = y_offset
 

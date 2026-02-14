@@ -153,3 +153,61 @@ This preserves current behavior while eliminating repeated failure patterns.
 
 ### Why this matters
 - Reduces subtle visual height drift between classic and interactive panels.
+
+---
+
+## 12) Full Armor Set Preview Refactor
+
+### Problem shape
+- Full-set columns needed tight alignment and consistent row spacing across five columns.
+- Streamlit widget spacing made fine-grained alignment unreliable.
+
+### Nuanced adjustment
+- Rendered full-set cards as a single HTML block per column to control spacing deterministically.
+- Added a fifth `Overall` column that sums highlighted stats per row.
+- Introduced a phantom image spacer for the `Overall` column to align rows with per-piece images.
+
+### Why this matters
+- Row alignment is stable regardless of Streamlit layout internals.
+- The `Overall` summary provides quick set-level comparisons without merging rows.
+
+---
+
+## 13) Histogram Tuning Controls Removal
+
+### Problem shape
+- Manual tuning controls were not providing value for the interactive view and added UI noise.
+
+### Nuanced adjustment
+- Removed manual tuning controls and their state persistence.
+- Locked histogram sizing to fixed defaults and adjusted interactive margins/height to avoid label clipping.
+
+### Why this matters
+- Fewer moving parts and fewer state edge cases.
+- Interactive axis labels remain fully visible without user tuning.
+
+---
+
+## 14) Reset Behavior Preservation
+
+### Problem shape
+- Resetting filters forced users back to single-piece mode.
+
+### Nuanced adjustment
+- Preserve `armor_mode` across reset so users stay in their current mode.
+
+### Why this matters
+- Reset no longer breaks flow when working in full-set or placeholder modes.
+
+---
+
+## 15) Default Piece Type Adjustments
+
+### Problem shape
+- Single-piece mode defaulted to `Helm` even when `Armor` was preferred.
+
+### Nuanced adjustment
+- Defaulted the piece type to `Armor` when available.
+
+### Why this matters
+- Aligns initial view with the most common item category.

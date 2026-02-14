@@ -15,15 +15,29 @@ This is the consolidated, actionable list of all major issues encountered from s
 - [x] Resolve root cause for `Histogram render error: enter` by avoiding unconditional context-manager usage on non-container targets.
 - [x] Final visual alignment polishing across all modes under browser resize conditions (unified embed height).
 - [x] Expand tuning ranges and trim interactive embed height to reduce subtle panel drift.
+- [x] Remove side-by-side option and make Interactive the default histogram view.
+- [x] Remove manual tuning controls and lock histogram sizing to fixed defaults.
+- [x] Increase interactive render height/margins to avoid axis-label clipping.
 
 ### 2) State and UX Consistency
 
 - [x] Consolidate armor-mode handling and explicit placeholder behavior for non-implemented modes.
 - [x] Persist and hydrate UI state via query params for repeatable sessions.
 - [x] Add reset path for filters/stats and tuning state.
+- [x] Preserve armor mode on reset (no forced return to single-piece mode).
 - [x] Add safer numeric formatting and consistent metric rendering.
 - [x] Preserve multi-stat ranking behavior for single-piece armor optimization.
 - [x] Sync optimizer weight inputs when highlighted stats change.
+- [x] Default single-piece armor selection to `Armor` when available.
+
+### 3) Full Armor Set Preview UX
+
+- [x] Implement five-column full-set preview: Helm/Armor/Gauntlets/Greaves/Overall.
+- [x] Add Overall summary column that totals highlighted stats per row.
+- [x] Render compact full-set cards via HTML for stable spacing and alignment.
+- [x] Add phantom image spacer in Overall column for row alignment.
+- [x] Center column headers and tighten card layout controls.
+- [x] Add configurable column gaps via spacer columns.
 
 ### 3) Optimization and Ranking
 
@@ -50,7 +64,7 @@ This is the consolidated, actionable list of all major issues encountered from s
 - [x] Add and run `optimizer_check.py`.
 - [x] Verify app readiness by both listener and HTTP checks.
 - [x] Document request catalog, timeline, nuanced review, sanity checks.
-- [ ] Keep session docs updated after next histogram-alignment pass.
+- [x] Keep session docs updated after next histogram-alignment pass.
 
 ---
 
@@ -98,7 +112,7 @@ This is the consolidated, actionable list of all major issues encountered from s
 
 ## D) Post-Commit Next Technical Focus
 
-1. Histogram visual parity pass (classic vs interactive vs side-by-side).
+1. Histogram visual parity pass (classic vs interactive).
 2. Browser-resize regression pass with debug border toggles.
 3. Keep all changes minimal and constrained to rendering/layout paths.
 

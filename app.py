@@ -8,7 +8,6 @@ import hashlib
 import subprocess
 import html
 import copy
-import time
 from pathlib import Path
 
 try:
@@ -35,16 +34,7 @@ from histogram_views import (
     build_interactive_histogram_figure,
     get_clicked_weight,
 )
-from histogram_layout import (
-    UNIFORM_HISTOGRAM_PARAMS,
-    place_one_by_two_grid,
-    place_graphical_object_in_grid_cell,
-    resolve_auto_render_layer,
-)
-from tuning_controls import (
-    render_dimension_tuning_toggle as tc_render_dimension_tuning_toggle,
-    render_transport_number_input as tc_render_transport_number_input,
-)
+from histogram_layout import resolve_auto_render_layer
 
 st.set_page_config(page_title="Elden Ring - Ranking UI", page_icon="🏆", layout="wide")
 
@@ -71,23 +61,30 @@ FULL_SET_LABELS = {
     "Armor": "Armor",
     "Gauntlets": "Gauntlets",
     "Greaves": "Greaves",
+    "Overall": "Overall",
 }
 
-FULL_SET_COLUMN_COUNT = 4
-FULL_SET_CARD_HEIGHT_PX = 280
+FULL_SET_COLUMN_COUNT = 5
+FULL_SET_PIECE_COLUMN_COUNT = 4
+FULL_SET_CARD_HEIGHT_PX = 380
+FULL_SET_IMAGE_SIZE_PX = 160
+FULL_SET_PHANTOM_IMAGE_HEIGHT_PX = 159
+FULL_SET_COLUMN_GAP_RATIO = 0.12
+FULL_SET_ROW_GAP_PX = 0
 
 HIST_VIEW_OPTIONS = [
     "Classic",
     "Interactive (click-to-set)",
-    "Side-by-side",
 ]
 
 
 def normalize_hist_view_mode(value: str) -> str:
     normalized = str(value or "").strip()
+    if normalized == "Side-by-side":
+        return "Interactive (click-to-set)"
     if normalized in HIST_VIEW_OPTIONS:
         return normalized
-    return "Side-by-side"
+    return "Interactive (click-to-set)"
 
 
 def build_hist_click_key(
@@ -295,53 +292,6 @@ def main():
         except Exception:
             pass
 
-    def render_dimension_tuning_toggle(
-        ui,
-        label: str,
-        enable_key: str,
-        prev_enable_key: str,
-        restore_values: dict,
-        help_text: str,
-    ) -> bool:
-        return tc_render_dimension_tuning_toggle(
-            st,
-            ui,
-            label=label,
-            enable_key=enable_key,
-            prev_enable_key=prev_enable_key,
-            restore_values=restore_values,
-            help_text=help_text,
-        )
-
-    def render_transport_number_input(
-        ui,
-        control_id: str,
-        label: str,
-        input_key: str,
-        canonical_key: str,
-        default_key: str,
-        min_value: float,
-        max_value: float,
-        help_text: str,
-        step: float = 0.000001,
-        display_format: str = "%.10f",
-        base_step: float = 0.000005,
-    ):
-        return tc_render_transport_number_input(
-            st,
-            ui,
-            control_id=control_id,
-            label=label,
-            input_key=input_key,
-            canonical_key=canonical_key,
-            default_key=default_key,
-            min_value=min_value,
-            max_value=max_value,
-            help_text=help_text,
-            step=step,
-            display_format=display_format,
-            base_step=base_step,
-        )
 
     def normalize_armor_mode(value: str) -> str:
         raw = str(value or "").strip().lower()
@@ -361,14 +311,14 @@ def main():
 
     def on_hist_view_mode_change():
         st.session_state["hist_view_mode"] = normalize_hist_view_mode(
-            st.session_state.get("hist_view_mode_widget", "Side-by-side")
+            st.session_state.get("hist_view_mode_widget", "Interactive (click-to-set)")
         )
 
     def reset_ui_state():
+        current_armor_mode = st.session_state.get("armor_mode")
         reset_keys = [
             "show_all_datasets",
             "selected_dataset_label",
-            "armor_mode",
             "armor_piece_type",
             "highlighted_stats",
             "lock_stat_order",
@@ -381,37 +331,6 @@ def main():
             "hist_view_mode",
             "hist_view_mode_widget",
             "max_weight_limit",
-            "enable_hist_tuning_classic",
-            "enable_hist_tuning_interactive",
-            "classic_width_ratio",
-            "classic_width_ratio_input",
-            "hist_default_classic_width_ratio",
-            "interactive_width_ratio",
-            "interactive_width_ratio_input",
-            "hist_default_width_ratio",
-            "hist_default_interactive_width_ratio",
-            "classic_x_offset_px",
-            "classic_x_offset_px_input",
-            "hist_default_classic_x_offset_px",
-            "classic_y_offset_px",
-            "classic_y_offset_px_input",
-            "hist_default_classic_y_offset_px",
-            "interactive_x_offset_px",
-            "interactive_x_offset_px_input",
-            "hist_default_interactive_x_offset_px",
-            "interactive_y_offset_px",
-            "interactive_y_offset_px_input",
-            "hist_default_interactive_y_offset_px",
-            "interactive_height_ratio",
-            "interactive_height_ratio_input",
-            "hist_default_height_ratio",
-            "hist_default_interactive_height_ratio",
-            "classic_height_ratio",
-            "classic_height_ratio_input",
-            "hist_default_classic_height_ratio",
-            "show_plot_debug_border",
-            "_prev_enable_hist_tuning_classic",
-            "_prev_enable_hist_tuning_interactive",
             "_qp_hydrated",
             "_optimizer_cache",
             "_opt_weight_stats_signature",
@@ -425,6 +344,9 @@ def main():
         for key in dynamic_weight_keys:
             del st.session_state[key]
         qp_clear()
+        if current_armor_mode:
+            st.session_state["armor_mode"] = current_armor_mode
+            qp_update({"armor_mode": current_armor_mode})
 
     def sync_optimizer_weight_state(stats: list[str]):
         signature = "|".join([str(s) for s in stats])
@@ -456,104 +378,9 @@ def main():
         )
         st.session_state["use_max_weight"] = qp_get_bool("use_max_weight", False)
         st.session_state["hist_view_mode"] = normalize_hist_view_mode(
-            qp_get("hist_view", "Side-by-side")
+            qp_get("hist_view", "Interactive (click-to-set)")
         )
         st.session_state["hist_view_mode_widget"] = st.session_state["hist_view_mode"]
-        st.session_state["enable_hist_tuning_interactive"] = qp_get_bool(
-            "hist_tune_interactive", qp_get_bool("hist_width_tune", False)
-        )
-        st.session_state["enable_hist_tuning_classic"] = qp_get_bool(
-            "hist_tune_classic", False
-        )
-        try:
-            ratio = float(qp_get("hist_width_ratio", "1.0"))
-        except Exception:
-            ratio = 1.0
-        st.session_state["interactive_width_ratio"] = min(4.0, max(0.3, ratio))
-        try:
-            classic_width_ratio = float(qp_get("hist_classic_width_ratio", "1.0"))
-        except Exception:
-            classic_width_ratio = 1.0
-        st.session_state["classic_width_ratio"] = min(4.0, max(0.3, classic_width_ratio))
-        try:
-            default_ratio = float(qp_get("hist_width_default_ratio", "1.0"))
-        except Exception:
-            default_ratio = 1.0
-        st.session_state["hist_default_width_ratio"] = min(4.0, max(0.3, default_ratio))
-        st.session_state["hist_default_interactive_width_ratio"] = float(
-            st.session_state["hist_default_width_ratio"]
-        )
-        try:
-            default_classic_width_ratio = float(
-                qp_get("hist_classic_width_default_ratio", "1.0")
-            )
-        except Exception:
-            default_classic_width_ratio = 1.0
-        st.session_state["hist_default_classic_width_ratio"] = min(
-            4.0, max(0.3, default_classic_width_ratio)
-        )
-        try:
-            height_ratio = float(qp_get("hist_height_ratio", "1.0"))
-        except Exception:
-            height_ratio = 1.0
-        st.session_state["interactive_height_ratio"] = min(3.0, max(0.4, height_ratio))
-        try:
-            default_height_ratio = float(qp_get("hist_height_default_ratio", "1.0"))
-        except Exception:
-            default_height_ratio = 1.0
-        st.session_state["hist_default_height_ratio"] = min(3.0, max(0.4, default_height_ratio))
-        st.session_state["hist_default_interactive_height_ratio"] = float(
-            st.session_state["hist_default_height_ratio"]
-        )
-        try:
-            classic_height_ratio = float(qp_get("hist_classic_height_ratio", "1.0"))
-        except Exception:
-            classic_height_ratio = 1.0
-        st.session_state["classic_height_ratio"] = min(3.0, max(0.4, classic_height_ratio))
-        try:
-            default_classic_height_ratio = float(
-                qp_get("hist_classic_height_default_ratio", "1.0")
-            )
-        except Exception:
-            default_classic_height_ratio = 1.0
-        st.session_state["hist_default_classic_height_ratio"] = min(
-            3.0, max(0.4, default_classic_height_ratio)
-        )
-        try:
-            classic_x_offset = float(qp_get("hist_classic_x_offset", "0"))
-        except Exception:
-            classic_x_offset = 0.0
-        st.session_state["classic_x_offset_px"] = min(160.0, max(-160.0, classic_x_offset))
-        try:
-            classic_y_offset = float(qp_get("hist_classic_y_offset", "0"))
-        except Exception:
-            classic_y_offset = 0.0
-        st.session_state["classic_y_offset_px"] = min(120.0, max(-120.0, classic_y_offset))
-        try:
-            interactive_x_offset = float(qp_get("hist_interactive_x_offset", "0"))
-        except Exception:
-            interactive_x_offset = 0.0
-        st.session_state["interactive_x_offset_px"] = min(160.0, max(-160.0, interactive_x_offset))
-        try:
-            interactive_y_offset = float(qp_get("hist_interactive_y_offset", "0"))
-        except Exception:
-            interactive_y_offset = 0.0
-        st.session_state["interactive_y_offset_px"] = min(120.0, max(-120.0, interactive_y_offset))
-        st.session_state["hist_default_classic_x_offset_px"] = float(
-            st.session_state.get("classic_x_offset_px", 0.0)
-        )
-        st.session_state["hist_default_classic_y_offset_px"] = float(
-            st.session_state.get("classic_y_offset_px", 0.0)
-        )
-        st.session_state["hist_default_interactive_x_offset_px"] = float(
-            st.session_state.get("interactive_x_offset_px", 0.0)
-        )
-        st.session_state["hist_default_interactive_y_offset_px"] = float(
-            st.session_state.get("interactive_y_offset_px", 0.0)
-        )
-        st.session_state["show_plot_debug_border"] = qp_get_bool("hist_debug_border", False)
-        st.session_state["_prev_enable_hist_tuning_classic"] = False
-        st.session_state["_prev_enable_hist_tuning_interactive"] = False
         try:
             st.session_state["max_weight_limit"] = float(qp_get("max_weight", "0.0"))
         except Exception:
@@ -764,8 +591,11 @@ def main():
             type_label_map, armor_piece_labels = resolve_armor_piece_types(df)
 
             if armor_piece_labels:
+                default_piece_label = (
+                    "Armor" if "Armor" in armor_piece_labels else armor_piece_labels[0]
+                )
                 ensure_state_in_options(
-                    "armor_piece_type", armor_piece_labels, armor_piece_labels[0]
+                    "armor_piece_type", armor_piece_labels, default_piece_label
                 )
             selected_label = st.sidebar.selectbox(
                 "Piece type:", options=armor_piece_labels, key="armor_piece_type"
@@ -828,17 +658,19 @@ def main():
     optimizer_weight_signature = None
     use_max_weight = False
     max_weight_limit = None
-    ensure_state_in_options("hist_view_mode", HIST_VIEW_OPTIONS, "Side-by-side")
+    ensure_state_in_options("hist_view_mode", HIST_VIEW_OPTIONS, "Interactive (click-to-set)")
     st.session_state["hist_view_mode"] = normalize_hist_view_mode(
-        st.session_state.get("hist_view_mode", "Side-by-side")
+        st.session_state.get("hist_view_mode", "Interactive (click-to-set)")
     )
     if "hist_view_mode_widget" not in st.session_state:
         st.session_state["hist_view_mode_widget"] = st.session_state["hist_view_mode"]
     else:
         st.session_state["hist_view_mode_widget"] = normalize_hist_view_mode(
-            st.session_state.get("hist_view_mode_widget", "Side-by-side")
+            st.session_state.get("hist_view_mode_widget", "Interactive (click-to-set)")
         )
-    hist_view_mode = str(st.session_state.get("hist_view_mode", "Side-by-side"))
+    hist_view_mode = str(
+        st.session_state.get("hist_view_mode", "Interactive (click-to-set)")
+    )
 
     st.sidebar.markdown("---")
     st.sidebar.subheader("Ranking Controls")
@@ -889,140 +721,6 @@ def main():
         key="show_raw_dev",
     )
 
-    enable_hist_tuning_classic = False
-    enable_hist_tuning_interactive = False
-    interactive_width_ratio = 1.0
-    classic_width_ratio = 1.0
-    default_hist_width_ratio = float(st.session_state.get("hist_default_width_ratio", 1.0))
-    default_classic_width_ratio = float(
-        st.session_state.get("hist_default_classic_width_ratio", 1.0)
-    )
-    interactive_height_ratio = 1.0
-    default_hist_height_ratio = float(st.session_state.get("hist_default_height_ratio", 1.0))
-    classic_height_ratio = 1.0
-    default_classic_height_ratio = float(
-        st.session_state.get("hist_default_classic_height_ratio", 1.0)
-    )
-    classic_x_offset_px = 0.0
-    classic_y_offset_px = 0.0
-    interactive_x_offset_px = 0.0
-    interactive_y_offset_px = 0.0
-    show_plot_debug_border = bool(st.session_state.get("show_plot_debug_border", False))
-
-    st.session_state.setdefault("classic_width_ratio", 1.0)
-    st.session_state.setdefault("hist_default_classic_width_ratio", 1.0)
-    st.session_state.setdefault("hist_default_interactive_width_ratio", float(st.session_state.get("hist_default_width_ratio", 1.0)))
-    st.session_state.setdefault("hist_default_interactive_height_ratio", float(st.session_state.get("hist_default_height_ratio", 1.0)))
-    st.session_state.setdefault("classic_x_offset_px", 0.0)
-    st.session_state.setdefault("classic_y_offset_px", 0.0)
-    st.session_state.setdefault("interactive_x_offset_px", 0.0)
-    st.session_state.setdefault("interactive_y_offset_px", 0.0)
-    st.session_state.setdefault("hist_default_classic_x_offset_px", 0.0)
-    st.session_state.setdefault("hist_default_classic_y_offset_px", 0.0)
-    st.session_state.setdefault("hist_default_interactive_x_offset_px", 0.0)
-    st.session_state.setdefault("hist_default_interactive_y_offset_px", 0.0)
-
-    def render_histogram_tuning_controls(ui, view_kind: str):
-        is_classic = view_kind == "classic"
-        prefix = "classic" if is_classic else "interactive"
-        ratio_limits = UNIFORM_HISTOGRAM_PARAMS.get("ratio_limits", {})
-        offset_limits = UNIFORM_HISTOGRAM_PARAMS.get("offset_limits", {})
-        enable_key = f"enable_hist_tuning_{prefix}"
-        prev_enable_key = f"_prev_enable_hist_tuning_{prefix}"
-        defaults_map = {
-            f"{prefix}_width_ratio": f"hist_default_{prefix}_width_ratio",
-            f"{prefix}_height_ratio": f"hist_default_{prefix}_height_ratio",
-            f"{prefix}_x_offset_px": f"hist_default_{prefix}_x_offset_px",
-            f"{prefix}_y_offset_px": f"hist_default_{prefix}_y_offset_px",
-        }
-
-        enabled_local = render_dimension_tuning_toggle(
-            ui,
-            "Enable manual dimensions tuning",
-            enable_key=enable_key,
-            prev_enable_key=prev_enable_key,
-            restore_values=defaults_map,
-            help_text="Tune width, height, and offsets for this histogram panel.",
-        )
-
-        auto_flags = []
-        if enabled_local:
-            ui.caption("Size")
-            width_value, width_auto = render_transport_number_input(
-                ui,
-                control_id=f"{prefix}_width",
-                label="Width ratio",
-                input_key=f"{prefix}_width_ratio_input",
-                canonical_key=f"{prefix}_width_ratio",
-                default_key=f"hist_default_{prefix}_width_ratio",
-                min_value=float(ratio_limits.get("width_min", 0.05)),
-                max_value=float(ratio_limits.get("width_max", 12.0)),
-                help_text="Width multiplier relative to the generated base width.",
-            )
-            height_value, height_auto = render_transport_number_input(
-                ui,
-                control_id=f"{prefix}_height",
-                label="Height ratio",
-                input_key=f"{prefix}_height_ratio_input",
-                canonical_key=f"{prefix}_height_ratio",
-                default_key=f"hist_default_{prefix}_height_ratio",
-                min_value=float(ratio_limits.get("height_min", 0.1)),
-                max_value=float(ratio_limits.get("height_max", 12.0)),
-                help_text="Height multiplier relative to the generated base height.",
-            )
-            ui.caption("Offset")
-            x_value, x_auto = render_transport_number_input(
-                ui,
-                control_id=f"{prefix}_xoffset",
-                label="X offset (px)",
-                input_key=f"{prefix}_x_offset_px_input",
-                canonical_key=f"{prefix}_x_offset_px",
-                default_key=f"hist_default_{prefix}_x_offset_px",
-                min_value=float(offset_limits.get("x_min", -600)),
-                max_value=float(offset_limits.get("x_max", 600)),
-                help_text="Horizontal offset in pixels.",
-                step=1.0,
-                display_format="%.0f",
-                base_step=0.5,
-            )
-            y_value, y_auto = render_transport_number_input(
-                ui,
-                control_id=f"{prefix}_yoffset",
-                label="Y offset (px)",
-                input_key=f"{prefix}_y_offset_px_input",
-                canonical_key=f"{prefix}_y_offset_px",
-                default_key=f"hist_default_{prefix}_y_offset_px",
-                min_value=float(offset_limits.get("y_min", -400)),
-                max_value=float(offset_limits.get("y_max", 400)),
-                help_text="Vertical offset in pixels.",
-                step=1.0,
-                display_format="%.0f",
-                base_step=0.5,
-            )
-            auto_flags.extend([width_auto, height_auto, x_auto, y_auto])
-
-            if ui.button(
-                "Lock current values as defaults",
-                key=f"lock_hist_{prefix}_defaults",
-            ):
-                st.session_state[f"hist_default_{prefix}_width_ratio"] = float(width_value)
-                st.session_state[f"hist_default_{prefix}_height_ratio"] = float(height_value)
-                st.session_state[f"hist_default_{prefix}_x_offset_px"] = float(x_value)
-                st.session_state[f"hist_default_{prefix}_y_offset_px"] = float(y_value)
-                if prefix == "interactive":
-                    st.session_state["hist_default_width_ratio"] = float(width_value)
-                    st.session_state["hist_default_height_ratio"] = float(height_value)
-
-        if any(auto_flags):
-            time.sleep(0.05)
-            st.rerun()
-
-        ui.caption(
-            f"Defaults — W: {float(st.session_state.get(f'hist_default_{prefix}_width_ratio', 1.0)):.2f}, "
-            f"H: {float(st.session_state.get(f'hist_default_{prefix}_height_ratio', 1.0)):.2f}, "
-            f"X: {float(st.session_state.get(f'hist_default_{prefix}_x_offset_px', 0.0)):.0f}px, "
-            f"Y: {float(st.session_state.get(f'hist_default_{prefix}_y_offset_px', 0.0)):.0f}px"
-        )
 
     if dataset == "armors" and (armor_single_piece or armor_full_set):
         st.sidebar.markdown("---")
@@ -1071,16 +769,6 @@ def main():
                     min_value=0.0,
                     step=0.1,
                     key="max_weight_limit",
-                )
-                st.sidebar.markdown("---")
-                st.sidebar.subheader("Histogram tuning (temporary): dimensions")
-                st.sidebar.caption(
-                    "Manual tuning controls are attached directly below each histogram panel."
-                )
-                show_plot_debug_border = st.sidebar.checkbox(
-                    "Show plot debug border (temporary)",
-                    key="show_plot_debug_border",
-                    help="Draws a thin white rectangle around each rendered histogram block for visual size matching.",
                 )
 
     st.sidebar.button(
@@ -1151,57 +839,17 @@ def main():
         if weight_series_all is not None and not weight_series_all.empty:
             histogram_config = HISTOGRAM_CONFIG
             histogram_runtime_config = copy.deepcopy(histogram_config)
-            histogram_runtime_config["debug"]["show_border"] = bool(show_plot_debug_border)
-            enable_hist_tuning_classic = bool(st.session_state.get("enable_hist_tuning_classic", False))
-            enable_hist_tuning_interactive = bool(
-                st.session_state.get("enable_hist_tuning_interactive", False)
-            )
-            interactive_width_ratio = float(
-                st.session_state.get("interactive_width_ratio", default_hist_width_ratio)
-            )
-            interactive_height_ratio = float(
-                st.session_state.get("interactive_height_ratio", default_hist_height_ratio)
-            )
-            classic_width_ratio = float(
-                st.session_state.get("classic_width_ratio", default_classic_width_ratio)
-            )
-            classic_height_ratio = float(
-                st.session_state.get("classic_height_ratio", default_classic_height_ratio)
-            )
-            interactive_x_offset_px = float(st.session_state.get("interactive_x_offset_px", 0.0))
-            interactive_y_offset_px = float(st.session_state.get("interactive_y_offset_px", 0.0))
-            classic_x_offset_px = float(st.session_state.get("classic_x_offset_px", 0.0))
-            classic_y_offset_px = float(st.session_state.get("classic_y_offset_px", 0.0))
-            classic_width_ratio_effective = (
-                float(classic_width_ratio)
-                if enable_hist_tuning_classic
-                else float(st.session_state.get("hist_default_classic_width_ratio", 1.0))
-            )
-            classic_height_ratio_effective = (
-                float(classic_height_ratio)
-                if enable_hist_tuning_classic
-                else float(default_classic_height_ratio)
-            )
-            interactive_width_ratio_effective = (
-                float(interactive_width_ratio)
-                if enable_hist_tuning_interactive
-                else float(
-                    st.session_state.get(
-                        "hist_default_interactive_width_ratio", default_hist_width_ratio
-                    )
-                )
-            )
-            interactive_height_ratio_effective = (
-                float(interactive_height_ratio)
-                if enable_hist_tuning_interactive
-                else float(
-                    st.session_state.get(
-                        "hist_default_interactive_height_ratio", default_hist_height_ratio
-                    )
-                )
-            )
+            histogram_runtime_config["debug"]["show_border"] = False
+            classic_width_ratio_effective = 1.0
+            classic_height_ratio_effective = 1.0
+            interactive_width_ratio_effective = 1.0
+            interactive_height_ratio_effective = 1.0
+            classic_x_offset_px = 0.0
+            classic_y_offset_px = 0.0
+            interactive_x_offset_px = 0.0
+            interactive_y_offset_px = 0.0
 
-            layout_mode = "grid" if hist_view_mode == "Side-by-side" else "single"
+            layout_mode = "single"
 
             classic_hist_config, _classic_render_layer = resolve_auto_render_layer(
                 base_config=histogram_runtime_config,
@@ -1312,7 +960,6 @@ def main():
 
                 if hist_view_mode == "Classic":
                     render_classic_histogram(st, weight_series_all, float(max_weight_limit), classic_hist_config)
-                    render_histogram_tuning_controls(st, "classic")
                 elif hist_view_mode == "Interactive (click-to-set)":
                     if interactive_available:
                         interactive_enabled = render_interactive_plot(
@@ -1327,69 +974,9 @@ def main():
                         )
                         if interactive_enabled:
                             st.caption(histogram_config["labels"]["interactive_tip"])
-                        render_histogram_tuning_controls(st, "interactive")
                     else:
                         st.info(histogram_config["labels"]["unavailable"])
                         render_classic_histogram(st, weight_series_all, float(max_weight_limit), classic_hist_config)
-                else:
-                    left_col, right_col = place_one_by_two_grid(st)
-
-                    place_graphical_object_in_grid_cell(
-                        left_col,
-                        label=histogram_config["labels"]["classic_label"],
-                        render_fn=lambda target_ui: render_classic_histogram(
-                            target_ui,
-                            weight_series_all,
-                            float(max_weight_limit),
-                            classic_hist_config,
-                        ),
-                        controls_fn=lambda target_ui: render_histogram_tuning_controls(
-                            target_ui,
-                            "classic",
-                        ),
-                    )
-
-                    if interactive_available:
-                        interactive_side_enabled = {"value": True}
-
-                        def _render_side_interactive(target_ui):
-                            interactive_side_enabled["value"] = render_interactive_plot(
-                                target_ui,
-                                click_key=build_hist_click_key(
-                                    "side",
-                                    dataset,
-                                    armor_piece_type,
-                                    hist_view_mode,
-                                    max_weight_limit,
-                                ),
-                            )
-
-                        place_graphical_object_in_grid_cell(
-                            right_col,
-                            label=histogram_config["labels"]["interactive_label"],
-                            render_fn=_render_side_interactive,
-                            controls_fn=lambda target_ui: render_histogram_tuning_controls(
-                                target_ui,
-                                "interactive",
-                            ),
-                        )
-                    else:
-                        place_graphical_object_in_grid_cell(
-                            right_col,
-                            label=histogram_config["labels"]["interactive_label"],
-                            render_fn=lambda target_ui: (
-                                target_ui.info(histogram_config["labels"]["unavailable"]),
-                                render_classic_histogram(
-                                    target_ui,
-                                    weight_series_all,
-                                    float(max_weight_limit),
-                                    classic_hist_config,
-                                ),
-                            )[-1],
-                        )
-                    if interactive_available:
-                        if interactive_side_enabled["value"]:
-                            st.caption(histogram_config["labels"]["interactive_side_tip"])
 
                 if min_weight_available is not None and max_weight_available is not None:
                     st.caption(
@@ -1419,21 +1006,6 @@ def main():
             "use_max_weight": str(use_max_weight).lower(),
             "hist_view": hist_view_mode,
             "max_weight": str(max_weight_limit) if max_weight_limit is not None else "",
-            "hist_tune_interactive": str(bool(st.session_state.get("enable_hist_tuning_interactive", False))).lower(),
-            "hist_tune_classic": str(bool(st.session_state.get("enable_hist_tuning_classic", False))).lower(),
-            "hist_width_ratio": str(float(st.session_state.get("interactive_width_ratio", interactive_width_ratio))),
-            "hist_width_default_ratio": str(float(st.session_state.get("hist_default_interactive_width_ratio", default_hist_width_ratio))),
-            "hist_height_ratio": str(float(st.session_state.get("interactive_height_ratio", interactive_height_ratio))),
-            "hist_height_default_ratio": str(float(st.session_state.get("hist_default_interactive_height_ratio", default_hist_height_ratio))),
-            "hist_interactive_x_offset": str(float(st.session_state.get("interactive_x_offset_px", 0.0))),
-            "hist_interactive_y_offset": str(float(st.session_state.get("interactive_y_offset_px", 0.0))),
-            "hist_classic_width_ratio": str(float(st.session_state.get("classic_width_ratio", classic_width_ratio))),
-            "hist_classic_width_default_ratio": str(float(st.session_state.get("hist_default_classic_width_ratio", 1.0))),
-            "hist_classic_height_ratio": str(float(st.session_state.get("classic_height_ratio", classic_height_ratio))),
-            "hist_classic_height_default_ratio": str(default_classic_height_ratio),
-            "hist_classic_x_offset": str(float(st.session_state.get("classic_x_offset_px", 0.0))),
-            "hist_classic_y_offset": str(float(st.session_state.get("classic_y_offset_px", 0.0))),
-            "hist_debug_border": str(show_plot_debug_border).lower(),
         }
     )
 
@@ -1559,7 +1131,66 @@ def main():
         display_rows: pd.DataFrame,
         compact_mode: bool = False,
         full_set_mode: bool = False,
+        image_mode: str = "auto",
     ):
+        if full_set_mode and compact_mode:
+            cards_html = []
+            for _, row in display_rows.iterrows():
+                bar_color = None
+                if primary_highlight and primary_highlight in df.columns:
+                    col_vals = df[primary_highlight].astype(float)
+                    mn, mx = col_vals.min(), col_vals.max()
+                    val = float(row.get(primary_highlight, 0))
+                    norm = (val - mn) / (mx - mn) if mx > mn else 0
+                    if norm > 0.66:
+                        bar_color = "#4CAF50"
+                    elif norm > 0.33:
+                        bar_color = "#FFC107"
+                    else:
+                        bar_color = "#F44336"
+
+                bar_html = (
+                    f"<div class='full-set-bar' style='background:{bar_color};'></div>"
+                    if bar_color
+                    else ""
+                )
+
+                if image_mode == "phantom":
+                    image_html = "<div class='full-set-img-phantom'></div>"
+                elif "image" in df.columns and pd.notna(row.get("image")):
+                    image_url = html.escape(str(row.get("image", "")))
+                    image_html = f"<img class='full-set-img' src='{image_url}' alt='' />"
+                else:
+                    image_html = "<div class='full-set-img-placeholder'>[img]</div>"
+
+                title_text = html.escape(str(row.get("name", "")))
+                metrics_html = ""
+                for hs in highlighted_stats:
+                    if hs in row:
+                        display_h = format_metric_value(row.get(hs))
+                        metrics_html += (
+                            "<div class='full-set-metric'>"
+                            "<span class='full-set-metric-label'>"
+                            "<span class='full-set-star'>&#9733;</span> "
+                            f"{html.escape(str(hs))}</span>"
+                            f"<span class='full-set-metric-value'>{html.escape(str(display_h))}</span>"
+                            "</div>"
+                        )
+
+                cards_html.append(
+                    "<div class='full-set-card'>"
+                    + bar_html
+                    + image_html
+                    + f"<div class='full-set-title'>{title_text}</div>"
+                    + metrics_html
+                    + "</div>"
+                )
+
+            st.markdown(
+                "<div class='full-set-card-list'>" + "".join(cards_html) + "</div>",
+                unsafe_allow_html=True,
+            )
+            return
         for _, row in display_rows.iterrows():
             color_style = ""
             bar_color = None
@@ -1686,7 +1317,8 @@ def main():
                                         display_val = format_metric_value(val)
                                         p.metric(label, display_val)
             st.markdown("</div>", unsafe_allow_html=True)
-            st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
+            gap_px = FULL_SET_ROW_GAP_PX if full_set_mode and compact_mode else 8
+            st.markdown(f"<div style='height:{gap_px}px'></div>", unsafe_allow_html=True)
 
     def render_ranked_cards(
         source_df: pd.DataFrame,
@@ -1784,22 +1416,112 @@ def main():
         st.markdown(
             f"""
             <style>
+            .full-set-scope [data-testid="stVerticalBlock"] {{
+                gap: 0 !important;
+            }}
+            .full-set-scope [data-testid="stVerticalBlock"] > div {{
+                margin-bottom: 0 !important;
+            }}
+            .full-set-scope .element-container {{
+                margin-bottom: 0 !important;
+            }}
+            .full-set-scope [data-testid="column"] > div {{
+                gap: 0 !important;
+            }}
+            .full-set-col > div {{
+                margin-bottom: 0 !important;
+            }}
+            .full-set-col .element-container {{
+                margin: 0 !important;
+                padding: 0 !important;
+            }}
+            .full-set-col .stMarkdown {{
+                margin: 0 !important;
+            }}
+            .full-set-col .stMarkdown p {{
+                margin: 0 !important;
+            }}
+            .full-set-header {{
+                font-size: 1.4rem;
+                font-weight: 600;
+                margin: 0 0 6px 0;
+                text-align: center;
+            }}
+            .full-set-card-list {{
+                display: flex;
+                flex-direction: column;
+                gap: 0;
+            }}
             .full-set-card {{
                 min-height: {FULL_SET_CARD_HEIGHT_PX}px;
                 height: {FULL_SET_CARD_HEIGHT_PX}px;
                 overflow: hidden;
-                border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+                border-bottom: 0;
+                margin: 0 !important;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                gap: 6px;
+            }}
+            .full-set-card + .full-set-card {{
+                margin-top: 0 !important;
             }}
             .full-set-title {{
                 display: -webkit-box;
                 -webkit-line-clamp: 2;
                 -webkit-box-orient: vertical;
                 overflow: hidden;
+                text-align: center;
+                color: rgba(255, 255, 255, 0.95);
+                font-size: 0.95rem;
+                line-height: 1.15;
+                min-height: 2.3em;
             }}
             .full-set-bar {{
                 height: 6px;
                 border-radius: 6px;
                 margin: 0 0 8px 0;
+            }}
+            .full-set-img {{
+                width: {FULL_SET_IMAGE_SIZE_PX}px;
+                height: auto;
+                display: block;
+            }}
+            .full-set-img-placeholder {{
+                width: {FULL_SET_IMAGE_SIZE_PX}px;
+                height: {FULL_SET_IMAGE_SIZE_PX}px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border-radius: 8px;
+                background: rgba(255, 255, 255, 0.06);
+                color: rgba(255, 255, 255, 0.7);
+                font-size: 0.85rem;
+            }}
+            .full-set-img-phantom {{
+                width: {FULL_SET_IMAGE_SIZE_PX}px;
+                height: {FULL_SET_PHANTOM_IMAGE_HEIGHT_PX}px;
+                display: block;
+                border-radius: 8px;
+                background: transparent;
+            }}
+            .full-set-metric {{
+                display: flex;
+                justify-content: space-between;
+                font-size: 0.85rem;
+                margin: 2px 0 0 0;
+                width: 100%;
+            }}
+            .full-set-metric-label {{
+                color: rgba(255, 255, 255, 0.75);
+            }}
+            .full-set-metric-value {{
+                color: rgba(255, 255, 255, 0.95);
+                font-variant-numeric: tabular-nums;
+            }}
+            .full-set-star {{
+                color: #FFC107;
             }}
             .full-set-legend {{
                 display: flex;
@@ -1844,7 +1566,11 @@ def main():
                 )
 
             ranked_columns = []
-            for label in armor_piece_labels[:FULL_SET_COLUMN_COUNT]:
+            piece_column_count = min(
+                len(armor_piece_labels),
+                max(1, FULL_SET_PIECE_COLUMN_COUNT),
+            )
+            for label in armor_piece_labels[:piece_column_count]:
                 raw_type = type_label_map.get(label, label)
                 piece_df = display_df
                 if "type" in piece_df.columns:
@@ -1852,18 +1578,57 @@ def main():
                 ranked_df, _ = rank_display_df(piece_df, raw_type)
                 ranked_columns.append((label, raw_type, ranked_df.head(per_page)))
 
-            export_row = st.columns(FULL_SET_COLUMN_COUNT)
+            def build_summary_rows(columns, max_rows: int) -> pd.DataFrame:
+                summary_rows = []
+                for row_index in range(max_rows):
+                    summary = {"name": ""}
+                    for stat in highlighted_stats:
+                        total = 0.0
+                        has_value = False
+                        for _label, _raw_type, col_df in columns:
+                            if row_index >= len(col_df):
+                                continue
+                            val = pd.to_numeric(col_df.iloc[row_index].get(stat), errors="coerce")
+                            if pd.notna(val):
+                                total += float(val)
+                                has_value = True
+                        if has_value:
+                            summary[stat] = total
+                    summary_rows.append(summary)
+                return pd.DataFrame(summary_rows)
+
+            summary_rows = build_summary_rows(ranked_columns, per_page)
+            ranked_columns.append(("Overall", "overall", summary_rows))
+
+            full_set_layout = []
+            for i in range(FULL_SET_COLUMN_COUNT):
+                full_set_layout.append(1)
+                if i < FULL_SET_COLUMN_COUNT - 1:
+                    full_set_layout.append(FULL_SET_COLUMN_GAP_RATIO)
+
+            export_row = st.columns(full_set_layout)
             for idx, (label, _raw_type, display_rows) in enumerate(ranked_columns):
                 export_label = FULL_SET_LABELS.get(label, label)
-                with export_row[idx % FULL_SET_COLUMN_COUNT]:
+                with export_row[idx * 2]:
                     render_download_button_for_rows(display_rows, export_label, export_label)
 
-            columns = st.columns(FULL_SET_COLUMN_COUNT)
+            columns = st.columns(full_set_layout)
             for idx, (label, raw_type, display_rows) in enumerate(ranked_columns):
                 header_label = FULL_SET_LABELS.get(label, label)
-                with columns[idx % FULL_SET_COLUMN_COUNT]:
-                    st.subheader(header_label)
-                    render_card_rows(display_rows, compact_mode=True, full_set_mode=True)
+                with columns[idx * 2]:
+                    st.markdown("<div class='full-set-col'>", unsafe_allow_html=True)
+                    st.markdown(
+                        f"<div class='full-set-header'>{html.escape(str(header_label))}</div>",
+                        unsafe_allow_html=True,
+                    )
+                    render_card_rows(
+                        display_rows,
+                        compact_mode=True,
+                        full_set_mode=True,
+                        image_mode="phantom" if label == "Overall" else "auto",
+                    )
+                    st.markdown("</div>", unsafe_allow_html=True)
+            st.markdown("</div>", unsafe_allow_html=True)
         return
 
     if dataset == "armors" and armor_single_piece:

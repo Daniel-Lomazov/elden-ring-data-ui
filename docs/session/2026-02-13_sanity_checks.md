@@ -13,6 +13,8 @@ This file summarizes the current sanity-check coverage and the debug/alignment p
   - HTTP readiness probe
   - machine-readable startup flags (`READY`, `LISTENER_PID`).
 - Manual UI check: verify weighted-sum weights change ranking order when adjusted.
+- Manual UI check: verify default histogram view is Interactive and axis labels are fully visible.
+- Manual UI check: verify full armor set preview shows five columns with aligned rows.
 
 ## Operational Commands (Canonical)
 
@@ -26,16 +28,8 @@ This file summarizes the current sanity-check coverage and the debug/alignment p
 ## Histogram Alignment Debug Posture
 
 Current mechanism:
-- Temporary debug border toggle in app state and histogram config path.
-
-Recommended usage pattern:
-1. Enable debug border while tuning width/height/offset values.
-2. Validate in all three modes:
-   - Classic
-   - Interactive
-   - Side-by-side
-3. Validate again after mode changes and reruns.
-4. Disable border for normal operation.
+- Manual tuning controls are removed; histogram sizing is fixed in code.
+- Interactive render height includes extra padding and larger bottom margin to avoid clipped axes.
 
 ## What is intentionally not added (minimal-change policy)
 

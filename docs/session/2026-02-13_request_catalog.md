@@ -64,6 +64,34 @@ This file normalizes and classifies the user requests made across this session, 
    - Class: Bug Fix + Architecture + UX  
    - Expected: aligned histogram panels, configurable weighted-sum UI, and clean state transitions.
 
+14. **Implement full armor set preview (four columns) and refine layout**  
+   - Class: UX / Architecture  
+   - Expected: column-aligned compact cards, consistent row heights, and simplified stats.
+
+15. **Add Overall summary column for full set**  
+   - Class: UX / Data aggregation  
+   - Expected: fifth column summing highlighted stats with aligned rows.
+
+16. **Add phantom image spacer and tune spacing**  
+   - Class: UX  
+   - Expected: row alignment across columns with a controllable phantom image box.
+
+17. **Remove histogram side-by-side mode; make Interactive the default**  
+   - Class: UX / State management  
+   - Expected: only Classic and Interactive modes, defaulting to Interactive.
+
+18. **Remove manual histogram tuning controls**  
+   - Class: UX simplification  
+   - Expected: fixed histogram sizing with fewer UI controls.
+
+19. **Fix interactive histogram clipping**  
+   - Class: Bug Fix  
+   - Expected: axis labels fully visible via height/margin adjustments.
+
+20. **Preserve armor mode on reset and default piece type to Armor**  
+   - Class: UX / State persistence  
+   - Expected: reset stays in current mode; single-piece defaults to Armor.
+
 ## Simplified User Intent Summary
 
 - Build a stable, production-like local workflow for a Streamlit app.
