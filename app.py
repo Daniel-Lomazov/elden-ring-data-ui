@@ -910,6 +910,17 @@ def main():
             options=detail_scope_options,
             key="armor_detailed_scope_mode",
         )
+        if armor_detailed_scope_mode == DETAILED_SCOPE_CUSTOM:
+            ensure_state_in_options(
+                "armor_custom_stack_view",
+                custom_stack_view_options,
+                STACK_VIEW_VERTICAL,
+            )
+            st.sidebar.selectbox(
+                "Choose view:",
+                options=custom_stack_view_options,
+                key="armor_custom_stack_view",
+            )
 
     if dataset == "talismans" and str(
         st.session_state.get("talisman_view_mode", VIEW_MODE_DETAILED)
@@ -953,6 +964,17 @@ def main():
             options=detail_scope_options,
             key="talisman_detailed_scope_mode",
         )
+        if talisman_detailed_scope_mode == DETAILED_SCOPE_CUSTOM:
+            ensure_state_in_options(
+                "talisman_custom_stack_view",
+                custom_stack_view_options,
+                STACK_VIEW_VERTICAL,
+            )
+            st.sidebar.selectbox(
+                "Choose view:",
+                options=custom_stack_view_options,
+                key="talisman_custom_stack_view",
+            )
 
     if dataset == "armors":
         armor_view_mode = str(
@@ -1033,7 +1055,7 @@ def main():
                         single_armor_names[0],
                     )
                     armor_detail_item_name = st.sidebar.selectbox(
-                        "Choose armor:",
+                        "Choose piece:",
                         options=single_armor_names,
                         key="armor_detail_single_item",
                     )
@@ -1045,7 +1067,7 @@ def main():
                     placeholder_sets[0],
                 )
                 st.sidebar.selectbox(
-                    "Choose armor set:",
+                    "Choose set:",
                     options=placeholder_sets,
                     key="armor_detail_full_set",
                 )
@@ -1055,17 +1077,7 @@ def main():
                 )
             else:
                 st.sidebar.markdown("---")
-                st.sidebar.subheader("Scope")
-                ensure_state_in_options(
-                    "armor_custom_stack_view",
-                    custom_stack_view_options,
-                    STACK_VIEW_VERTICAL,
-                )
-                st.sidebar.selectbox(
-                    "Choose view:",
-                    options=custom_stack_view_options,
-                    key="armor_custom_stack_view",
-                )
+                st.sidebar.subheader(f"Scope: {armor_detailed_scope_mode}")
                 for piece_label in ARMOR_PIECE_ORDER:
                     raw_type = type_label_map.get(piece_label, piece_label)
                     piece_names = sorted(
@@ -1146,17 +1158,7 @@ def main():
                 )
             else:
                 st.sidebar.markdown("---")
-                st.sidebar.subheader("Scope")
-                ensure_state_in_options(
-                    "talisman_custom_stack_view",
-                    custom_stack_view_options,
-                    STACK_VIEW_VERTICAL,
-                )
-                st.sidebar.selectbox(
-                    "Choose view:",
-                    options=custom_stack_view_options,
-                    key="talisman_custom_stack_view",
-                )
+                st.sidebar.subheader(f"Scope: {talisman_detailed_scope_mode}")
                 for idx, slot_label in enumerate(TALISMAN_SLOT_LABELS, start=1):
                     if not talisman_names:
                         continue
@@ -1177,7 +1179,7 @@ def main():
         if generic_view_mode == VIEW_MODE_DETAILED:
             detailed_view_active = True
             st.sidebar.markdown("---")
-            st.sidebar.subheader("Scope")
+            st.sidebar.subheader("Scope: Custom")
             ensure_state_in_options(
                 "generic_custom_stack_view",
                 custom_stack_view_options,
