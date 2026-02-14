@@ -944,9 +944,24 @@ def main():
         current_piece_names = []
         for piece_label in ["Helm", "Armor", "Gauntlets", "Greaves"]:
             current_piece_names.extend([str(x) for x in (pieces.get(piece_label, []) or []) if str(x).strip()])
-        variant_preference = resolve_variant_preference(current_piece_names)
+
+        base_variant_map = {}
+        for piece_name in current_piece_names:
+            base_key = normalize_variant_base_name(piece_name)
+            base_variant_map.setdefault(base_key, set()).add(
+                "altered" if is_altered_variant_name(piece_name) else "regular"
+            )
+        has_mixed_variants = any(len(variant_set) > 1 for variant_set in base_variant_map.values())
+
+        variant_preference = "paired" if has_mixed_variants else resolve_variant_preference(current_piece_names)
         variant_preference_label = (
-            "Altered" if variant_preference == "altered" else "Regular" if variant_preference == "regular" else "Any"
+            "Paired (Regular + Altered)"
+            if variant_preference == "paired"
+            else "Altered"
+            if variant_preference == "altered"
+            else "Regular"
+            if variant_preference == "regular"
+            else "Any"
         )
 
         st.caption(f"Audit: {audit_path.name}")
@@ -1008,6 +1023,17 @@ def main():
 
         deduped = []
         for base_key, items in grouped_candidates.items():
+            if variant_preference == "paired":
+                regular_items = [item for item in items if not is_altered_variant_name(item["name"])]
+                altered_items = [item for item in items if is_altered_variant_name(item["name"])]
+                if regular_items and altered_items:
+                    regular_best = sorted(regular_items, key=lambda x: (-x["score"], x["name"]))[0]
+                    altered_best = sorted(altered_items, key=lambda x: (-x["score"], x["name"]))[0]
+                    regular_best["variant_base"] = base_key
+                    altered_best["variant_base"] = base_key
+                    deduped.append(regular_best)
+                    deduped.append(altered_best)
+                    continue
             preferred_items = items
             if variant_preference in {"altered", "regular"}:
                 preferred_items = [
@@ -1025,6 +1051,70 @@ def main():
 
         deduped = sorted(deduped, key=lambda x: (-x["score"], x["name"]))
         suggested = deduped[:8]
+
+        paired_candidates = []
+        for base_key, items in grouped_candidates.items():
+            regular_items = [item for item in items if not is_altered_variant_name(item["name"])]
+            altered_items = [item for item in items if is_altered_variant_name(item["name"])]
+            if not regular_items or not altered_items:
+                continue
+            regular_best = sorted(regular_items, key=lambda x: (-x["score"], x["name"]))[0]
+            altered_best = sorted(altered_items, key=lambda x: (-x["score"], x["name"]))[0]
+            pair_score = regular_best["score"] + altered_best["score"]
+            paired_candidates.append(
+                {
+                    "base": base_key,
+                    "regular_name": regular_best["name"],
+                    "regular_family": regular_best["source_family"],
+                    "altered_name": altered_best["name"],
+                    "altered_family": altered_best["source_family"],
+                    "pair_score": pair_score,
+                }
+            )
+        paired_candidates = sorted(paired_candidates, key=lambda x: (-x["pair_score"], x["base"]))
+
+        if variant_preference == "paired" and paired_candidates:
+            st.markdown("**Auto-paired variants**")
+            for pair_idx, pair in enumerate(paired_candidates[:4]):
+                st.write(
+                    f"{pair_idx + 1}. {pair['regular_name']} + {pair['altered_name']} "
+                    f"(score={pair['pair_score']})"
+                )
+                pair_cols = st.columns(2)
+                with pair_cols[0]:
+                    reg_row = name_to_row.get(pair["regular_name"])
+                    if reg_row is not None and "image" in arm_df.columns and pd.notna(reg_row.get("image")):
+                        try:
+                            st.image(reg_row.get("image"), width=110)
+                        except Exception:
+                            pass
+                with pair_cols[1]:
+                    alt_row = name_to_row.get(pair["altered_name"])
+                    if alt_row is not None and "image" in arm_df.columns and pd.notna(alt_row.get("image")):
+                        try:
+                            st.image(alt_row.get("image"), width=110)
+                        except Exception:
+                            pass
+                if st.button(
+                    f"Use pair #{pair_idx + 1}",
+                    key=f"review_pair_{queue_index}_{pair_idx}",
+                    use_container_width=True,
+                ):
+                    decisions_payload["decisions"].append(
+                        {
+                            "family": family,
+                            "missing_piece": missing_piece,
+                            "action": "match_pair",
+                            "candidate_regular": pair["regular_name"],
+                            "candidate_regular_family": pair["regular_family"],
+                            "candidate_altered": pair["altered_name"],
+                            "candidate_altered_family": pair["altered_family"],
+                            "pair_score": pair["pair_score"],
+                        }
+                    )
+                    if save_json_file(decisions_path, decisions_payload):
+                        st.session_state["review_queue_index"] = min(queue_index, max(0, len(queue) - 2))
+                        st.rerun()
 
         st.markdown("**Suggested matches**")
         if suggested:
