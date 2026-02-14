@@ -305,6 +305,7 @@ def main():
         if current_armor_mode:
             st.session_state["armor_mode"] = current_armor_mode
             qp_update({"armor_mode": current_armor_mode})
+        st.session_state["_force_reset_rerun"] = True
 
     def sync_optimizer_weight_state(stats: list[str]):
         signature = "|".join([str(s) for s in stats])
@@ -347,6 +348,10 @@ def main():
         st.session_state["_qp_hydrated"] = True
 
     # Apply deferred updates before widgets are instantiated.
+    if st.session_state.get("_force_reset_rerun"):
+        del st.session_state["_force_reset_rerun"]
+        st.rerun()
+
     if "_pending_max_weight_limit" in st.session_state:
         try:
             st.session_state["max_weight_limit"] = float(
@@ -679,9 +684,10 @@ def main():
 
     # In single-piece armor mode, allow selecting many highlighted stats.
     if dataset == "armors" and (armor_single_piece or armor_full_set):
-        default_highlights = (
-            options_labels[:2] if len(options_labels) >= 2 else options_labels[:1]
+        default_stat = "Dmg: Phy" if "Dmg: Phy" in options_labels else (
+            options_labels[0] if options_labels else None
         )
+        default_highlights = [default_stat] if default_stat else []
         ensure_state_multiselect("highlighted_stats", options_labels, default_highlights)
         highlighted_stats = st.sidebar.multiselect(
             "Highlighted stats:",
@@ -1105,19 +1111,9 @@ def main():
 
     def build_ranking_caption() -> str | None:
         if dataset == "armors" and len(ranking_stats) >= 2:
-            caption_line = (
-                f"Ranking single pieces by highlighted stats: {', '.join(ranking_stats)} "
-                f"(method: {optimizer_method})"
-            )
-            if optimizer_method == "weighted_sum_normalized" and optimizer_weights:
-                weight_tokens = [
-                    f"{stat}={float(optimizer_weights.get(stat, 1.0)):.2f}"
-                    for stat in ranking_stats
-                ]
-                caption_line += f" | weights: {', '.join(weight_tokens)}"
-            return caption_line
+            return "Ranking single piece stats"
         if primary_highlight:
-            return f"Highlight stat: {primary_highlight}"
+            return "Ranking single piece stats"
         return None
 
     def render_download_button_for_rows(
