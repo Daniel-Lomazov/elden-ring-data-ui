@@ -6,6 +6,7 @@ import re
 import json
 import hashlib
 import subprocess
+import sys
 import html
 import copy
 from pathlib import Path
@@ -130,7 +131,7 @@ def main():
     def generate_manifest():
         # run the secure_data helper to (re)generate manifest + backup
         try:
-            subprocess.run(["python", str(ROOT / "secure_data.py")], check=True)
+            subprocess.run([sys.executable, str(ROOT / "secure_data.py")], check=True)
         except Exception:
             pass
 

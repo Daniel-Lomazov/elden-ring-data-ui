@@ -34,6 +34,10 @@ elden_ring_data_ui/
 ├── histogram_layout.py     # Shared histogram sizing/layout utilities
 ├── data_loader.py          # Data loading helper
 ├── ui_components.py        # Minimal parsing helpers
+├── tools/                  # Verification/integrity utilities (with root wrappers)
+│   ├── final_check.py
+│   ├── optimizer_check.py
+│   └── secure_data.py
 ├── requirements.txt        # Python dependencies
 ├── environment.yml         # Conda environment (recommended)
 ├── data/                   # CSV data directory
@@ -142,6 +146,7 @@ Seamless startup (auto-open browser):
 
 - This trimmed project focuses on the ranking/sorting UI. Some earlier modules (filtering, optimization helpers, and tests) were removed during cleanup to keep the codebase minimal and focused.
 - If you need the removed features restored, I can add them back or provide separate branches for experimental tooling.
+- Root utility scripts `final_check.py`, `optimizer_check.py`, and `secure_data.py` remain stable entrypoints and delegate to implementations in `tools/`.
 
 ## Session Documentation Artifacts
 
@@ -153,6 +158,8 @@ Seamless startup (auto-open browser):
    - Focused review of high-impact/nuanced implementation decisions.
 - [docs/session/2026-02-13_sanity_checks.md](docs/session/2026-02-13_sanity_checks.md)
    - Current sanity-check coverage, commands, and alignment-debug posture.
+- [docs/session/2026-02-14_repo_deep_dive.md](docs/session/2026-02-14_repo_deep_dive.md)
+   - Deep-dive repo audit summary: what happened, what is current, what is planned next.
 
 ## Best Armor Optimization (ALMOPs)
 
