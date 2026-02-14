@@ -1,6 +1,6 @@
 {
-  "version": 1,
-  "goal": "Control which columns are loaded first (fast baseline), and which are loaded for optimization or visual views.",
+  "version": 2,
+  "goal": "Control which columns are loaded first (fast baseline), and which are loaded for optimization and detailed/item views across all datasets.",
   "always_include": [
     "id",
     "name"
@@ -46,11 +46,61 @@
         "damage negation",
         "resistance"
       ]
+    },
+    "detailed_item_view": {
+      "description": "General-purpose detailed item view profile for all datasets.",
+      "include": [
+        "image",
+        "description",
+        "effect",
+        "type",
+        "dlc"
+      ]
+    },
+    "detailed_complete_set_view": {
+      "description": "General-purpose complete-set detailed view profile for all datasets.",
+      "include": [
+        "image",
+        "description",
+        "effect",
+        "type",
+        "dlc",
+        "weight"
+      ]
     }
   },
   "dataset_overrides": {
     "armors": {
-      "notes": "Armors rely on parsing damage negation/resistance into derived Dmg:/Res: columns."
+      "notes": "Armors rely on parsing damage negation/resistance into derived Dmg:/Res: columns.",
+      "profile_includes": {
+        "detailed_item_view": [
+          "special effect",
+          "how to acquire",
+          "in-game section",
+          "damage negation",
+          "resistance"
+        ],
+        "detailed_complete_set_view": [
+          "special effect",
+          "how to acquire",
+          "in-game section",
+          "damage negation",
+          "resistance"
+        ]
+      }
+    },
+    "talismans": {
+      "notes": "Talismans emphasize effect and concise metadata in detailed views.",
+      "profile_includes": {
+        "detailed_item_view": [
+          "effect",
+          "value"
+        ],
+        "detailed_complete_set_view": [
+          "effect",
+          "value"
+        ]
+      }
     }
   }
 }
