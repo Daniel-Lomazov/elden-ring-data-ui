@@ -1146,6 +1146,29 @@ def main():
             elif armor_detailed_scope_mode == DETAILED_SCOPE_FULL:
                 st.sidebar.markdown("---")
                 st.sidebar.subheader("Armor pieces (full scope)")
+
+                pending_sync = st.session_state.pop("armor_full_scope_sync_pending", None)
+                if isinstance(pending_sync, dict):
+                    for piece_label, resolved_name in pending_sync.items():
+                        target_names = piece_names_by_label.get(piece_label, [])
+                        target_key = f"armor_full_set_{safe_stat_key(piece_label)}"
+                        if resolved_name in target_names:
+                            st.session_state[target_key] = resolved_name
+
+                def on_armor_full_piece_change(changed_piece_label: str):
+                    source_key = f"armor_full_set_{safe_stat_key(changed_piece_label)}"
+                    source_name = st.session_state.get(source_key)
+                    if not source_name:
+                        return
+                    sync_updates = {}
+                    for piece_label in ARMOR_PIECE_ORDER:
+                        if piece_label == changed_piece_label:
+                            continue
+                        resolved_name = resolve_complement_piece_name(source_name, piece_label)
+                        if resolved_name:
+                            sync_updates[piece_label] = resolved_name
+                    st.session_state["armor_full_scope_sync_pending"] = sync_updates
+
                 full_scope_current = {}
                 for piece_label in ARMOR_PIECE_ORDER:
                     piece_names = piece_names_by_label.get(piece_label, [])
@@ -1157,43 +1180,12 @@ def main():
                         f"{piece_label}:",
                         options=piece_names,
                         key=key,
+                        on_change=on_armor_full_piece_change,
+                        args=(piece_label,),
                     )
                     full_scope_current[piece_label] = selected_piece_name
 
                 if full_scope_current:
-                    previous_full_scope = st.session_state.get("armor_full_scope_last", {})
-                    changed_label = None
-                    for piece_label in ARMOR_PIECE_ORDER:
-                        current_value = full_scope_current.get(piece_label)
-                        if current_value and previous_full_scope.get(piece_label) != current_value:
-                            changed_label = piece_label
-                            break
-
-                    if changed_label:
-                        source_name = full_scope_current.get(changed_label)
-                        synced_any = False
-                        if source_name:
-                            for piece_label in ARMOR_PIECE_ORDER:
-                                if piece_label == changed_label:
-                                    continue
-                                target_key = f"armor_full_set_{safe_stat_key(piece_label)}"
-                                resolved_name = resolve_complement_piece_name(
-                                    source_name,
-                                    piece_label,
-                                )
-                                if (
-                                    resolved_name
-                                    and st.session_state.get(target_key) != resolved_name
-                                ):
-                                    st.session_state[target_key] = resolved_name
-                                    full_scope_current[piece_label] = resolved_name
-                                    synced_any = True
-                        st.session_state["armor_full_scope_last"] = dict(full_scope_current)
-                        if synced_any:
-                            st.rerun()
-                    else:
-                        st.session_state["armor_full_scope_last"] = dict(full_scope_current)
-
                     armor_detail_set_selection = dict(full_scope_current)
             else:
                 st.sidebar.markdown("---")
