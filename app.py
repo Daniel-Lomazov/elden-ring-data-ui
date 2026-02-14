@@ -674,13 +674,6 @@ def main():
 
     st.sidebar.markdown("---")
     st.sidebar.subheader("Ranking Controls")
-    reset_col_spacer, reset_col_button = st.sidebar.columns([2, 2])
-    with reset_col_button:
-        st.button(
-            "Reset",
-            key="reset_filters",
-            on_click=reset_ui_state,
-        )
 
     # In single-piece armor mode, allow selecting many highlighted stats.
     if dataset == "armors" and (armor_single_piece or armor_full_set):
@@ -692,6 +685,13 @@ def main():
             "Highlighted stats:",
             options=options_labels,
             key="highlighted_stats",
+        )
+
+        st.sidebar.button(
+            "Reset filters/stats",
+            key="reset_filters",
+            on_click=reset_ui_state,
+            use_container_width=True,
         )
 
         if "lock_stat_order" not in st.session_state:
