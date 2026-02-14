@@ -78,6 +78,11 @@ HIST_VIEW_OPTIONS = [
     "Interactive (click-to-set)",
 ]
 
+# Post-parse pruning rules to reduce memory pressure without affecting visible UI.
+POST_PARSE_DROP_COLUMNS_BY_DATASET = {
+    "armors": ["damage negation", "resistance"],
+}
+
 
 def normalize_hist_view_mode(value: str) -> str:
     normalized = str(value or "").strip()
@@ -109,6 +114,15 @@ def build_hist_click_key(
 def safe_stat_key(value: str) -> str:
     token = re.sub(r"[^A-Za-z0-9_]+", "_", str(value or "").strip()).strip("_")
     return token.lower() if token else "stat"
+
+
+def apply_post_parse_column_pruning(dataset_key: str, frame: pd.DataFrame) -> pd.DataFrame:
+    if frame is None or frame.empty:
+        return frame
+    drop_columns = POST_PARSE_DROP_COLUMNS_BY_DATASET.get(str(dataset_key), [])
+    if not drop_columns:
+        return frame
+    return DataLoader.drop_columns(frame, drop_columns)
 
 
 @st.cache_resource
@@ -520,6 +534,7 @@ def main():
 
     # parse armor-like stats when present
     df = parse_armor_stats(df)
+    df = apply_post_parse_column_pruning(dataset, df)
 
     # Load armor column mapping (if present) to avoid ambiguous friendly labels
     armor_map_path = ROOT / "armor_column_map.json"
