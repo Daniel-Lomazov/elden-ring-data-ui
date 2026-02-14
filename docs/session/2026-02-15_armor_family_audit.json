@@ -1,0 +1,7314 @@
+{
+  "complete_count": 64,
+  "incomplete_count": 263,
+  "ambiguous_count": 129,
+  "complete": [
+    {
+      "family": "all knowing",
+      "pieces": {
+        "Helm": [
+          "All-Knowing Helm"
+        ],
+        "Armor": [
+          "All-Knowing Armor",
+          "All-Knowing Armor (Altered)"
+        ],
+        "Gauntlets": [
+          "All-Knowing Gauntlets"
+        ],
+        "Greaves": [
+          "All-Knowing Greaves"
+        ]
+      },
+      "multi_in_piece": true,
+      "total_names": 5
+    },
+    {
+      "family": "astrologer",
+      "pieces": {
+        "Helm": [
+          "Astrologer Hood"
+        ],
+        "Armor": [
+          "Astrologer Robe",
+          "Astrologer Robe (Altered)"
+        ],
+        "Gauntlets": [
+          "Astrologer Gloves"
+        ],
+        "Greaves": [
+          "Astrologer Trousers"
+        ]
+      },
+      "multi_in_piece": true,
+      "total_names": 5
+    },
+    {
+      "family": "bandit",
+      "pieces": {
+        "Helm": [
+          "Bandit Mask"
+        ],
+        "Armor": [
+          "Bandit Garb"
+        ],
+        "Gauntlets": [
+          "Bandit Manchettes"
+        ],
+        "Greaves": [
+          "Bandit Boots"
+        ]
+      },
+      "multi_in_piece": false,
+      "total_names": 4
+    },
+    {
+      "family": "banished knight",
+      "pieces": {
+        "Helm": [
+          "Banished Knight Helm",
+          "Banished Knight Helm (Altered)"
+        ],
+        "Armor": [
+          "Banished Knight Armor",
+          "Banished Knight Armor (Altered)"
+        ],
+        "Gauntlets": [
+          "Banished Knight Gauntlets"
+        ],
+        "Greaves": [
+          "Banished Knight Greaves"
+        ]
+      },
+      "multi_in_piece": true,
+      "total_names": 6
+    },
+    {
+      "family": "beast champion",
+      "pieces": {
+        "Helm": [
+          "Beast Champion Helm"
+        ],
+        "Armor": [
+          "Beast Champion Armor",
+          "Beast Champion Armor (Altered)"
+        ],
+        "Gauntlets": [
+          "Beast Champion Gauntlets"
+        ],
+        "Greaves": [
+          "Beast Champion Greaves"
+        ]
+      },
+      "multi_in_piece": true,
+      "total_names": 5
+    },
+    {
+      "family": "black knife",
+      "pieces": {
+        "Helm": [
+          "Black Knife Hood"
+        ],
+        "Armor": [
+          "Black Knife Armor",
+          "Black Knife Armor (Altered)"
+        ],
+        "Gauntlets": [
+          "Black Knife Gauntlets"
+        ],
+        "Greaves": [
+          "Black Knife Greaves"
+        ]
+      },
+      "multi_in_piece": true,
+      "total_names": 5
+    },
+    {
+      "family": "black knight",
+      "pieces": {
+        "Helm": [
+          "Black Knight Helm"
+        ],
+        "Armor": [
+          "Black Knight Armor"
+        ],
+        "Gauntlets": [
+          "Black Knight Gauntlets"
+        ],
+        "Greaves": [
+          "Black Knight Greaves"
+        ]
+      },
+      "multi_in_piece": false,
+      "total_names": 4
+    },
+    {
+      "family": "blackflame monk",
+      "pieces": {
+        "Helm": [
+          "Blackflame Monk Hood"
+        ],
+        "Armor": [
+          "Blackflame Monk Armor"
+        ],
+        "Gauntlets": [
+          "Blackflame Monk Gauntlets"
+        ],
+        "Greaves": [
+          "Blackflame Monk Greaves"
+        ]
+      },
+      "multi_in_piece": false,
+      "total_names": 4
+    },
+    {
+      "family": "bloodhound knight",
+      "pieces": {
+        "Helm": [
+          "Bloodhound Knight Helm"
+        ],
+        "Armor": [
+          "Bloodhound Knight Armor",
+          "Bloodhound Knight Armor (Altered)"
+        ],
+        "Gauntlets": [
+          "Bloodhound Knight Gauntlets"
+        ],
+        "Greaves": [
+          "Bloodhound Knight Greaves"
+        ]
+      },
+      "multi_in_piece": true,
+      "total_names": 5
+    },
+    {
+      "family": "briar",
+      "pieces": {
+        "Helm": [
+          "Briar Helm"
+        ],
+        "Armor": [
+          "Briar Armor",
+          "Briar Armor (Altered)"
+        ],
+        "Gauntlets": [
+          "Briar Gauntlets"
+        ],
+        "Greaves": [
+          "Briar Greaves"
+        ]
+      },
+      "multi_in_piece": true,
+      "total_names": 5
+    },
+    {
+      "family": "bull goat",
+      "pieces": {
+        "Helm": [
+          "Bull-Goat Helm"
+        ],
+        "Armor": [
+          "Bull-Goat Armor"
+        ],
+        "Gauntlets": [
+          "Bull-Goat Gauntlets"
+        ],
+        "Greaves": [
+          "Bull-Goat Greaves"
+        ]
+      },
+      "multi_in_piece": false,
+      "total_names": 4
+    },
+    {
+      "family": "carian knight",
+      "pieces": {
+        "Helm": [
+          "Carian Knight Helm"
+        ],
+        "Armor": [
+          "Carian Knight Armor",
+          "Carian Knight Armor (Altered)"
+        ],
+        "Gauntlets": [
+          "Carian Knight Gauntlets"
+        ],
+        "Greaves": [
+          "Carian Knight Greaves"
+        ]
+      },
+      "multi_in_piece": true,
+      "total_names": 5
+    },
+    {
+      "family": "cleanrot",
+      "pieces": {
+        "Helm": [
+          "Cleanrot Helm",
+          "Cleanrot Helm (Altered)"
+        ],
+        "Armor": [
+          "Cleanrot Armor",
+          "Cleanrot Armor (Altered)"
+        ],
+        "Gauntlets": [
+          "Cleanrot Gauntlets"
+        ],
+        "Greaves": [
+          "Cleanrot Greaves"
+        ]
+      },
+      "multi_in_piece": true,
+      "total_names": 6
+    },
+    {
+      "family": "confessor",
+      "pieces": {
+        "Helm": [
+          "Confessor Hood",
+          "Confessor Hood (Altered)"
+        ],
+        "Armor": [
+          "Confessor Armor",
+          "Confessor Armor (Altered)"
+        ],
+        "Gauntlets": [
+          "Confessor Gloves"
+        ],
+        "Greaves": [
+          "Confessor Boots"
+        ]
+      },
+      "multi_in_piece": true,
+      "total_names": 6
+    },
+    {
+      "family": "cuckoo knight",
+      "pieces": {
+        "Helm": [
+          "Cuckoo Knight Helm"
+        ],
+        "Armor": [
+          "Cuckoo Knight Armor",
+          "Cuckoo Knight Armor (Altered)"
+        ],
+        "Gauntlets": [
+          "Cuckoo Knight Gauntlets"
+        ],
+        "Greaves": [
+          "Cuckoo Knight Greaves"
+        ]
+      },
+      "multi_in_piece": true,
+      "total_names": 5
+    },
+    {
+      "family": "death knight",
+      "pieces": {
+        "Helm": [
+          "Death Knight Helm"
+        ],
+        "Armor": [
+          "Death Knight Armor"
+        ],
+        "Gauntlets": [
+          "Death Knight Gauntlets"
+        ],
+        "Greaves": [
+          "Death Knight Greaves"
+        ]
+      },
+      "multi_in_piece": false,
+      "total_names": 4
+    },
+    {
+      "family": "drake knight",
+      "pieces": {
+        "Helm": [
+          "Drake Knight Helm",
+          "Drake Knight Helm (Altered)"
+        ],
+        "Armor": [
+          "Drake Knight Armor",
+          "Drake Knight Armor (Altered)"
+        ],
+        "Gauntlets": [
+          "Drake Knight Gauntlets"
+        ],
+        "Greaves": [
+          "Drake Knight Greaves"
+        ]
+      },
+      "multi_in_piece": true,
+      "total_names": 6
+    },
+    {
+      "family": "elden lord",
+      "pieces": {
+        "Helm": [
+          "Elden Lord Crown"
+        ],
+        "Armor": [
+          "Elden Lord Armor",
+          "Elden Lord Armor (Altered)"
+        ],
+        "Gauntlets": [
+          "Elden Lord Bracers"
+        ],
+        "Greaves": [
+          "Elden Lord Greaves"
+        ]
+      },
+      "multi_in_piece": true,
+      "total_names": 5
+    },
+    {
+      "family": "exile",
+      "pieces": {
+        "Helm": [
+          "Exile Hood"
+        ],
+        "Armor": [
+          "Exile Armor"
+        ],
+        "Gauntlets": [
+          "Exile Gauntlets"
+        ],
+        "Greaves": [
+          "Exile Greaves"
+        ]
+      },
+      "multi_in_piece": false,
+      "total_names": 4
+    },
+    {
+      "family": "fingerprint",
+      "pieces": {
+        "Helm": [
+          "Fingerprint Helm"
+        ],
+        "Armor": [
+          "Fingerprint Armor",
+          "Fingerprint Armor (Altered)"
+        ],
+        "Gauntlets": [
+          "Fingerprint Gauntlets"
+        ],
+        "Greaves": [
+          "Fingerprint Greaves"
+        ]
+      },
+      "multi_in_piece": true,
+      "total_names": 5
+    },
+    {
+      "family": "fire knight",
+      "pieces": {
+        "Helm": [
+          "Fire Knight Helm"
+        ],
+        "Armor": [
+          "Fire Knight Armor",
+          "Fire Knight Armor (Altered)"
+        ],
+        "Gauntlets": [
+          "Fire Knight Gauntlets"
+        ],
+        "Greaves": [
+          "Fire Knight Greaves"
+        ]
+      },
+      "multi_in_piece": true,
+      "total_names": 5
+    },
+    {
+      "family": "fire monk",
+      "pieces": {
+        "Helm": [
+          "Fire Monk Hood"
+        ],
+        "Armor": [
+          "Fire Monk Armor"
+        ],
+        "Gauntlets": [
+          "Fire Monk Gauntlets"
+        ],
+        "Greaves": [
+          "Fire Monk Greaves"
+        ]
+      },
+      "multi_in_piece": false,
+      "total_names": 4
+    },
+    {
+      "family": "fire prelate",
+      "pieces": {
+        "Helm": [
+          "Fire Prelate Helm"
+        ],
+        "Armor": [
+          "Fire Prelate Armor",
+          "Fire Prelate Armor (Altered)"
+        ],
+        "Gauntlets": [
+          "Fire Prelate Gauntlets"
+        ],
+        "Greaves": [
+          "Fire Prelate Greaves"
+        ]
+      },
+      "multi_in_piece": true,
+      "total_names": 5
+    },
+    {
+      "family": "freyja's",
+      "pieces": {
+        "Helm": [
+          "Freyja's Helm"
+        ],
+        "Armor": [
+          "Freyja's Armor",
+          "Freyja's Armor (Altered)"
+        ],
+        "Gauntlets": [
+          "Freyja's Gauntlets"
+        ],
+        "Greaves": [
+          "Freyja's Greaves"
+        ]
+      },
+      "multi_in_piece": true,
+      "total_names": 5
+    },
+    {
+      "family": "gaius's",
+      "pieces": {
+        "Helm": [
+          "Gaius's Helm"
+        ],
+        "Armor": [
+          "Gaius's Armor"
+        ],
+        "Gauntlets": [
+          "Gaius's Gauntlets"
+        ],
+        "Greaves": [
+          "Gaius's Greaves"
+        ]
+      },
+      "multi_in_piece": false,
+      "total_names": 4
+    },
+    {
+      "family": "gelmir knight",
+      "pieces": {
+        "Helm": [
+          "Gelmir Knight Helm"
+        ],
+        "Armor": [
+          "Gelmir Knight Armor",
+          "Gelmir Knight Armor (Altered)"
+        ],
+        "Gauntlets": [
+          "Gelmir Knight Gauntlets"
+        ],
+        "Greaves": [
+          "Gelmir Knight Greaves"
+        ]
+      },
+      "multi_in_piece": true,
+      "total_names": 5
+    },
+    {
+      "family": "godrick knight",
+      "pieces": {
+        "Helm": [
+          "Godrick Knight Helm"
+        ],
+        "Armor": [
+          "Godrick Knight Armor",
+          "Godrick Knight Armor (Altered)"
+        ],
+        "Gauntlets": [
+          "Godrick Knight Gauntlets"
+        ],
+        "Greaves": [
+          "Godrick Knight Greaves"
+        ]
+      },
+      "multi_in_piece": true,
+      "total_names": 5
+    },
+    {
+      "family": "guardian",
+      "pieces": {
+        "Helm": [
+          "Guardian Mask"
+        ],
+        "Armor": [
+          "Guardian Garb",
+          "Guardian Garb (Full Bloom)"
+        ],
+        "Gauntlets": [
+          "Guardian Bracers"
+        ],
+        "Greaves": [
+          "Guardian Greaves"
+        ]
+      },
+      "multi_in_piece": true,
+      "total_names": 5
+    },
+    {
+      "family": "haligtree knight",
+      "pieces": {
+        "Helm": [
+          "Haligtree Knight Helm"
+        ],
+        "Armor": [
+          "Haligtree Knight Armor",
+          "Haligtree Knight Armor (Altered)"
+        ],
+        "Gauntlets": [
+          "Haligtree Knight Gauntlets"
+        ],
+        "Greaves": [
+          "Haligtree Knight Greaves"
+        ]
+      },
+      "multi_in_piece": true,
+      "total_names": 5
+    },
+    {
+      "family": "horned warrior",
+      "pieces": {
+        "Helm": [
+          "Horned Warrior Helm"
+        ],
+        "Armor": [
+          "Horned Warrior Armor"
+        ],
+        "Gauntlets": [
+          "Horned Warrior Gauntlets"
+        ],
+        "Greaves": [
+          "Horned Warrior Greaves"
+        ]
+      },
+      "multi_in_piece": false,
+      "total_names": 4
+    },
+    {
+      "family": "hoslow's",
+      "pieces": {
+        "Helm": [
+          "Hoslow's Helm"
+        ],
+        "Armor": [
+          "Hoslow's Armor",
+          "Hoslow's Armor (Altered)"
+        ],
+        "Gauntlets": [
+          "Hoslow's Gauntlets"
+        ],
+        "Greaves": [
+          "Hoslow's Greaves"
+        ]
+      },
+      "multi_in_piece": true,
+      "total_names": 5
+    },
+    {
+      "family": "kaiden",
+      "pieces": {
+        "Helm": [
+          "Kaiden Helm"
+        ],
+        "Armor": [
+          "Kaiden Armor"
+        ],
+        "Gauntlets": [
+          "Kaiden Gauntlets"
+        ],
+        "Greaves": [
+          "Kaiden Trousers"
+        ]
+      },
+      "multi_in_piece": false,
+      "total_names": 4
+    },
+    {
+      "family": "knight",
+      "pieces": {
+        "Helm": [
+          "Knight Helm"
+        ],
+        "Armor": [
+          "Knight Armor"
+        ],
+        "Gauntlets": [
+          "Knight Gauntlets"
+        ],
+        "Greaves": [
+          "Knight Greaves"
+        ]
+      },
+      "multi_in_piece": false,
+      "total_names": 4
+    },
+    {
+      "family": "land of reeds",
+      "pieces": {
+        "Helm": [
+          "Land of Reeds Helm"
+        ],
+        "Armor": [
+          "Land of Reeds Armor",
+          "Land of Reeds Armor (Altered)"
+        ],
+        "Gauntlets": [
+          "Land of Reeds Gauntlets"
+        ],
+        "Greaves": [
+          "Land of Reeds Greaves"
+        ]
+      },
+      "multi_in_piece": true,
+      "total_names": 5
+    },
+    {
+      "family": "leather",
+      "pieces": {
+        "Helm": [
+          "Leather Headband",
+          "Leather Crown"
+        ],
+        "Armor": [
+          "Leather Armor"
+        ],
+        "Gauntlets": [
+          "Leather Gloves"
+        ],
+        "Greaves": [
+          "Leather Trousers",
+          "Leather Boots"
+        ]
+      },
+      "multi_in_piece": true,
+      "total_names": 6
+    },
+    {
+      "family": "leyndell knight",
+      "pieces": {
+        "Helm": [
+          "Leyndell Knight Helm"
+        ],
+        "Armor": [
+          "Leyndell Knight Armor",
+          "Leyndell Knight Armor (Altered)"
+        ],
+        "Gauntlets": [
+          "Leyndell Knight Gauntlets"
+        ],
+        "Greaves": [
+          "Leyndell Knight Greaves"
+        ]
+      },
+      "multi_in_piece": true,
+      "total_names": 5
+    },
+    {
+      "family": "lionel's",
+      "pieces": {
+        "Helm": [
+          "Lionel's Helm"
+        ],
+        "Armor": [
+          "Lionel's Armor",
+          "Lionel's Armor (Altered)"
+        ],
+        "Gauntlets": [
+          "Lionel's Gauntlets"
+        ],
+        "Greaves": [
+          "Lionel's Greaves"
+        ]
+      },
+      "multi_in_piece": true,
+      "total_names": 5
+    },
+    {
+      "family": "malformed dragon",
+      "pieces": {
+        "Helm": [
+          "Malformed Dragon Helm"
+        ],
+        "Armor": [
+          "Malformed Dragon Armor"
+        ],
+        "Gauntlets": [
+          "Malformed Dragon Gauntlets"
+        ],
+        "Greaves": [
+          "Malformed Dragon Greaves"
+        ]
+      },
+      "multi_in_piece": false,
+      "total_names": 4
+    },
+    {
+      "family": "maliketh's",
+      "pieces": {
+        "Helm": [
+          "Maliketh's Helm"
+        ],
+        "Armor": [
+          "Maliketh's Armor",
+          "Maliketh's Armor (Altered)"
+        ],
+        "Gauntlets": [
+          "Maliketh's Gauntlets"
+        ],
+        "Greaves": [
+          "Maliketh's Greaves"
+        ]
+      },
+      "multi_in_piece": true,
+      "total_names": 5
+    },
+    {
+      "family": "messmer soldier",
+      "pieces": {
+        "Helm": [
+          "Messmer Soldier Helm"
+        ],
+        "Armor": [
+          "Messmer Soldier Armor",
+          "Messmer Soldier Armor (Altered)"
+        ],
+        "Gauntlets": [
+          "Messmer Soldier Gauntlets"
+        ],
+        "Greaves": [
+          "Messmer Soldier Greaves"
+        ]
+      },
+      "multi_in_piece": true,
+      "total_names": 5
+    },
+    {
+      "family": "messmer's",
+      "pieces": {
+        "Helm": [
+          "Messmer's Helm",
+          "Messmer's Helm (Altered)"
+        ],
+        "Armor": [
+          "Messmer's Armor"
+        ],
+        "Gauntlets": [
+          "Messmer's Gauntlets"
+        ],
+        "Greaves": [
+          "Messmer's Greaves"
+        ]
+      },
+      "multi_in_piece": true,
+      "total_names": 5
+    },
+    {
+      "family": "night's cavalry",
+      "pieces": {
+        "Helm": [
+          "Night's Cavalry Helm",
+          "Night's Cavalry Helm (Altered)"
+        ],
+        "Armor": [
+          "Night's Cavalry Armor",
+          "Night's Cavalry Armor (Altered)"
+        ],
+        "Gauntlets": [
+          "Night's Cavalry Gauntlets"
+        ],
+        "Greaves": [
+          "Night's Cavalry Greaves"
+        ]
+      },
+      "multi_in_piece": true,
+      "total_names": 6
+    },
+    {
+      "family": "oathseeker knight",
+      "pieces": {
+        "Helm": [
+          "Oathseeker Knight Helm"
+        ],
+        "Armor": [
+          "Oathseeker Knight Armor"
+        ],
+        "Gauntlets": [
+          "Oathseeker Knight Gauntlets"
+        ],
+        "Greaves": [
+          "Oathseeker Knight Greaves"
+        ]
+      },
+      "multi_in_piece": false,
+      "total_names": 4
+    },
+    {
+      "family": "of night",
+      "pieces": {
+        "Helm": [
+          "Helm of Night"
+        ],
+        "Armor": [
+          "Armor of Night"
+        ],
+        "Gauntlets": [
+          "Gauntlets of Night"
+        ],
+        "Greaves": [
+          "Greaves of Night"
+        ]
+      },
+      "multi_in_piece": false,
+      "total_names": 4
+    },
+    {
+      "family": "of solitude",
+      "pieces": {
+        "Helm": [
+          "Helm of Solitude"
+        ],
+        "Armor": [
+          "Armor of Solitude",
+          "Armor of Solitude (Altered)"
+        ],
+        "Gauntlets": [
+          "Gauntlets of Solitude"
+        ],
+        "Greaves": [
+          "Greaves of Solitude"
+        ]
+      },
+      "multi_in_piece": true,
+      "total_names": 5
+    },
+    {
+      "family": "omen",
+      "pieces": {
+        "Helm": [
+          "Omen Helm"
+        ],
+        "Armor": [
+          "Omen Armor"
+        ],
+        "Gauntlets": [
+          "Omen Gauntlets"
+        ],
+        "Greaves": [
+          "Omen Greaves"
+        ]
+      },
+      "multi_in_piece": false,
+      "total_names": 4
+    },
+    {
+      "family": "raging wolf",
+      "pieces": {
+        "Helm": [
+          "Raging Wolf Helm"
+        ],
+        "Armor": [
+          "Raging Wolf Armor",
+          "Raging Wolf Armor (Altered)"
+        ],
+        "Gauntlets": [
+          "Raging Wolf Gauntlets"
+        ],
+        "Greaves": [
+          "Raging Wolf Greaves"
+        ]
+      },
+      "multi_in_piece": true,
+      "total_names": 5
+    },
+    {
+      "family": "rakshasa",
+      "pieces": {
+        "Helm": [
+          "Rakshasa Helm"
+        ],
+        "Armor": [
+          "Rakshasa Armor"
+        ],
+        "Gauntlets": [
+          "Rakshasa Gauntlets"
+        ],
+        "Greaves": [
+          "Rakshasa Greaves"
+        ]
+      },
+      "multi_in_piece": false,
+      "total_names": 4
+    },
+    {
+      "family": "raya lucarian",
+      "pieces": {
+        "Helm": [
+          "Raya Lucarian Helm"
+        ],
+        "Armor": [
+          "Raya Lucarian Robe"
+        ],
+        "Gauntlets": [
+          "Raya Lucarian Gauntlets"
+        ],
+        "Greaves": [
+          "Raya Lucarian Greaves"
+        ]
+      },
+      "multi_in_piece": false,
+      "total_names": 4
+    },
+    {
+      "family": "redmane knight",
+      "pieces": {
+        "Helm": [
+          "Redmane Knight Helm"
+        ],
+        "Armor": [
+          "Redmane Knight Armor",
+          "Redmane Knight Armor (Altered)"
+        ],
+        "Gauntlets": [
+          "Redmane Knight Gauntlets"
+        ],
+        "Greaves": [
+          "Redmane Knight Greaves"
+        ]
+      },
+      "multi_in_piece": true,
+      "total_names": 5
+    },
+    {
+      "family": "rellana's",
+      "pieces": {
+        "Helm": [
+          "Rellana's Helm"
+        ],
+        "Armor": [
+          "Rellana's Armor"
+        ],
+        "Gauntlets": [
+          "Rellana's Gloves"
+        ],
+        "Greaves": [
+          "Rellana's Greaves"
+        ]
+      },
+      "multi_in_piece": false,
+      "total_names": 4
+    },
+    {
+      "family": "royal knight",
+      "pieces": {
+        "Helm": [
+          "Royal Knight Helm"
+        ],
+        "Armor": [
+          "Royal Knight Armor",
+          "Royal Knight Armor (Altered)"
+        ],
+        "Gauntlets": [
+          "Royal Knight Gauntlets"
+        ],
+        "Greaves": [
+          "Royal Knight Greaves"
+        ]
+      },
+      "multi_in_piece": true,
+      "total_names": 5
+    },
+    {
+      "family": "royal remains",
+      "pieces": {
+        "Helm": [
+          "Royal Remains Helm"
+        ],
+        "Armor": [
+          "Royal Remains Armor"
+        ],
+        "Gauntlets": [
+          "Royal Remains Gauntlets"
+        ],
+        "Greaves": [
+          "Royal Remains Greaves"
+        ]
+      },
+      "multi_in_piece": false,
+      "total_names": 4
+    },
+    {
+      "family": "scaled",
+      "pieces": {
+        "Helm": [
+          "Scaled Helm"
+        ],
+        "Armor": [
+          "Scaled Armor",
+          "Scaled Armor (Altered)"
+        ],
+        "Gauntlets": [
+          "Scaled Gauntlets"
+        ],
+        "Greaves": [
+          "Scaled Greaves"
+        ]
+      },
+      "multi_in_piece": true,
+      "total_names": 5
+    },
+    {
+      "family": "shadow militiaman",
+      "pieces": {
+        "Helm": [
+          "Shadow Militiaman Helm"
+        ],
+        "Armor": [
+          "Shadow Militiaman Armor"
+        ],
+        "Gauntlets": [
+          "Shadow Militiaman Gauntlets"
+        ],
+        "Greaves": [
+          "Shadow Militiaman Greaves"
+        ]
+      },
+      "multi_in_piece": false,
+      "total_names": 4
+    },
+    {
+      "family": "thiollier's",
+      "pieces": {
+        "Helm": [
+          "Thiollier's Mask"
+        ],
+        "Armor": [
+          "Thiollier's Garb",
+          "Thiollier's Garb (Altered)"
+        ],
+        "Gauntlets": [
+          "Thiollier's Gloves"
+        ],
+        "Greaves": [
+          "Thiollier's Trousers"
+        ]
+      },
+      "multi_in_piece": true,
+      "total_names": 5
+    },
+    {
+      "family": "traveling maiden",
+      "pieces": {
+        "Helm": [
+          "Traveling Maiden Hood"
+        ],
+        "Armor": [
+          "Traveling Maiden Robe",
+          "Traveling Maiden Robe (Altered)"
+        ],
+        "Gauntlets": [
+          "Traveling Maiden Gloves"
+        ],
+        "Greaves": [
+          "Traveling Maiden Boots"
+        ]
+      },
+      "multi_in_piece": true,
+      "total_names": 5
+    },
+    {
+      "family": "tree sentinel",
+      "pieces": {
+        "Helm": [
+          "Tree Sentinel Helm"
+        ],
+        "Armor": [
+          "Tree Sentinel Armor",
+          "Tree Sentinel Armor (Altered)"
+        ],
+        "Gauntlets": [
+          "Tree Sentinel Gauntlets"
+        ],
+        "Greaves": [
+          "Tree Sentinel Greaves"
+        ]
+      },
+      "multi_in_piece": true,
+      "total_names": 5
+    },
+    {
+      "family": "twinned",
+      "pieces": {
+        "Helm": [
+          "Twinned Helm"
+        ],
+        "Armor": [
+          "Twinned Armor",
+          "Twinned Armor (Altered)"
+        ],
+        "Gauntlets": [
+          "Twinned Gauntlets"
+        ],
+        "Greaves": [
+          "Twinned Greaves"
+        ]
+      },
+      "multi_in_piece": true,
+      "total_names": 5
+    },
+    {
+      "family": "vagabond knight",
+      "pieces": {
+        "Helm": [
+          "Vagabond Knight Helm"
+        ],
+        "Armor": [
+          "Vagabond Knight Armor",
+          "Vagabond Knight Armor (Altered)"
+        ],
+        "Gauntlets": [
+          "Vagabond Knight Gauntlets"
+        ],
+        "Greaves": [
+          "Vagabond Knight Greaves"
+        ]
+      },
+      "multi_in_piece": true,
+      "total_names": 5
+    },
+    {
+      "family": "verdigris",
+      "pieces": {
+        "Helm": [
+          "Verdigris Helm"
+        ],
+        "Armor": [
+          "Verdigris Armor"
+        ],
+        "Gauntlets": [
+          "Verdigris Gauntlets"
+        ],
+        "Greaves": [
+          "Verdigris Greaves"
+        ]
+      },
+      "multi_in_piece": false,
+      "total_names": 4
+    },
+    {
+      "family": "veteran's",
+      "pieces": {
+        "Helm": [
+          "Veteran's Helm"
+        ],
+        "Armor": [
+          "Veteran's Armor",
+          "Veteran's Armor (Altered)"
+        ],
+        "Gauntlets": [
+          "Veteran's Gauntlets"
+        ],
+        "Greaves": [
+          "Veteran's Greaves"
+        ]
+      },
+      "multi_in_piece": true,
+      "total_names": 5
+    },
+    {
+      "family": "vulgar militia",
+      "pieces": {
+        "Helm": [
+          "Vulgar Militia Helm"
+        ],
+        "Armor": [
+          "Vulgar Militia Armor"
+        ],
+        "Gauntlets": [
+          "Vulgar Militia Gauntlets"
+        ],
+        "Greaves": [
+          "Vulgar Militia Greaves"
+        ]
+      },
+      "multi_in_piece": false,
+      "total_names": 4
+    },
+    {
+      "family": "young lion's",
+      "pieces": {
+        "Helm": [
+          "Young Lion's Helm"
+        ],
+        "Armor": [
+          "Young Lion's Armor",
+          "Young Lion's Armor (Altered)"
+        ],
+        "Gauntlets": [
+          "Young Lion's Gauntlets"
+        ],
+        "Greaves": [
+          "Young Lion's Greaves"
+        ]
+      },
+      "multi_in_piece": true,
+      "total_names": 5
+    }
+  ],
+  "incomplete": [
+    {
+      "family": "alberich's",
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Alberich's Robe",
+          "Alberich's Robe (Altered)"
+        ],
+        "Gauntlets": [
+          "Alberich's Bracers"
+        ],
+        "Greaves": [
+          "Alberich's Trousers"
+        ]
+      },
+      "multi_in_piece": true,
+      "total_names": 4
+    },
+    {
+      "family": "alberich's pointed",
+      "pieces": {
+        "Helm": [
+          "Alberich's Pointed Hat",
+          "Alberich's Pointed Hat (Altered)"
+        ],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": true,
+      "total_names": 2
+    },
+    {
+      "family": "albinauric",
+      "pieces": {
+        "Helm": [
+          "Albinauric Mask"
+        ],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "ansbach's",
+      "pieces": {
+        "Helm": [],
+        "Armor": [],
+        "Gauntlets": [
+          "Ansbach's Manchettes"
+        ],
+        "Greaves": [
+          "Ansbach's Boots"
+        ]
+      },
+      "multi_in_piece": false,
+      "total_names": 2
+    },
+    {
+      "family": "ansbach's attire",
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Ansbach's Attire",
+          "Ansbach's Attire (Altered)"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": true,
+      "total_names": 2
+    },
+    {
+      "family": "aristocrat",
+      "pieces": {
+        "Helm": [
+          "Aristocrat Hat",
+          "Aristocrat Headband"
+        ],
+        "Armor": [
+          "Aristocrat Coat",
+          "Aristocrat Garb",
+          "Aristocrat Garb (Altered)"
+        ],
+        "Gauntlets": [],
+        "Greaves": [
+          "Aristocrat Boots"
+        ]
+      },
+      "multi_in_piece": true,
+      "total_names": 6
+    },
+    {
+      "family": "ascetic's ankle guards",
+      "pieces": {
+        "Helm": [],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": [
+          "Ascetic's Ankle Guards"
+        ]
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "ascetic's loincloth",
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Ascetic's Loincloth"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "ascetic's wrist guards",
+      "pieces": {
+        "Helm": [],
+        "Armor": [],
+        "Gauntlets": [
+          "Ascetic's Wrist Guards"
+        ],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "ash of war",
+      "pieces": {
+        "Helm": [
+          "Ash-of-War Scarab"
+        ],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "azur's",
+      "pieces": {
+        "Helm": [],
+        "Armor": [],
+        "Gauntlets": [
+          "Azur's Manchettes"
+        ],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "azur's glintstone",
+      "pieces": {
+        "Helm": [
+          "Azur's Glintstone Crown"
+        ],
+        "Armor": [
+          "Azur's Glintstone Robe"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 2
+    },
+    {
+      "family": "battlemage",
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Battlemage Robe"
+        ],
+        "Gauntlets": [
+          "Battlemage Manchettes"
+        ],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 2
+    },
+    {
+      "family": "battlemage legwraps",
+      "pieces": {
+        "Helm": [],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": [
+          "Battlemage Legwraps"
+        ]
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "black",
+      "pieces": {
+        "Helm": [
+          "Black Hood"
+        ],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "black dumpling",
+      "pieces": {
+        "Helm": [
+          "Black Dumpling"
+        ],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "black wolf",
+      "pieces": {
+        "Helm": [
+          "Black Wolf Mask"
+        ],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "blackguard's iron",
+      "pieces": {
+        "Helm": [
+          "Blackguard's Iron Mask"
+        ],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "blaidd's",
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Blaidd's Armor",
+          "Blaidd's Armor (Altered)"
+        ],
+        "Gauntlets": [
+          "Blaidd's Gauntlets"
+        ],
+        "Greaves": [
+          "Blaidd's Greaves"
+        ]
+      },
+      "multi_in_piece": true,
+      "total_names": 4
+    },
+    {
+      "family": "bloodsoaked",
+      "pieces": {
+        "Helm": [
+          "Bloodsoaked Mask"
+        ],
+        "Armor": [],
+        "Gauntlets": [
+          "Bloodsoaked Manchettes"
+        ],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 2
+    },
+    {
+      "family": "bloodsoaked tabard",
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Bloodsoaked Tabard"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "blue cloth",
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Blue Cloth Vest"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "blue cloth cowl",
+      "pieces": {
+        "Helm": [
+          "Blue Cloth Cowl"
+        ],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "blue festive",
+      "pieces": {
+        "Helm": [
+          "Blue Festive Hood"
+        ],
+        "Armor": [
+          "Blue Festive Garb"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 2
+    },
+    {
+      "family": "blue silver",
+      "pieces": {
+        "Helm": [
+          "Blue Silver Mail Hood"
+        ],
+        "Armor": [
+          "Blue Silver Mail Armor",
+          "Blue Silver Mail Armor (Altered)"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": true,
+      "total_names": 3
+    },
+    {
+      "family": "blue silver bracelets",
+      "pieces": {
+        "Helm": [],
+        "Armor": [],
+        "Gauntlets": [
+          "Blue Silver Bracelets"
+        ],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "blue silver skirt",
+      "pieces": {
+        "Helm": [],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": [
+          "Blue Silver Mail Skirt"
+        ]
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "braided arm wraps",
+      "pieces": {
+        "Helm": [],
+        "Armor": [],
+        "Gauntlets": [
+          "Braided Arm Wraps"
+        ],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "braided cord",
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Braided Cord Robe"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "brave's battlewear",
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Brave's Battlewear",
+          "Brave's Battlewear (Altered)"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": true,
+      "total_names": 2
+    },
+    {
+      "family": "brave's bracer",
+      "pieces": {
+        "Helm": [],
+        "Armor": [],
+        "Gauntlets": [
+          "Brave's Bracer"
+        ],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "brave's cord circlet",
+      "pieces": {
+        "Helm": [
+          "Brave's Cord Circlet"
+        ],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "brave's leather",
+      "pieces": {
+        "Helm": [
+          "Brave's Leather Helm"
+        ],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "brave's legwraps",
+      "pieces": {
+        "Helm": [],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": [
+          "Brave's Legwraps"
+        ]
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "caterpillar",
+      "pieces": {
+        "Helm": [
+          "Caterpillar Mask"
+        ],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "cerulean tear scarab",
+      "pieces": {
+        "Helm": [
+          "Cerulean Tear Scarab"
+        ],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "chain",
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Chain Armor"
+        ],
+        "Gauntlets": [],
+        "Greaves": [
+          "Chain Leggings"
+        ]
+      },
+      "multi_in_piece": false,
+      "total_names": 2
+    },
+    {
+      "family": "chain coif",
+      "pieces": {
+        "Helm": [
+          "Chain Coif"
+        ],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "chain draped tabard",
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Chain-Draped Tabard"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "champion",
+      "pieces": {
+        "Helm": [
+          "Champion Headband"
+        ],
+        "Armor": [],
+        "Gauntlets": [
+          "Champion Bracers"
+        ],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 2
+    },
+    {
+      "family": "champion gaiters",
+      "pieces": {
+        "Helm": [],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": [
+          "Champion Gaiters"
+        ]
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "champion pauldron",
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Champion Pauldron"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "circlet of light",
+      "pieces": {
+        "Helm": [
+          "Circlet of Light"
+        ],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "cloth",
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Cloth Garb"
+        ],
+        "Gauntlets": [],
+        "Greaves": [
+          "Cloth Trousers"
+        ]
+      },
+      "multi_in_piece": false,
+      "total_names": 2
+    },
+    {
+      "family": "common soldier",
+      "pieces": {
+        "Helm": [
+          "Common Soldier Helm"
+        ],
+        "Armor": [],
+        "Gauntlets": [
+          "Common Soldier Gauntlets"
+        ],
+        "Greaves": [
+          "Common Soldier Greaves"
+        ]
+      },
+      "multi_in_piece": false,
+      "total_names": 3
+    },
+    {
+      "family": "common soldier cloth",
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Common Soldier Cloth Armor"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "commoner's",
+      "pieces": {
+        "Helm": [
+          "Commoner's Headband",
+          "Commoner's Headband (Altered)"
+        ],
+        "Armor": [
+          "Commoner's Garb",
+          "Commoner's Garb (Altered)"
+        ],
+        "Gauntlets": [],
+        "Greaves": [
+          "Commoner's Shoes"
+        ]
+      },
+      "multi_in_piece": true,
+      "total_names": 5
+    },
+    {
+      "family": "commoner's simple",
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Commoner's Simple Garb",
+          "Commoner's Simple Garb (Altered)"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": true,
+      "total_names": 2
+    },
+    {
+      "family": "consort's",
+      "pieces": {
+        "Helm": [
+          "Consort's Mask"
+        ],
+        "Armor": [
+          "Consort's Robe"
+        ],
+        "Gauntlets": [],
+        "Greaves": [
+          "Consort's Trousers"
+        ]
+      },
+      "multi_in_piece": false,
+      "total_names": 3
+    },
+    {
+      "family": "corhyn's",
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Corhyn's Robe"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "crimson",
+      "pieces": {
+        "Helm": [
+          "Crimson Hood"
+        ],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "crimson tear scarab",
+      "pieces": {
+        "Helm": [
+          "Crimson Tear Scarab"
+        ],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "crucible",
+      "pieces": {
+        "Helm": [],
+        "Armor": [],
+        "Gauntlets": [
+          "Crucible Gauntlets"
+        ],
+        "Greaves": [
+          "Crucible Greaves"
+        ]
+      },
+      "multi_in_piece": false,
+      "total_names": 2
+    },
+    {
+      "family": "crucible axe",
+      "pieces": {
+        "Helm": [
+          "Crucible Axe Helm"
+        ],
+        "Armor": [
+          "Crucible Axe Armor",
+          "Crucible Axe Armor (Altered)"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": true,
+      "total_names": 3
+    },
+    {
+      "family": "crucible hammer",
+      "pieces": {
+        "Helm": [
+          "Crucible Hammer-Helm"
+        ],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "crucible tree",
+      "pieces": {
+        "Helm": [
+          "Crucible Tree Helm"
+        ],
+        "Armor": [
+          "Crucible Tree Armor",
+          "Crucible Tree Armor (Altered)"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": true,
+      "total_names": 3
+    },
+    {
+      "family": "cuckoo surcoat",
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Cuckoo Surcoat"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "curseblade",
+      "pieces": {
+        "Helm": [
+          "Curseblade Mask"
+        ],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "dancer's",
+      "pieces": {
+        "Helm": [
+          "Dancer's Hood"
+        ],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": [
+          "Dancer's Trousers"
+        ]
+      },
+      "multi_in_piece": false,
+      "total_names": 2
+    },
+    {
+      "family": "dancer's bracer",
+      "pieces": {
+        "Helm": [],
+        "Armor": [],
+        "Gauntlets": [
+          "Dancer's Bracer"
+        ],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "dancer's dress",
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Dancer's Dress",
+          "Dancer's Dress (Altered)"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": true,
+      "total_names": 2
+    },
+    {
+      "family": "dane's",
+      "pieces": {
+        "Helm": [
+          "Dane's Hat"
+        ],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "death",
+      "pieces": {
+        "Helm": [
+          "Death Mask Helm"
+        ],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "deathbed dress",
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Deathbed Dress"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "deathbed smalls",
+      "pieces": {
+        "Helm": [],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": [
+          "Deathbed Smalls"
+        ]
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "depraved perfumer",
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Depraved Perfumer Robe",
+          "Depraved Perfumer Robe (Altered)"
+        ],
+        "Gauntlets": [
+          "Depraved Perfumer Gloves"
+        ],
+        "Greaves": [
+          "Depraved Perfumer Trousers"
+        ]
+      },
+      "multi_in_piece": true,
+      "total_names": 4
+    },
+    {
+      "family": "depraved perfumer headscarf",
+      "pieces": {
+        "Helm": [
+          "Depraved Perfumer Headscarf"
+        ],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "diallos's",
+      "pieces": {
+        "Helm": [
+          "Diallos's Mask"
+        ],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "dirty chainmail",
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Dirty Chainmail"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "divine beast",
+      "pieces": {
+        "Helm": [
+          "Divine Beast Helm"
+        ],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "divine beast head",
+      "pieces": {
+        "Helm": [
+          "Divine Beast Head"
+        ],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "divine beast warrior",
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Divine Beast Warrior Armor"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "divine bird",
+      "pieces": {
+        "Helm": [
+          "Divine Bird Helm"
+        ],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "divine bird warrior",
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Divine Bird Warrior Armor"
+        ],
+        "Gauntlets": [
+          "Divine Bird Warrior Gauntlets"
+        ],
+        "Greaves": [
+          "Divine Bird Warrior Greaves"
+        ]
+      },
+      "multi_in_piece": false,
+      "total_names": 3
+    },
+    {
+      "family": "dryleaf",
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Dryleaf Robe",
+          "Dryleaf Robe (Altered)"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": true,
+      "total_names": 2
+    },
+    {
+      "family": "dryleaf arm wraps",
+      "pieces": {
+        "Helm": [],
+        "Armor": [],
+        "Gauntlets": [
+          "Dryleaf Arm Wraps"
+        ],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "dryleaf cuissardes",
+      "pieces": {
+        "Helm": [],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": [
+          "Dryleaf Cuissardes"
+        ]
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "duelist",
+      "pieces": {
+        "Helm": [
+          "Duelist Helm"
+        ],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": [
+          "Duelist Greaves"
+        ]
+      },
+      "multi_in_piece": false,
+      "total_names": 2
+    },
+    {
+      "family": "eccentric's",
+      "pieces": {
+        "Helm": [
+          "Eccentric's Hood",
+          "Eccentric's Hood (Altered)"
+        ],
+        "Armor": [
+          "Eccentric's Armor"
+        ],
+        "Gauntlets": [
+          "Eccentric's Manchettes"
+        ],
+        "Greaves": []
+      },
+      "multi_in_piece": true,
+      "total_names": 4
+    },
+    {
+      "family": "eccentric's breeches",
+      "pieces": {
+        "Helm": [],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": [
+          "Eccentric's Breeches"
+        ]
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "envoy",
+      "pieces": {
+        "Helm": [
+          "Envoy Crown"
+        ],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "erdtree surcoat",
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Erdtree Surcoat"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "errant sorcerer",
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Errant Sorcerer Robe",
+          "Errant Sorcerer Robe (Altered)"
+        ],
+        "Gauntlets": [
+          "Errant Sorcerer Manchettes"
+        ],
+        "Greaves": [
+          "Errant Sorcerer Boots"
+        ]
+      },
+      "multi_in_piece": true,
+      "total_names": 4
+    },
+    {
+      "family": "eye surcoat",
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Eye Surcoat"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "fang",
+      "pieces": {
+        "Helm": [
+          "Fang Helm"
+        ],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "fell omen cloak",
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Fell Omen Cloak"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "festive",
+      "pieces": {
+        "Helm": [
+          "Festive Hood",
+          "Festive Hood (Altered)"
+        ],
+        "Armor": [
+          "Festive Garb",
+          "Festive Garb (Altered)"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": true,
+      "total_names": 4
+    },
+    {
+      "family": "fia's",
+      "pieces": {
+        "Helm": [
+          "Fia's Hood"
+        ],
+        "Armor": [
+          "Fia's Robe",
+          "Fia's Robe (Altered)"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": true,
+      "total_names": 3
+    },
+    {
+      "family": "finger",
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Finger Robe"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "finger maiden",
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Finger Maiden Robe",
+          "Finger Maiden Robe (Altered)"
+        ],
+        "Gauntlets": [],
+        "Greaves": [
+          "Finger Maiden Shoes"
+        ]
+      },
+      "multi_in_piece": true,
+      "total_names": 3
+    },
+    {
+      "family": "finger maiden fillet",
+      "pieces": {
+        "Helm": [
+          "Finger Maiden Fillet"
+        ],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "foot soldier",
+      "pieces": {
+        "Helm": [
+          "Foot Soldier Helm"
+        ],
+        "Armor": [],
+        "Gauntlets": [
+          "Foot Soldier Gauntlets"
+        ],
+        "Greaves": [
+          "Foot Soldier Greaves"
+        ]
+      },
+      "multi_in_piece": false,
+      "total_names": 3
+    },
+    {
+      "family": "foot soldier cap",
+      "pieces": {
+        "Helm": [
+          "Foot Soldier Cap"
+        ],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "foot soldier helmet",
+      "pieces": {
+        "Helm": [
+          "Foot Soldier Helmet"
+        ],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "foot soldier tabard",
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Foot Soldier Tabard"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "fur",
+      "pieces": {
+        "Helm": [],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": [
+          "Fur Leggings"
+        ]
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "fur raiment",
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Fur Raiment"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "gauntlets",
+      "pieces": {
+        "Helm": [],
+        "Armor": [],
+        "Gauntlets": [
+          "Gauntlets"
+        ],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "gilded foot soldier",
+      "pieces": {
+        "Helm": [
+          "Gilded Foot Soldier Cap"
+        ],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "glintstone scarab",
+      "pieces": {
+        "Helm": [
+          "Glintstone Scarab"
+        ],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "gloried attire",
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Gloried Attire"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "godrick soldier",
+      "pieces": {
+        "Helm": [
+          "Godrick Soldier Helm"
+        ],
+        "Armor": [],
+        "Gauntlets": [
+          "Godrick Soldier Gauntlets"
+        ],
+        "Greaves": [
+          "Godrick Soldier Greaves"
+        ]
+      },
+      "multi_in_piece": false,
+      "total_names": 3
+    },
+    {
+      "family": "godskin apostle",
+      "pieces": {
+        "Helm": [
+          "Godskin Apostle Hood"
+        ],
+        "Armor": [
+          "Godskin Apostle Robe"
+        ],
+        "Gauntlets": [],
+        "Greaves": [
+          "Godskin Apostle Trousers"
+        ]
+      },
+      "multi_in_piece": false,
+      "total_names": 3
+    },
+    {
+      "family": "godskin apostle bracelets",
+      "pieces": {
+        "Helm": [],
+        "Armor": [],
+        "Gauntlets": [
+          "Godskin Apostle Bracelets"
+        ],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "godskin noble",
+      "pieces": {
+        "Helm": [
+          "Godskin Noble Hood"
+        ],
+        "Armor": [
+          "Godskin Noble Robe"
+        ],
+        "Gauntlets": [],
+        "Greaves": [
+          "Godskin Noble Trousers"
+        ]
+      },
+      "multi_in_piece": false,
+      "total_names": 3
+    },
+    {
+      "family": "godskin noble bracelets",
+      "pieces": {
+        "Helm": [],
+        "Armor": [],
+        "Gauntlets": [
+          "Godskin Noble Bracelets"
+        ],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "gold bracelets",
+      "pieces": {
+        "Helm": [],
+        "Armor": [],
+        "Gauntlets": [
+          "Gold Bracelets"
+        ],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "gold waistwrap",
+      "pieces": {
+        "Helm": [],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": [
+          "Gold Waistwrap"
+        ]
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "golden prosthetic",
+      "pieces": {
+        "Helm": [],
+        "Armor": [],
+        "Gauntlets": [
+          "Golden Prosthetic"
+        ],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "goldmask's rags",
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Goldmask's Rags"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "grass hair ornament",
+      "pieces": {
+        "Helm": [
+          "Grass Hair Ornament"
+        ],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "gravebird",
+      "pieces": {
+        "Helm": [
+          "Gravebird Helm"
+        ],
+        "Armor": [
+          "Gravebird Armor"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 2
+    },
+    {
+      "family": "gravebird anklets",
+      "pieces": {
+        "Helm": [],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": [
+          "Gravebird Anklets"
+        ]
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "gravebird bracelets",
+      "pieces": {
+        "Helm": [],
+        "Armor": [],
+        "Gauntlets": [
+          "Gravebird Bracelets"
+        ],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "gravebird's blackquill",
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Gravebird's Blackquill Armor"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "gravekeeper cloak",
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Gravekeeper Cloak",
+          "Gravekeeper Cloak (Altered)"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": true,
+      "total_names": 2
+    },
+    {
+      "family": "great horned",
+      "pieces": {
+        "Helm": [
+          "Great Horned Headband"
+        ],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "greathelm",
+      "pieces": {
+        "Helm": [
+          "Greathelm"
+        ],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "greathood",
+      "pieces": {
+        "Helm": [
+          "Greathood"
+        ],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "greatjar",
+      "pieces": {
+        "Helm": [
+          "Greatjar"
+        ],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "guilty",
+      "pieces": {
+        "Helm": [
+          "Guilty Hood"
+        ],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "haima glintstone",
+      "pieces": {
+        "Helm": [
+          "Haima Glintstone Crown"
+        ],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "haligtree",
+      "pieces": {
+        "Helm": [
+          "Haligtree Helm"
+        ],
+        "Armor": [],
+        "Gauntlets": [
+          "Haligtree Gauntlets"
+        ],
+        "Greaves": [
+          "Haligtree Greaves"
+        ]
+      },
+      "multi_in_piece": false,
+      "total_names": 3
+    },
+    {
+      "family": "haligtree crest surcoat",
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Haligtree Crest Surcoat"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "hierodas glintstone",
+      "pieces": {
+        "Helm": [
+          "Hierodas Glintstone Crown"
+        ],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "high page",
+      "pieces": {
+        "Helm": [
+          "High Page Hood"
+        ],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "high page clothes",
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "High Page Clothes",
+          "High Page Clothes (Altered)"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": true,
+      "total_names": 2
+    },
+    {
+      "family": "high priest",
+      "pieces": {
+        "Helm": [
+          "High Priest Hat"
+        ],
+        "Armor": [
+          "High Priest Robe"
+        ],
+        "Gauntlets": [
+          "High Priest Gloves"
+        ],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 3
+    },
+    {
+      "family": "high priest undergarments",
+      "pieces": {
+        "Helm": [],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": [
+          "High Priest Undergarments"
+        ]
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "highland attire",
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Highland Attire"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "highwayman",
+      "pieces": {
+        "Helm": [
+          "Highwayman Hood"
+        ],
+        "Armor": [],
+        "Gauntlets": [
+          "Highwayman Gauntlets"
+        ],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 2
+    },
+    {
+      "family": "highwayman cloth",
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Highwayman Cloth Armor"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "igon's",
+      "pieces": {
+        "Helm": [
+          "Igon's Helm",
+          "Igon's Helm (Altered)"
+        ],
+        "Armor": [
+          "Igon's Armor",
+          "Igon's Armor (Altered)"
+        ],
+        "Gauntlets": [
+          "Igon's Gauntlets"
+        ],
+        "Greaves": []
+      },
+      "multi_in_piece": true,
+      "total_names": 5
+    },
+    {
+      "family": "igon's loincloth",
+      "pieces": {
+        "Helm": [],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": [
+          "Igon's Loincloth"
+        ]
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "iji's mirrorhelm",
+      "pieces": {
+        "Helm": [
+          "Iji's Mirrorhelm"
+        ],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "imp head",
+      "pieces": {
+        "Helm": [
+          "Imp Head (Lion)",
+          "Imp Head (Cat)",
+          "Imp Head (Corpse)",
+          "Imp Head (Elder)",
+          "Imp Head (Fanged)",
+          "Imp Head (Long-Tongued)",
+          "Imp Head (Wolf)"
+        ],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": true,
+      "total_names": 7
+    },
+    {
+      "family": "incantation scarab",
+      "pieces": {
+        "Helm": [
+          "Incantation Scarab"
+        ],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "iron",
+      "pieces": {
+        "Helm": [],
+        "Armor": [],
+        "Gauntlets": [
+          "Iron Gauntlets"
+        ],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "iron helmet",
+      "pieces": {
+        "Helm": [
+          "Iron Helmet"
+        ],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "iron kasa",
+      "pieces": {
+        "Helm": [
+          "Iron Kasa"
+        ],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "iron rivet",
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Iron Rivet Armor"
+        ],
+        "Gauntlets": [
+          "Iron Rivet Gauntlets"
+        ],
+        "Greaves": [
+          "Iron Rivet Greaves"
+        ]
+      },
+      "multi_in_piece": false,
+      "total_names": 3
+    },
+    {
+      "family": "ivory draped tabard",
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Ivory-Draped Tabard"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "jar",
+      "pieces": {
+        "Helm": [
+          "Jar"
+        ],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "juvenile scholar",
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Juvenile Scholar Robe"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "juvenile scholar cap",
+      "pieces": {
+        "Helm": [
+          "Juvenile Scholar Cap"
+        ],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "karolos glintstone",
+      "pieces": {
+        "Helm": [
+          "Karolos Glintstone Crown"
+        ],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "lazuli",
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Lazuli Robe"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "lazuli glintstone",
+      "pieces": {
+        "Helm": [
+          "Lazuli Glintstone Crown"
+        ],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "leather arm wraps",
+      "pieces": {
+        "Helm": [],
+        "Armor": [],
+        "Gauntlets": [
+          "Leather Arm Wraps"
+        ],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "leather draped tabard",
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Leather-Draped Tabard"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "leather leg wraps",
+      "pieces": {
+        "Helm": [],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": [
+          "Leather Leg Wraps"
+        ]
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "leda's",
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Leda's Armor"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "leyndell soldier",
+      "pieces": {
+        "Helm": [
+          "Leyndell Soldier Helm"
+        ],
+        "Armor": [],
+        "Gauntlets": [
+          "Leyndell Soldier Gauntlets"
+        ],
+        "Greaves": [
+          "Leyndell Soldier Greaves"
+        ]
+      },
+      "multi_in_piece": false,
+      "total_names": 3
+    },
+    {
+      "family": "lord of blood's",
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Lord of Blood's Robe",
+          "Lord of Blood's Robe (Altered)"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": true,
+      "total_names": 2
+    },
+    {
+      "family": "lusat's",
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Lusat's Robe"
+        ],
+        "Gauntlets": [
+          "Lusat's Manchettes"
+        ],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 2
+    },
+    {
+      "family": "lusat's glintstone",
+      "pieces": {
+        "Helm": [
+          "Lusat's Glintstone Crown"
+        ],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "malenia's",
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Malenia's Armor",
+          "Malenia's Armor (Altered)"
+        ],
+        "Gauntlets": [],
+        "Greaves": [
+          "Malenia's Greaves"
+        ]
+      },
+      "multi_in_piece": true,
+      "total_names": 3
+    },
+    {
+      "family": "malenia's gauntlet",
+      "pieces": {
+        "Helm": [],
+        "Armor": [],
+        "Gauntlets": [
+          "Malenia's Gauntlet"
+        ],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "malenia's winged",
+      "pieces": {
+        "Helm": [
+          "Malenia's Winged Helm"
+        ],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "marais",
+      "pieces": {
+        "Helm": [
+          "Marais Mask"
+        ],
+        "Armor": [
+          "Marais Robe"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 2
+    },
+    {
+      "family": "marionette soldier",
+      "pieces": {
+        "Helm": [
+          "Marionette Soldier Helm"
+        ],
+        "Armor": [
+          "Marionette Soldier Armor"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 2
+    },
+    {
+      "family": "marionette soldier birdhelm",
+      "pieces": {
+        "Helm": [
+          "Marionette Soldier Birdhelm"
+        ],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "mausoleum",
+      "pieces": {
+        "Helm": [],
+        "Armor": [],
+        "Gauntlets": [
+          "Mausoleum Gauntlets"
+        ],
+        "Greaves": [
+          "Mausoleum Greaves"
+        ]
+      },
+      "multi_in_piece": false,
+      "total_names": 2
+    },
+    {
+      "family": "mausoleum knight",
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Mausoleum Knight Armor",
+          "Mausoleum Knight Armor (Altered)"
+        ],
+        "Gauntlets": [
+          "Mausoleum Knight Gauntlets"
+        ],
+        "Greaves": [
+          "Mausoleum Knight Greaves"
+        ]
+      },
+      "multi_in_piece": true,
+      "total_names": 4
+    },
+    {
+      "family": "mausoleum surcoat",
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Mausoleum Surcoat"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "millicent's",
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Millicent's Robe"
+        ],
+        "Gauntlets": [
+          "Millicent's Gloves"
+        ],
+        "Greaves": [
+          "Millicent's Boots"
+        ]
+      },
+      "multi_in_piece": false,
+      "total_names": 3
+    },
+    {
+      "family": "millicent's tunic",
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Millicent's Tunic"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "mushroom",
+      "pieces": {
+        "Helm": [
+          "Mushroom Crown"
+        ],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "mushroom arms",
+      "pieces": {
+        "Helm": [],
+        "Armor": [],
+        "Gauntlets": [
+          "Mushroom Arms"
+        ],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "mushroom body",
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Mushroom Body"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "mushroom head",
+      "pieces": {
+        "Helm": [
+          "Mushroom Head"
+        ],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "mushroom legs",
+      "pieces": {
+        "Helm": [],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": [
+          "Mushroom Legs"
+        ]
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "navy",
+      "pieces": {
+        "Helm": [
+          "Navy Hood"
+        ],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "night maiden",
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Night Maiden Armor"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "night maiden twin",
+      "pieces": {
+        "Helm": [
+          "Night Maiden Twin Crown"
+        ],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "noble's",
+      "pieces": {
+        "Helm": [],
+        "Armor": [],
+        "Gauntlets": [
+          "Noble's Gloves"
+        ],
+        "Greaves": [
+          "Noble's Trousers"
+        ]
+      },
+      "multi_in_piece": false,
+      "total_names": 2
+    },
+    {
+      "family": "noble's traveling",
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Noble's Traveling Garb"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "nomadic merchant's",
+      "pieces": {
+        "Helm": [],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": [
+          "Nomadic Merchant's Trousers"
+        ]
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "nomadic merchant's chapeau",
+      "pieces": {
+        "Helm": [
+          "Nomadic Merchant's Chapeau"
+        ],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "nomadic merchant's finery",
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Nomadic Merchant's Finery",
+          "Nomadic Merchant's Finery (Altered)"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": true,
+      "total_names": 2
+    },
+    {
+      "family": "nox",
+      "pieces": {
+        "Helm": [],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": [
+          "Nox Greaves"
+        ]
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "nox bracelets",
+      "pieces": {
+        "Helm": [],
+        "Armor": [],
+        "Gauntlets": [
+          "Nox Bracelets"
+        ],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "nox mirrorhelm",
+      "pieces": {
+        "Helm": [
+          "Nox Mirrorhelm"
+        ],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "nox monk",
+      "pieces": {
+        "Helm": [
+          "Nox Monk Hood",
+          "Nox Monk Hood (Altered)"
+        ],
+        "Armor": [
+          "Nox Monk Armor",
+          "Nox Monk Armor (Altered)"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": true,
+      "total_names": 4
+    },
+    {
+      "family": "nox swordstress",
+      "pieces": {
+        "Helm": [
+          "Nox Swordstress Crown",
+          "Nox Swordstress Crown (Altered)"
+        ],
+        "Armor": [
+          "Nox Swordstress Armor",
+          "Nox Swordstress Armor (Altered)"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": true,
+      "total_names": 4
+    },
+    {
+      "family": "octopus head",
+      "pieces": {
+        "Helm": [
+          "Octopus Head"
+        ],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "of confidence",
+      "pieces": {
+        "Helm": [
+          "Mask of Confidence"
+        ],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "official's attire",
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Official's Attire"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "okina",
+      "pieces": {
+        "Helm": [
+          "Okina Mask"
+        ],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "old aristocrat",
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Old Aristocrat Gown"
+        ],
+        "Gauntlets": [],
+        "Greaves": [
+          "Old Aristocrat Shoes"
+        ]
+      },
+      "multi_in_piece": false,
+      "total_names": 2
+    },
+    {
+      "family": "old aristocrat cowl",
+      "pieces": {
+        "Helm": [
+          "Old Aristocrat Cowl"
+        ],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "old sorcerer's legwraps",
+      "pieces": {
+        "Helm": [],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": [
+          "Old Sorcerer's Legwraps"
+        ]
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "olivinus glintstone",
+      "pieces": {
+        "Helm": [
+          "Olivinus Glintstone Crown"
+        ],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "omenkiller",
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Omenkiller Robe"
+        ],
+        "Gauntlets": [],
+        "Greaves": [
+          "Omenkiller Boots"
+        ]
+      },
+      "multi_in_piece": false,
+      "total_names": 2
+    },
+    {
+      "family": "omenkiller long",
+      "pieces": {
+        "Helm": [],
+        "Armor": [],
+        "Gauntlets": [
+          "Omenkiller Long Gloves"
+        ],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "omensmirk",
+      "pieces": {
+        "Helm": [
+          "Omensmirk Mask"
+        ],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "page",
+      "pieces": {
+        "Helm": [
+          "Page Hood"
+        ],
+        "Armor": [
+          "Page Garb",
+          "Page Garb (Altered)"
+        ],
+        "Gauntlets": [],
+        "Greaves": [
+          "Page Trousers"
+        ]
+      },
+      "multi_in_piece": true,
+      "total_names": 4
+    },
+    {
+      "family": "pelt of ralva",
+      "pieces": {
+        "Helm": [
+          "Pelt of Ralva"
+        ],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "perfumer",
+      "pieces": {
+        "Helm": [
+          "Perfumer Hood"
+        ],
+        "Armor": [
+          "Perfumer Robe",
+          "Perfumer Robe (Altered)"
+        ],
+        "Gauntlets": [
+          "Perfumer Gloves"
+        ],
+        "Greaves": []
+      },
+      "multi_in_piece": true,
+      "total_names": 4
+    },
+    {
+      "family": "perfumer sarong",
+      "pieces": {
+        "Helm": [],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": [
+          "Perfumer Sarong"
+        ]
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "perfumer's traveling",
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Perfumer's Traveling Garb",
+          "Perfumer's Traveling Garb (Altered)"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": true,
+      "total_names": 2
+    },
+    {
+      "family": "preceptor's",
+      "pieces": {
+        "Helm": [],
+        "Armor": [],
+        "Gauntlets": [
+          "Preceptor's Gloves"
+        ],
+        "Greaves": [
+          "Preceptor's Trousers"
+        ]
+      },
+      "multi_in_piece": false,
+      "total_names": 2
+    },
+    {
+      "family": "preceptor's big",
+      "pieces": {
+        "Helm": [
+          "Preceptor's Big Hat"
+        ],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "preceptor's long",
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Preceptor's Long Gown",
+          "Preceptor's Long Gown (Altered)"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": true,
+      "total_names": 2
+    },
+    {
+      "family": "prisoner",
+      "pieces": {
+        "Helm": [],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": [
+          "Prisoner Trousers"
+        ]
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "prisoner clothing",
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Prisoner Clothing"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "prisoner iron",
+      "pieces": {
+        "Helm": [
+          "Prisoner Iron Mask"
+        ],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "prophet",
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Prophet Robe",
+          "Prophet Robe (Altered)"
+        ],
+        "Gauntlets": [],
+        "Greaves": [
+          "Prophet Trousers"
+        ]
+      },
+      "multi_in_piece": true,
+      "total_names": 3
+    },
+    {
+      "family": "prophet blindfold",
+      "pieces": {
+        "Helm": [
+          "Prophet Blindfold"
+        ],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "pumpkin",
+      "pieces": {
+        "Helm": [
+          "Pumpkin Helm"
+        ],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "queen's",
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Queen's Robe"
+        ],
+        "Gauntlets": [],
+        "Greaves": [
+          "Queen's Leggings"
+        ]
+      },
+      "multi_in_piece": false,
+      "total_names": 2
+    },
+    {
+      "family": "queen's bracelets",
+      "pieces": {
+        "Helm": [],
+        "Armor": [],
+        "Gauntlets": [
+          "Queen's Bracelets"
+        ],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "queen's crescent",
+      "pieces": {
+        "Helm": [
+          "Queen's Crescent Crown"
+        ],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "radahn soldier",
+      "pieces": {
+        "Helm": [
+          "Radahn Soldier Helm"
+        ],
+        "Armor": [],
+        "Gauntlets": [
+          "Radahn Soldier Gauntlets"
+        ],
+        "Greaves": [
+          "Radahn Soldier Greaves"
+        ]
+      },
+      "multi_in_piece": false,
+      "total_names": 3
+    },
+    {
+      "family": "radahn's",
+      "pieces": {
+        "Helm": [],
+        "Armor": [],
+        "Gauntlets": [
+          "Radahn's Gauntlets"
+        ],
+        "Greaves": [
+          "Radahn's Greaves"
+        ]
+      },
+      "multi_in_piece": false,
+      "total_names": 2
+    },
+    {
+      "family": "radahn's lion",
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Radahn's Lion Armor",
+          "Radahn's Lion Armor (Altered)"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": true,
+      "total_names": 2
+    },
+    {
+      "family": "radahn's redmane",
+      "pieces": {
+        "Helm": [
+          "Radahn's Redmane Helm"
+        ],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "radiant gold",
+      "pieces": {
+        "Helm": [
+          "Radiant Gold Mask"
+        ],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "ragged",
+      "pieces": {
+        "Helm": [
+          "Ragged Hat",
+          "Ragged Hat (Altered)"
+        ],
+        "Armor": [
+          "Ragged Armor",
+          "Ragged Armor (Altered)"
+        ],
+        "Gauntlets": [
+          "Ragged Gloves"
+        ],
+        "Greaves": []
+      },
+      "multi_in_piece": true,
+      "total_names": 5
+    },
+    {
+      "family": "ragged loincloth",
+      "pieces": {
+        "Helm": [],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": [
+          "Ragged Loincloth"
+        ]
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "raptor's black feathers",
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Raptor's Black Feathers"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "redmane surcoat",
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Redmane Surcoat"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "ronin's",
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Ronin's Armor",
+          "Ronin's Armor (Altered)"
+        ],
+        "Gauntlets": [
+          "Ronin's Gauntlets"
+        ],
+        "Greaves": [
+          "Ronin's Greaves"
+        ]
+      },
+      "multi_in_piece": true,
+      "total_names": 4
+    },
+    {
+      "family": "rotten duelist",
+      "pieces": {
+        "Helm": [
+          "Rotten Duelist Helm"
+        ],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": [
+          "Rotten Duelist Greaves"
+        ]
+      },
+      "multi_in_piece": false,
+      "total_names": 2
+    },
+    {
+      "family": "rotten gravekeeper cloak",
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Rotten Gravekeeper Cloak",
+          "Rotten Gravekeeper Cloak (Altered)"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": true,
+      "total_names": 2
+    },
+    {
+      "family": "ruler's",
+      "pieces": {
+        "Helm": [
+          "Ruler's Mask"
+        ],
+        "Armor": [
+          "Ruler's Robe"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 2
+    },
+    {
+      "family": "sacred",
+      "pieces": {
+        "Helm": [
+          "Sacred Crown Helm"
+        ],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "sage",
+      "pieces": {
+        "Helm": [
+          "Sage Hood"
+        ],
+        "Armor": [
+          "Sage Robe"
+        ],
+        "Gauntlets": [],
+        "Greaves": [
+          "Sage Trousers"
+        ]
+      },
+      "multi_in_piece": false,
+      "total_names": 3
+    },
+    {
+      "family": "salza's",
+      "pieces": {
+        "Helm": [
+          "Salza's Hood"
+        ],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "sanguine noble",
+      "pieces": {
+        "Helm": [
+          "Sanguine Noble Hood"
+        ],
+        "Armor": [
+          "Sanguine Noble Robe"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 2
+    },
+    {
+      "family": "sanguine noble waistcloth",
+      "pieces": {
+        "Helm": [],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": [
+          "Sanguine Noble Waistcloth"
+        ]
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "scale",
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Scale Armor"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "scarlet tabard",
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Scarlet Tabard"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "shaman",
+      "pieces": {
+        "Helm": [],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": [
+          "Shaman Leggings"
+        ]
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "shaman furs",
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Shaman Furs"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "shining horned",
+      "pieces": {
+        "Helm": [
+          "Shining Horned Headband"
+        ],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "silver tear",
+      "pieces": {
+        "Helm": [
+          "Silver Tear Mask"
+        ],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "skeletal",
+      "pieces": {
+        "Helm": [
+          "Skeletal Mask"
+        ],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "snow witch",
+      "pieces": {
+        "Helm": [
+          "Snow Witch Hat"
+        ],
+        "Armor": [
+          "Snow Witch Robe",
+          "Snow Witch Robe (Altered)"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": true,
+      "total_names": 3
+    },
+    {
+      "family": "snow witch skirt",
+      "pieces": {
+        "Helm": [],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": [
+          "Snow Witch Skirt"
+        ]
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "soiled loincloth",
+      "pieces": {
+        "Helm": [],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": [
+          "Soiled Loincloth"
+        ]
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "sorcerer",
+      "pieces": {
+        "Helm": [],
+        "Armor": [],
+        "Gauntlets": [
+          "Sorcerer Manchettes"
+        ],
+        "Greaves": [
+          "Sorcerer Leggings"
+        ]
+      },
+      "multi_in_piece": false,
+      "total_names": 2
+    },
+    {
+      "family": "spellblade's",
+      "pieces": {
+        "Helm": [],
+        "Armor": [],
+        "Gauntlets": [
+          "Spellblade's Gloves"
+        ],
+        "Greaves": [
+          "Spellblade's Trousers"
+        ]
+      },
+      "multi_in_piece": false,
+      "total_names": 2
+    },
+    {
+      "family": "spellblade's pointed",
+      "pieces": {
+        "Helm": [
+          "Spellblade's Pointed Hat"
+        ],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "spellblade's traveling attire",
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Spellblade's Traveling Attire",
+          "Spellblade's Traveling Attire (Altered)"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": true,
+      "total_names": 2
+    },
+    {
+      "family": "st trina's blossom",
+      "pieces": {
+        "Helm": [
+          "St. Trina's Blossom"
+        ],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "traveler's",
+      "pieces": {
+        "Helm": [
+          "Traveler's Hat"
+        ],
+        "Armor": [],
+        "Gauntlets": [
+          "Traveler's Gloves",
+          "Traveler's Manchettes"
+        ],
+        "Greaves": [
+          "Traveler's Boots"
+        ]
+      },
+      "multi_in_piece": true,
+      "total_names": 4
+    },
+    {
+      "family": "traveler's clothes",
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Traveler's Clothes"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "traveler's slops",
+      "pieces": {
+        "Helm": [],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": [
+          "Traveler's Slops"
+        ]
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "tree and beast",
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Tree-and-Beast Surcoat"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "tree surcoat",
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Tree Surcoat"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "twinsage glintstone",
+      "pieces": {
+        "Helm": [
+          "Twinsage Glintstone Crown"
+        ],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "upper class",
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Upper-Class Robe"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "war surgeon",
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "War Surgeon Gown",
+          "War Surgeon Gown (Altered)"
+        ],
+        "Gauntlets": [
+          "War Surgeon Gloves"
+        ],
+        "Greaves": [
+          "War Surgeon Trousers"
+        ]
+      },
+      "multi_in_piece": true,
+      "total_names": 4
+    },
+    {
+      "family": "warrior",
+      "pieces": {
+        "Helm": [],
+        "Armor": [],
+        "Gauntlets": [
+          "Warrior Gauntlets"
+        ],
+        "Greaves": [
+          "Warrior Greaves"
+        ]
+      },
+      "multi_in_piece": false,
+      "total_names": 2
+    },
+    {
+      "family": "white",
+      "pieces": {
+        "Helm": [
+          "White Mask"
+        ],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "white reed",
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "White Reed Armor"
+        ],
+        "Gauntlets": [
+          "White Reed Gauntlets"
+        ],
+        "Greaves": [
+          "White Reed Greaves"
+        ]
+      },
+      "multi_in_piece": false,
+      "total_names": 3
+    },
+    {
+      "family": "winged serpent",
+      "pieces": {
+        "Helm": [
+          "Winged Serpent Helm"
+        ],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "wise man's",
+      "pieces": {
+        "Helm": [
+          "Wise Man's Mask"
+        ],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "witch's glintstone",
+      "pieces": {
+        "Helm": [
+          "Witch's Glintstone Crown"
+        ],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "zamor",
+      "pieces": {
+        "Helm": [
+          "Zamor Mask"
+        ],
+        "Armor": [
+          "Zamor Armor"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 2
+    },
+    {
+      "family": "zamor bracelets",
+      "pieces": {
+        "Helm": [],
+        "Armor": [],
+        "Gauntlets": [
+          "Zamor Bracelets"
+        ],
+        "Greaves": []
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    },
+    {
+      "family": "zamor legwraps",
+      "pieces": {
+        "Helm": [],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": [
+          "Zamor Legwraps"
+        ]
+      },
+      "multi_in_piece": false,
+      "total_names": 1
+    }
+  ],
+  "ambiguous": [
+    {
+      "family": "all knowing",
+      "present_piece_count": 4,
+      "multi_in_piece": true,
+      "total_names": 5,
+      "pieces": {
+        "Helm": [
+          "All-Knowing Helm"
+        ],
+        "Armor": [
+          "All-Knowing Armor",
+          "All-Knowing Armor (Altered)"
+        ],
+        "Gauntlets": [
+          "All-Knowing Gauntlets"
+        ],
+        "Greaves": [
+          "All-Knowing Greaves"
+        ]
+      }
+    },
+    {
+      "family": "astrologer",
+      "present_piece_count": 4,
+      "multi_in_piece": true,
+      "total_names": 5,
+      "pieces": {
+        "Helm": [
+          "Astrologer Hood"
+        ],
+        "Armor": [
+          "Astrologer Robe",
+          "Astrologer Robe (Altered)"
+        ],
+        "Gauntlets": [
+          "Astrologer Gloves"
+        ],
+        "Greaves": [
+          "Astrologer Trousers"
+        ]
+      }
+    },
+    {
+      "family": "banished knight",
+      "present_piece_count": 4,
+      "multi_in_piece": true,
+      "total_names": 6,
+      "pieces": {
+        "Helm": [
+          "Banished Knight Helm",
+          "Banished Knight Helm (Altered)"
+        ],
+        "Armor": [
+          "Banished Knight Armor",
+          "Banished Knight Armor (Altered)"
+        ],
+        "Gauntlets": [
+          "Banished Knight Gauntlets"
+        ],
+        "Greaves": [
+          "Banished Knight Greaves"
+        ]
+      }
+    },
+    {
+      "family": "beast champion",
+      "present_piece_count": 4,
+      "multi_in_piece": true,
+      "total_names": 5,
+      "pieces": {
+        "Helm": [
+          "Beast Champion Helm"
+        ],
+        "Armor": [
+          "Beast Champion Armor",
+          "Beast Champion Armor (Altered)"
+        ],
+        "Gauntlets": [
+          "Beast Champion Gauntlets"
+        ],
+        "Greaves": [
+          "Beast Champion Greaves"
+        ]
+      }
+    },
+    {
+      "family": "black knife",
+      "present_piece_count": 4,
+      "multi_in_piece": true,
+      "total_names": 5,
+      "pieces": {
+        "Helm": [
+          "Black Knife Hood"
+        ],
+        "Armor": [
+          "Black Knife Armor",
+          "Black Knife Armor (Altered)"
+        ],
+        "Gauntlets": [
+          "Black Knife Gauntlets"
+        ],
+        "Greaves": [
+          "Black Knife Greaves"
+        ]
+      }
+    },
+    {
+      "family": "bloodhound knight",
+      "present_piece_count": 4,
+      "multi_in_piece": true,
+      "total_names": 5,
+      "pieces": {
+        "Helm": [
+          "Bloodhound Knight Helm"
+        ],
+        "Armor": [
+          "Bloodhound Knight Armor",
+          "Bloodhound Knight Armor (Altered)"
+        ],
+        "Gauntlets": [
+          "Bloodhound Knight Gauntlets"
+        ],
+        "Greaves": [
+          "Bloodhound Knight Greaves"
+        ]
+      }
+    },
+    {
+      "family": "briar",
+      "present_piece_count": 4,
+      "multi_in_piece": true,
+      "total_names": 5,
+      "pieces": {
+        "Helm": [
+          "Briar Helm"
+        ],
+        "Armor": [
+          "Briar Armor",
+          "Briar Armor (Altered)"
+        ],
+        "Gauntlets": [
+          "Briar Gauntlets"
+        ],
+        "Greaves": [
+          "Briar Greaves"
+        ]
+      }
+    },
+    {
+      "family": "carian knight",
+      "present_piece_count": 4,
+      "multi_in_piece": true,
+      "total_names": 5,
+      "pieces": {
+        "Helm": [
+          "Carian Knight Helm"
+        ],
+        "Armor": [
+          "Carian Knight Armor",
+          "Carian Knight Armor (Altered)"
+        ],
+        "Gauntlets": [
+          "Carian Knight Gauntlets"
+        ],
+        "Greaves": [
+          "Carian Knight Greaves"
+        ]
+      }
+    },
+    {
+      "family": "cleanrot",
+      "present_piece_count": 4,
+      "multi_in_piece": true,
+      "total_names": 6,
+      "pieces": {
+        "Helm": [
+          "Cleanrot Helm",
+          "Cleanrot Helm (Altered)"
+        ],
+        "Armor": [
+          "Cleanrot Armor",
+          "Cleanrot Armor (Altered)"
+        ],
+        "Gauntlets": [
+          "Cleanrot Gauntlets"
+        ],
+        "Greaves": [
+          "Cleanrot Greaves"
+        ]
+      }
+    },
+    {
+      "family": "confessor",
+      "present_piece_count": 4,
+      "multi_in_piece": true,
+      "total_names": 6,
+      "pieces": {
+        "Helm": [
+          "Confessor Hood",
+          "Confessor Hood (Altered)"
+        ],
+        "Armor": [
+          "Confessor Armor",
+          "Confessor Armor (Altered)"
+        ],
+        "Gauntlets": [
+          "Confessor Gloves"
+        ],
+        "Greaves": [
+          "Confessor Boots"
+        ]
+      }
+    },
+    {
+      "family": "cuckoo knight",
+      "present_piece_count": 4,
+      "multi_in_piece": true,
+      "total_names": 5,
+      "pieces": {
+        "Helm": [
+          "Cuckoo Knight Helm"
+        ],
+        "Armor": [
+          "Cuckoo Knight Armor",
+          "Cuckoo Knight Armor (Altered)"
+        ],
+        "Gauntlets": [
+          "Cuckoo Knight Gauntlets"
+        ],
+        "Greaves": [
+          "Cuckoo Knight Greaves"
+        ]
+      }
+    },
+    {
+      "family": "drake knight",
+      "present_piece_count": 4,
+      "multi_in_piece": true,
+      "total_names": 6,
+      "pieces": {
+        "Helm": [
+          "Drake Knight Helm",
+          "Drake Knight Helm (Altered)"
+        ],
+        "Armor": [
+          "Drake Knight Armor",
+          "Drake Knight Armor (Altered)"
+        ],
+        "Gauntlets": [
+          "Drake Knight Gauntlets"
+        ],
+        "Greaves": [
+          "Drake Knight Greaves"
+        ]
+      }
+    },
+    {
+      "family": "elden lord",
+      "present_piece_count": 4,
+      "multi_in_piece": true,
+      "total_names": 5,
+      "pieces": {
+        "Helm": [
+          "Elden Lord Crown"
+        ],
+        "Armor": [
+          "Elden Lord Armor",
+          "Elden Lord Armor (Altered)"
+        ],
+        "Gauntlets": [
+          "Elden Lord Bracers"
+        ],
+        "Greaves": [
+          "Elden Lord Greaves"
+        ]
+      }
+    },
+    {
+      "family": "fingerprint",
+      "present_piece_count": 4,
+      "multi_in_piece": true,
+      "total_names": 5,
+      "pieces": {
+        "Helm": [
+          "Fingerprint Helm"
+        ],
+        "Armor": [
+          "Fingerprint Armor",
+          "Fingerprint Armor (Altered)"
+        ],
+        "Gauntlets": [
+          "Fingerprint Gauntlets"
+        ],
+        "Greaves": [
+          "Fingerprint Greaves"
+        ]
+      }
+    },
+    {
+      "family": "fire knight",
+      "present_piece_count": 4,
+      "multi_in_piece": true,
+      "total_names": 5,
+      "pieces": {
+        "Helm": [
+          "Fire Knight Helm"
+        ],
+        "Armor": [
+          "Fire Knight Armor",
+          "Fire Knight Armor (Altered)"
+        ],
+        "Gauntlets": [
+          "Fire Knight Gauntlets"
+        ],
+        "Greaves": [
+          "Fire Knight Greaves"
+        ]
+      }
+    },
+    {
+      "family": "fire prelate",
+      "present_piece_count": 4,
+      "multi_in_piece": true,
+      "total_names": 5,
+      "pieces": {
+        "Helm": [
+          "Fire Prelate Helm"
+        ],
+        "Armor": [
+          "Fire Prelate Armor",
+          "Fire Prelate Armor (Altered)"
+        ],
+        "Gauntlets": [
+          "Fire Prelate Gauntlets"
+        ],
+        "Greaves": [
+          "Fire Prelate Greaves"
+        ]
+      }
+    },
+    {
+      "family": "freyja's",
+      "present_piece_count": 4,
+      "multi_in_piece": true,
+      "total_names": 5,
+      "pieces": {
+        "Helm": [
+          "Freyja's Helm"
+        ],
+        "Armor": [
+          "Freyja's Armor",
+          "Freyja's Armor (Altered)"
+        ],
+        "Gauntlets": [
+          "Freyja's Gauntlets"
+        ],
+        "Greaves": [
+          "Freyja's Greaves"
+        ]
+      }
+    },
+    {
+      "family": "gelmir knight",
+      "present_piece_count": 4,
+      "multi_in_piece": true,
+      "total_names": 5,
+      "pieces": {
+        "Helm": [
+          "Gelmir Knight Helm"
+        ],
+        "Armor": [
+          "Gelmir Knight Armor",
+          "Gelmir Knight Armor (Altered)"
+        ],
+        "Gauntlets": [
+          "Gelmir Knight Gauntlets"
+        ],
+        "Greaves": [
+          "Gelmir Knight Greaves"
+        ]
+      }
+    },
+    {
+      "family": "godrick knight",
+      "present_piece_count": 4,
+      "multi_in_piece": true,
+      "total_names": 5,
+      "pieces": {
+        "Helm": [
+          "Godrick Knight Helm"
+        ],
+        "Armor": [
+          "Godrick Knight Armor",
+          "Godrick Knight Armor (Altered)"
+        ],
+        "Gauntlets": [
+          "Godrick Knight Gauntlets"
+        ],
+        "Greaves": [
+          "Godrick Knight Greaves"
+        ]
+      }
+    },
+    {
+      "family": "guardian",
+      "present_piece_count": 4,
+      "multi_in_piece": true,
+      "total_names": 5,
+      "pieces": {
+        "Helm": [
+          "Guardian Mask"
+        ],
+        "Armor": [
+          "Guardian Garb",
+          "Guardian Garb (Full Bloom)"
+        ],
+        "Gauntlets": [
+          "Guardian Bracers"
+        ],
+        "Greaves": [
+          "Guardian Greaves"
+        ]
+      }
+    },
+    {
+      "family": "haligtree knight",
+      "present_piece_count": 4,
+      "multi_in_piece": true,
+      "total_names": 5,
+      "pieces": {
+        "Helm": [
+          "Haligtree Knight Helm"
+        ],
+        "Armor": [
+          "Haligtree Knight Armor",
+          "Haligtree Knight Armor (Altered)"
+        ],
+        "Gauntlets": [
+          "Haligtree Knight Gauntlets"
+        ],
+        "Greaves": [
+          "Haligtree Knight Greaves"
+        ]
+      }
+    },
+    {
+      "family": "hoslow's",
+      "present_piece_count": 4,
+      "multi_in_piece": true,
+      "total_names": 5,
+      "pieces": {
+        "Helm": [
+          "Hoslow's Helm"
+        ],
+        "Armor": [
+          "Hoslow's Armor",
+          "Hoslow's Armor (Altered)"
+        ],
+        "Gauntlets": [
+          "Hoslow's Gauntlets"
+        ],
+        "Greaves": [
+          "Hoslow's Greaves"
+        ]
+      }
+    },
+    {
+      "family": "land of reeds",
+      "present_piece_count": 4,
+      "multi_in_piece": true,
+      "total_names": 5,
+      "pieces": {
+        "Helm": [
+          "Land of Reeds Helm"
+        ],
+        "Armor": [
+          "Land of Reeds Armor",
+          "Land of Reeds Armor (Altered)"
+        ],
+        "Gauntlets": [
+          "Land of Reeds Gauntlets"
+        ],
+        "Greaves": [
+          "Land of Reeds Greaves"
+        ]
+      }
+    },
+    {
+      "family": "leather",
+      "present_piece_count": 4,
+      "multi_in_piece": true,
+      "total_names": 6,
+      "pieces": {
+        "Helm": [
+          "Leather Headband",
+          "Leather Crown"
+        ],
+        "Armor": [
+          "Leather Armor"
+        ],
+        "Gauntlets": [
+          "Leather Gloves"
+        ],
+        "Greaves": [
+          "Leather Trousers",
+          "Leather Boots"
+        ]
+      }
+    },
+    {
+      "family": "leyndell knight",
+      "present_piece_count": 4,
+      "multi_in_piece": true,
+      "total_names": 5,
+      "pieces": {
+        "Helm": [
+          "Leyndell Knight Helm"
+        ],
+        "Armor": [
+          "Leyndell Knight Armor",
+          "Leyndell Knight Armor (Altered)"
+        ],
+        "Gauntlets": [
+          "Leyndell Knight Gauntlets"
+        ],
+        "Greaves": [
+          "Leyndell Knight Greaves"
+        ]
+      }
+    },
+    {
+      "family": "lionel's",
+      "present_piece_count": 4,
+      "multi_in_piece": true,
+      "total_names": 5,
+      "pieces": {
+        "Helm": [
+          "Lionel's Helm"
+        ],
+        "Armor": [
+          "Lionel's Armor",
+          "Lionel's Armor (Altered)"
+        ],
+        "Gauntlets": [
+          "Lionel's Gauntlets"
+        ],
+        "Greaves": [
+          "Lionel's Greaves"
+        ]
+      }
+    },
+    {
+      "family": "maliketh's",
+      "present_piece_count": 4,
+      "multi_in_piece": true,
+      "total_names": 5,
+      "pieces": {
+        "Helm": [
+          "Maliketh's Helm"
+        ],
+        "Armor": [
+          "Maliketh's Armor",
+          "Maliketh's Armor (Altered)"
+        ],
+        "Gauntlets": [
+          "Maliketh's Gauntlets"
+        ],
+        "Greaves": [
+          "Maliketh's Greaves"
+        ]
+      }
+    },
+    {
+      "family": "messmer soldier",
+      "present_piece_count": 4,
+      "multi_in_piece": true,
+      "total_names": 5,
+      "pieces": {
+        "Helm": [
+          "Messmer Soldier Helm"
+        ],
+        "Armor": [
+          "Messmer Soldier Armor",
+          "Messmer Soldier Armor (Altered)"
+        ],
+        "Gauntlets": [
+          "Messmer Soldier Gauntlets"
+        ],
+        "Greaves": [
+          "Messmer Soldier Greaves"
+        ]
+      }
+    },
+    {
+      "family": "messmer's",
+      "present_piece_count": 4,
+      "multi_in_piece": true,
+      "total_names": 5,
+      "pieces": {
+        "Helm": [
+          "Messmer's Helm",
+          "Messmer's Helm (Altered)"
+        ],
+        "Armor": [
+          "Messmer's Armor"
+        ],
+        "Gauntlets": [
+          "Messmer's Gauntlets"
+        ],
+        "Greaves": [
+          "Messmer's Greaves"
+        ]
+      }
+    },
+    {
+      "family": "night's cavalry",
+      "present_piece_count": 4,
+      "multi_in_piece": true,
+      "total_names": 6,
+      "pieces": {
+        "Helm": [
+          "Night's Cavalry Helm",
+          "Night's Cavalry Helm (Altered)"
+        ],
+        "Armor": [
+          "Night's Cavalry Armor",
+          "Night's Cavalry Armor (Altered)"
+        ],
+        "Gauntlets": [
+          "Night's Cavalry Gauntlets"
+        ],
+        "Greaves": [
+          "Night's Cavalry Greaves"
+        ]
+      }
+    },
+    {
+      "family": "of solitude",
+      "present_piece_count": 4,
+      "multi_in_piece": true,
+      "total_names": 5,
+      "pieces": {
+        "Helm": [
+          "Helm of Solitude"
+        ],
+        "Armor": [
+          "Armor of Solitude",
+          "Armor of Solitude (Altered)"
+        ],
+        "Gauntlets": [
+          "Gauntlets of Solitude"
+        ],
+        "Greaves": [
+          "Greaves of Solitude"
+        ]
+      }
+    },
+    {
+      "family": "raging wolf",
+      "present_piece_count": 4,
+      "multi_in_piece": true,
+      "total_names": 5,
+      "pieces": {
+        "Helm": [
+          "Raging Wolf Helm"
+        ],
+        "Armor": [
+          "Raging Wolf Armor",
+          "Raging Wolf Armor (Altered)"
+        ],
+        "Gauntlets": [
+          "Raging Wolf Gauntlets"
+        ],
+        "Greaves": [
+          "Raging Wolf Greaves"
+        ]
+      }
+    },
+    {
+      "family": "redmane knight",
+      "present_piece_count": 4,
+      "multi_in_piece": true,
+      "total_names": 5,
+      "pieces": {
+        "Helm": [
+          "Redmane Knight Helm"
+        ],
+        "Armor": [
+          "Redmane Knight Armor",
+          "Redmane Knight Armor (Altered)"
+        ],
+        "Gauntlets": [
+          "Redmane Knight Gauntlets"
+        ],
+        "Greaves": [
+          "Redmane Knight Greaves"
+        ]
+      }
+    },
+    {
+      "family": "royal knight",
+      "present_piece_count": 4,
+      "multi_in_piece": true,
+      "total_names": 5,
+      "pieces": {
+        "Helm": [
+          "Royal Knight Helm"
+        ],
+        "Armor": [
+          "Royal Knight Armor",
+          "Royal Knight Armor (Altered)"
+        ],
+        "Gauntlets": [
+          "Royal Knight Gauntlets"
+        ],
+        "Greaves": [
+          "Royal Knight Greaves"
+        ]
+      }
+    },
+    {
+      "family": "scaled",
+      "present_piece_count": 4,
+      "multi_in_piece": true,
+      "total_names": 5,
+      "pieces": {
+        "Helm": [
+          "Scaled Helm"
+        ],
+        "Armor": [
+          "Scaled Armor",
+          "Scaled Armor (Altered)"
+        ],
+        "Gauntlets": [
+          "Scaled Gauntlets"
+        ],
+        "Greaves": [
+          "Scaled Greaves"
+        ]
+      }
+    },
+    {
+      "family": "thiollier's",
+      "present_piece_count": 4,
+      "multi_in_piece": true,
+      "total_names": 5,
+      "pieces": {
+        "Helm": [
+          "Thiollier's Mask"
+        ],
+        "Armor": [
+          "Thiollier's Garb",
+          "Thiollier's Garb (Altered)"
+        ],
+        "Gauntlets": [
+          "Thiollier's Gloves"
+        ],
+        "Greaves": [
+          "Thiollier's Trousers"
+        ]
+      }
+    },
+    {
+      "family": "traveling maiden",
+      "present_piece_count": 4,
+      "multi_in_piece": true,
+      "total_names": 5,
+      "pieces": {
+        "Helm": [
+          "Traveling Maiden Hood"
+        ],
+        "Armor": [
+          "Traveling Maiden Robe",
+          "Traveling Maiden Robe (Altered)"
+        ],
+        "Gauntlets": [
+          "Traveling Maiden Gloves"
+        ],
+        "Greaves": [
+          "Traveling Maiden Boots"
+        ]
+      }
+    },
+    {
+      "family": "tree sentinel",
+      "present_piece_count": 4,
+      "multi_in_piece": true,
+      "total_names": 5,
+      "pieces": {
+        "Helm": [
+          "Tree Sentinel Helm"
+        ],
+        "Armor": [
+          "Tree Sentinel Armor",
+          "Tree Sentinel Armor (Altered)"
+        ],
+        "Gauntlets": [
+          "Tree Sentinel Gauntlets"
+        ],
+        "Greaves": [
+          "Tree Sentinel Greaves"
+        ]
+      }
+    },
+    {
+      "family": "twinned",
+      "present_piece_count": 4,
+      "multi_in_piece": true,
+      "total_names": 5,
+      "pieces": {
+        "Helm": [
+          "Twinned Helm"
+        ],
+        "Armor": [
+          "Twinned Armor",
+          "Twinned Armor (Altered)"
+        ],
+        "Gauntlets": [
+          "Twinned Gauntlets"
+        ],
+        "Greaves": [
+          "Twinned Greaves"
+        ]
+      }
+    },
+    {
+      "family": "vagabond knight",
+      "present_piece_count": 4,
+      "multi_in_piece": true,
+      "total_names": 5,
+      "pieces": {
+        "Helm": [
+          "Vagabond Knight Helm"
+        ],
+        "Armor": [
+          "Vagabond Knight Armor",
+          "Vagabond Knight Armor (Altered)"
+        ],
+        "Gauntlets": [
+          "Vagabond Knight Gauntlets"
+        ],
+        "Greaves": [
+          "Vagabond Knight Greaves"
+        ]
+      }
+    },
+    {
+      "family": "veteran's",
+      "present_piece_count": 4,
+      "multi_in_piece": true,
+      "total_names": 5,
+      "pieces": {
+        "Helm": [
+          "Veteran's Helm"
+        ],
+        "Armor": [
+          "Veteran's Armor",
+          "Veteran's Armor (Altered)"
+        ],
+        "Gauntlets": [
+          "Veteran's Gauntlets"
+        ],
+        "Greaves": [
+          "Veteran's Greaves"
+        ]
+      }
+    },
+    {
+      "family": "young lion's",
+      "present_piece_count": 4,
+      "multi_in_piece": true,
+      "total_names": 5,
+      "pieces": {
+        "Helm": [
+          "Young Lion's Helm"
+        ],
+        "Armor": [
+          "Young Lion's Armor",
+          "Young Lion's Armor (Altered)"
+        ],
+        "Gauntlets": [
+          "Young Lion's Gauntlets"
+        ],
+        "Greaves": [
+          "Young Lion's Greaves"
+        ]
+      }
+    },
+    {
+      "family": "alberich's",
+      "present_piece_count": 3,
+      "multi_in_piece": true,
+      "total_names": 4,
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Alberich's Robe",
+          "Alberich's Robe (Altered)"
+        ],
+        "Gauntlets": [
+          "Alberich's Bracers"
+        ],
+        "Greaves": [
+          "Alberich's Trousers"
+        ]
+      }
+    },
+    {
+      "family": "aristocrat",
+      "present_piece_count": 3,
+      "multi_in_piece": true,
+      "total_names": 6,
+      "pieces": {
+        "Helm": [
+          "Aristocrat Hat",
+          "Aristocrat Headband"
+        ],
+        "Armor": [
+          "Aristocrat Coat",
+          "Aristocrat Garb",
+          "Aristocrat Garb (Altered)"
+        ],
+        "Gauntlets": [],
+        "Greaves": [
+          "Aristocrat Boots"
+        ]
+      }
+    },
+    {
+      "family": "blaidd's",
+      "present_piece_count": 3,
+      "multi_in_piece": true,
+      "total_names": 4,
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Blaidd's Armor",
+          "Blaidd's Armor (Altered)"
+        ],
+        "Gauntlets": [
+          "Blaidd's Gauntlets"
+        ],
+        "Greaves": [
+          "Blaidd's Greaves"
+        ]
+      }
+    },
+    {
+      "family": "common soldier",
+      "present_piece_count": 3,
+      "multi_in_piece": false,
+      "total_names": 3,
+      "pieces": {
+        "Helm": [
+          "Common Soldier Helm"
+        ],
+        "Armor": [],
+        "Gauntlets": [
+          "Common Soldier Gauntlets"
+        ],
+        "Greaves": [
+          "Common Soldier Greaves"
+        ]
+      }
+    },
+    {
+      "family": "commoner's",
+      "present_piece_count": 3,
+      "multi_in_piece": true,
+      "total_names": 5,
+      "pieces": {
+        "Helm": [
+          "Commoner's Headband",
+          "Commoner's Headband (Altered)"
+        ],
+        "Armor": [
+          "Commoner's Garb",
+          "Commoner's Garb (Altered)"
+        ],
+        "Gauntlets": [],
+        "Greaves": [
+          "Commoner's Shoes"
+        ]
+      }
+    },
+    {
+      "family": "consort's",
+      "present_piece_count": 3,
+      "multi_in_piece": false,
+      "total_names": 3,
+      "pieces": {
+        "Helm": [
+          "Consort's Mask"
+        ],
+        "Armor": [
+          "Consort's Robe"
+        ],
+        "Gauntlets": [],
+        "Greaves": [
+          "Consort's Trousers"
+        ]
+      }
+    },
+    {
+      "family": "depraved perfumer",
+      "present_piece_count": 3,
+      "multi_in_piece": true,
+      "total_names": 4,
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Depraved Perfumer Robe",
+          "Depraved Perfumer Robe (Altered)"
+        ],
+        "Gauntlets": [
+          "Depraved Perfumer Gloves"
+        ],
+        "Greaves": [
+          "Depraved Perfumer Trousers"
+        ]
+      }
+    },
+    {
+      "family": "divine bird warrior",
+      "present_piece_count": 3,
+      "multi_in_piece": false,
+      "total_names": 3,
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Divine Bird Warrior Armor"
+        ],
+        "Gauntlets": [
+          "Divine Bird Warrior Gauntlets"
+        ],
+        "Greaves": [
+          "Divine Bird Warrior Greaves"
+        ]
+      }
+    },
+    {
+      "family": "eccentric's",
+      "present_piece_count": 3,
+      "multi_in_piece": true,
+      "total_names": 4,
+      "pieces": {
+        "Helm": [
+          "Eccentric's Hood",
+          "Eccentric's Hood (Altered)"
+        ],
+        "Armor": [
+          "Eccentric's Armor"
+        ],
+        "Gauntlets": [
+          "Eccentric's Manchettes"
+        ],
+        "Greaves": []
+      }
+    },
+    {
+      "family": "errant sorcerer",
+      "present_piece_count": 3,
+      "multi_in_piece": true,
+      "total_names": 4,
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Errant Sorcerer Robe",
+          "Errant Sorcerer Robe (Altered)"
+        ],
+        "Gauntlets": [
+          "Errant Sorcerer Manchettes"
+        ],
+        "Greaves": [
+          "Errant Sorcerer Boots"
+        ]
+      }
+    },
+    {
+      "family": "foot soldier",
+      "present_piece_count": 3,
+      "multi_in_piece": false,
+      "total_names": 3,
+      "pieces": {
+        "Helm": [
+          "Foot Soldier Helm"
+        ],
+        "Armor": [],
+        "Gauntlets": [
+          "Foot Soldier Gauntlets"
+        ],
+        "Greaves": [
+          "Foot Soldier Greaves"
+        ]
+      }
+    },
+    {
+      "family": "godrick soldier",
+      "present_piece_count": 3,
+      "multi_in_piece": false,
+      "total_names": 3,
+      "pieces": {
+        "Helm": [
+          "Godrick Soldier Helm"
+        ],
+        "Armor": [],
+        "Gauntlets": [
+          "Godrick Soldier Gauntlets"
+        ],
+        "Greaves": [
+          "Godrick Soldier Greaves"
+        ]
+      }
+    },
+    {
+      "family": "godskin apostle",
+      "present_piece_count": 3,
+      "multi_in_piece": false,
+      "total_names": 3,
+      "pieces": {
+        "Helm": [
+          "Godskin Apostle Hood"
+        ],
+        "Armor": [
+          "Godskin Apostle Robe"
+        ],
+        "Gauntlets": [],
+        "Greaves": [
+          "Godskin Apostle Trousers"
+        ]
+      }
+    },
+    {
+      "family": "godskin noble",
+      "present_piece_count": 3,
+      "multi_in_piece": false,
+      "total_names": 3,
+      "pieces": {
+        "Helm": [
+          "Godskin Noble Hood"
+        ],
+        "Armor": [
+          "Godskin Noble Robe"
+        ],
+        "Gauntlets": [],
+        "Greaves": [
+          "Godskin Noble Trousers"
+        ]
+      }
+    },
+    {
+      "family": "haligtree",
+      "present_piece_count": 3,
+      "multi_in_piece": false,
+      "total_names": 3,
+      "pieces": {
+        "Helm": [
+          "Haligtree Helm"
+        ],
+        "Armor": [],
+        "Gauntlets": [
+          "Haligtree Gauntlets"
+        ],
+        "Greaves": [
+          "Haligtree Greaves"
+        ]
+      }
+    },
+    {
+      "family": "high priest",
+      "present_piece_count": 3,
+      "multi_in_piece": false,
+      "total_names": 3,
+      "pieces": {
+        "Helm": [
+          "High Priest Hat"
+        ],
+        "Armor": [
+          "High Priest Robe"
+        ],
+        "Gauntlets": [
+          "High Priest Gloves"
+        ],
+        "Greaves": []
+      }
+    },
+    {
+      "family": "igon's",
+      "present_piece_count": 3,
+      "multi_in_piece": true,
+      "total_names": 5,
+      "pieces": {
+        "Helm": [
+          "Igon's Helm",
+          "Igon's Helm (Altered)"
+        ],
+        "Armor": [
+          "Igon's Armor",
+          "Igon's Armor (Altered)"
+        ],
+        "Gauntlets": [
+          "Igon's Gauntlets"
+        ],
+        "Greaves": []
+      }
+    },
+    {
+      "family": "iron rivet",
+      "present_piece_count": 3,
+      "multi_in_piece": false,
+      "total_names": 3,
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Iron Rivet Armor"
+        ],
+        "Gauntlets": [
+          "Iron Rivet Gauntlets"
+        ],
+        "Greaves": [
+          "Iron Rivet Greaves"
+        ]
+      }
+    },
+    {
+      "family": "leyndell soldier",
+      "present_piece_count": 3,
+      "multi_in_piece": false,
+      "total_names": 3,
+      "pieces": {
+        "Helm": [
+          "Leyndell Soldier Helm"
+        ],
+        "Armor": [],
+        "Gauntlets": [
+          "Leyndell Soldier Gauntlets"
+        ],
+        "Greaves": [
+          "Leyndell Soldier Greaves"
+        ]
+      }
+    },
+    {
+      "family": "mausoleum knight",
+      "present_piece_count": 3,
+      "multi_in_piece": true,
+      "total_names": 4,
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Mausoleum Knight Armor",
+          "Mausoleum Knight Armor (Altered)"
+        ],
+        "Gauntlets": [
+          "Mausoleum Knight Gauntlets"
+        ],
+        "Greaves": [
+          "Mausoleum Knight Greaves"
+        ]
+      }
+    },
+    {
+      "family": "millicent's",
+      "present_piece_count": 3,
+      "multi_in_piece": false,
+      "total_names": 3,
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Millicent's Robe"
+        ],
+        "Gauntlets": [
+          "Millicent's Gloves"
+        ],
+        "Greaves": [
+          "Millicent's Boots"
+        ]
+      }
+    },
+    {
+      "family": "page",
+      "present_piece_count": 3,
+      "multi_in_piece": true,
+      "total_names": 4,
+      "pieces": {
+        "Helm": [
+          "Page Hood"
+        ],
+        "Armor": [
+          "Page Garb",
+          "Page Garb (Altered)"
+        ],
+        "Gauntlets": [],
+        "Greaves": [
+          "Page Trousers"
+        ]
+      }
+    },
+    {
+      "family": "perfumer",
+      "present_piece_count": 3,
+      "multi_in_piece": true,
+      "total_names": 4,
+      "pieces": {
+        "Helm": [
+          "Perfumer Hood"
+        ],
+        "Armor": [
+          "Perfumer Robe",
+          "Perfumer Robe (Altered)"
+        ],
+        "Gauntlets": [
+          "Perfumer Gloves"
+        ],
+        "Greaves": []
+      }
+    },
+    {
+      "family": "radahn soldier",
+      "present_piece_count": 3,
+      "multi_in_piece": false,
+      "total_names": 3,
+      "pieces": {
+        "Helm": [
+          "Radahn Soldier Helm"
+        ],
+        "Armor": [],
+        "Gauntlets": [
+          "Radahn Soldier Gauntlets"
+        ],
+        "Greaves": [
+          "Radahn Soldier Greaves"
+        ]
+      }
+    },
+    {
+      "family": "ragged",
+      "present_piece_count": 3,
+      "multi_in_piece": true,
+      "total_names": 5,
+      "pieces": {
+        "Helm": [
+          "Ragged Hat",
+          "Ragged Hat (Altered)"
+        ],
+        "Armor": [
+          "Ragged Armor",
+          "Ragged Armor (Altered)"
+        ],
+        "Gauntlets": [
+          "Ragged Gloves"
+        ],
+        "Greaves": []
+      }
+    },
+    {
+      "family": "ronin's",
+      "present_piece_count": 3,
+      "multi_in_piece": true,
+      "total_names": 4,
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Ronin's Armor",
+          "Ronin's Armor (Altered)"
+        ],
+        "Gauntlets": [
+          "Ronin's Gauntlets"
+        ],
+        "Greaves": [
+          "Ronin's Greaves"
+        ]
+      }
+    },
+    {
+      "family": "sage",
+      "present_piece_count": 3,
+      "multi_in_piece": false,
+      "total_names": 3,
+      "pieces": {
+        "Helm": [
+          "Sage Hood"
+        ],
+        "Armor": [
+          "Sage Robe"
+        ],
+        "Gauntlets": [],
+        "Greaves": [
+          "Sage Trousers"
+        ]
+      }
+    },
+    {
+      "family": "traveler's",
+      "present_piece_count": 3,
+      "multi_in_piece": true,
+      "total_names": 4,
+      "pieces": {
+        "Helm": [
+          "Traveler's Hat"
+        ],
+        "Armor": [],
+        "Gauntlets": [
+          "Traveler's Gloves",
+          "Traveler's Manchettes"
+        ],
+        "Greaves": [
+          "Traveler's Boots"
+        ]
+      }
+    },
+    {
+      "family": "war surgeon",
+      "present_piece_count": 3,
+      "multi_in_piece": true,
+      "total_names": 4,
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "War Surgeon Gown",
+          "War Surgeon Gown (Altered)"
+        ],
+        "Gauntlets": [
+          "War Surgeon Gloves"
+        ],
+        "Greaves": [
+          "War Surgeon Trousers"
+        ]
+      }
+    },
+    {
+      "family": "white reed",
+      "present_piece_count": 3,
+      "multi_in_piece": false,
+      "total_names": 3,
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "White Reed Armor"
+        ],
+        "Gauntlets": [
+          "White Reed Gauntlets"
+        ],
+        "Greaves": [
+          "White Reed Greaves"
+        ]
+      }
+    },
+    {
+      "family": "ansbach's",
+      "present_piece_count": 2,
+      "multi_in_piece": false,
+      "total_names": 2,
+      "pieces": {
+        "Helm": [],
+        "Armor": [],
+        "Gauntlets": [
+          "Ansbach's Manchettes"
+        ],
+        "Greaves": [
+          "Ansbach's Boots"
+        ]
+      }
+    },
+    {
+      "family": "azur's glintstone",
+      "present_piece_count": 2,
+      "multi_in_piece": false,
+      "total_names": 2,
+      "pieces": {
+        "Helm": [
+          "Azur's Glintstone Crown"
+        ],
+        "Armor": [
+          "Azur's Glintstone Robe"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      }
+    },
+    {
+      "family": "battlemage",
+      "present_piece_count": 2,
+      "multi_in_piece": false,
+      "total_names": 2,
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Battlemage Robe"
+        ],
+        "Gauntlets": [
+          "Battlemage Manchettes"
+        ],
+        "Greaves": []
+      }
+    },
+    {
+      "family": "bloodsoaked",
+      "present_piece_count": 2,
+      "multi_in_piece": false,
+      "total_names": 2,
+      "pieces": {
+        "Helm": [
+          "Bloodsoaked Mask"
+        ],
+        "Armor": [],
+        "Gauntlets": [
+          "Bloodsoaked Manchettes"
+        ],
+        "Greaves": []
+      }
+    },
+    {
+      "family": "blue festive",
+      "present_piece_count": 2,
+      "multi_in_piece": false,
+      "total_names": 2,
+      "pieces": {
+        "Helm": [
+          "Blue Festive Hood"
+        ],
+        "Armor": [
+          "Blue Festive Garb"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      }
+    },
+    {
+      "family": "blue silver",
+      "present_piece_count": 2,
+      "multi_in_piece": true,
+      "total_names": 3,
+      "pieces": {
+        "Helm": [
+          "Blue Silver Mail Hood"
+        ],
+        "Armor": [
+          "Blue Silver Mail Armor",
+          "Blue Silver Mail Armor (Altered)"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      }
+    },
+    {
+      "family": "chain",
+      "present_piece_count": 2,
+      "multi_in_piece": false,
+      "total_names": 2,
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Chain Armor"
+        ],
+        "Gauntlets": [],
+        "Greaves": [
+          "Chain Leggings"
+        ]
+      }
+    },
+    {
+      "family": "champion",
+      "present_piece_count": 2,
+      "multi_in_piece": false,
+      "total_names": 2,
+      "pieces": {
+        "Helm": [
+          "Champion Headband"
+        ],
+        "Armor": [],
+        "Gauntlets": [
+          "Champion Bracers"
+        ],
+        "Greaves": []
+      }
+    },
+    {
+      "family": "cloth",
+      "present_piece_count": 2,
+      "multi_in_piece": false,
+      "total_names": 2,
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Cloth Garb"
+        ],
+        "Gauntlets": [],
+        "Greaves": [
+          "Cloth Trousers"
+        ]
+      }
+    },
+    {
+      "family": "crucible",
+      "present_piece_count": 2,
+      "multi_in_piece": false,
+      "total_names": 2,
+      "pieces": {
+        "Helm": [],
+        "Armor": [],
+        "Gauntlets": [
+          "Crucible Gauntlets"
+        ],
+        "Greaves": [
+          "Crucible Greaves"
+        ]
+      }
+    },
+    {
+      "family": "crucible axe",
+      "present_piece_count": 2,
+      "multi_in_piece": true,
+      "total_names": 3,
+      "pieces": {
+        "Helm": [
+          "Crucible Axe Helm"
+        ],
+        "Armor": [
+          "Crucible Axe Armor",
+          "Crucible Axe Armor (Altered)"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      }
+    },
+    {
+      "family": "crucible tree",
+      "present_piece_count": 2,
+      "multi_in_piece": true,
+      "total_names": 3,
+      "pieces": {
+        "Helm": [
+          "Crucible Tree Helm"
+        ],
+        "Armor": [
+          "Crucible Tree Armor",
+          "Crucible Tree Armor (Altered)"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      }
+    },
+    {
+      "family": "dancer's",
+      "present_piece_count": 2,
+      "multi_in_piece": false,
+      "total_names": 2,
+      "pieces": {
+        "Helm": [
+          "Dancer's Hood"
+        ],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": [
+          "Dancer's Trousers"
+        ]
+      }
+    },
+    {
+      "family": "duelist",
+      "present_piece_count": 2,
+      "multi_in_piece": false,
+      "total_names": 2,
+      "pieces": {
+        "Helm": [
+          "Duelist Helm"
+        ],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": [
+          "Duelist Greaves"
+        ]
+      }
+    },
+    {
+      "family": "festive",
+      "present_piece_count": 2,
+      "multi_in_piece": true,
+      "total_names": 4,
+      "pieces": {
+        "Helm": [
+          "Festive Hood",
+          "Festive Hood (Altered)"
+        ],
+        "Armor": [
+          "Festive Garb",
+          "Festive Garb (Altered)"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      }
+    },
+    {
+      "family": "fia's",
+      "present_piece_count": 2,
+      "multi_in_piece": true,
+      "total_names": 3,
+      "pieces": {
+        "Helm": [
+          "Fia's Hood"
+        ],
+        "Armor": [
+          "Fia's Robe",
+          "Fia's Robe (Altered)"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      }
+    },
+    {
+      "family": "finger maiden",
+      "present_piece_count": 2,
+      "multi_in_piece": true,
+      "total_names": 3,
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Finger Maiden Robe",
+          "Finger Maiden Robe (Altered)"
+        ],
+        "Gauntlets": [],
+        "Greaves": [
+          "Finger Maiden Shoes"
+        ]
+      }
+    },
+    {
+      "family": "gravebird",
+      "present_piece_count": 2,
+      "multi_in_piece": false,
+      "total_names": 2,
+      "pieces": {
+        "Helm": [
+          "Gravebird Helm"
+        ],
+        "Armor": [
+          "Gravebird Armor"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      }
+    },
+    {
+      "family": "highwayman",
+      "present_piece_count": 2,
+      "multi_in_piece": false,
+      "total_names": 2,
+      "pieces": {
+        "Helm": [
+          "Highwayman Hood"
+        ],
+        "Armor": [],
+        "Gauntlets": [
+          "Highwayman Gauntlets"
+        ],
+        "Greaves": []
+      }
+    },
+    {
+      "family": "lusat's",
+      "present_piece_count": 2,
+      "multi_in_piece": false,
+      "total_names": 2,
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Lusat's Robe"
+        ],
+        "Gauntlets": [
+          "Lusat's Manchettes"
+        ],
+        "Greaves": []
+      }
+    },
+    {
+      "family": "malenia's",
+      "present_piece_count": 2,
+      "multi_in_piece": true,
+      "total_names": 3,
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Malenia's Armor",
+          "Malenia's Armor (Altered)"
+        ],
+        "Gauntlets": [],
+        "Greaves": [
+          "Malenia's Greaves"
+        ]
+      }
+    },
+    {
+      "family": "marais",
+      "present_piece_count": 2,
+      "multi_in_piece": false,
+      "total_names": 2,
+      "pieces": {
+        "Helm": [
+          "Marais Mask"
+        ],
+        "Armor": [
+          "Marais Robe"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      }
+    },
+    {
+      "family": "marionette soldier",
+      "present_piece_count": 2,
+      "multi_in_piece": false,
+      "total_names": 2,
+      "pieces": {
+        "Helm": [
+          "Marionette Soldier Helm"
+        ],
+        "Armor": [
+          "Marionette Soldier Armor"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      }
+    },
+    {
+      "family": "mausoleum",
+      "present_piece_count": 2,
+      "multi_in_piece": false,
+      "total_names": 2,
+      "pieces": {
+        "Helm": [],
+        "Armor": [],
+        "Gauntlets": [
+          "Mausoleum Gauntlets"
+        ],
+        "Greaves": [
+          "Mausoleum Greaves"
+        ]
+      }
+    },
+    {
+      "family": "noble's",
+      "present_piece_count": 2,
+      "multi_in_piece": false,
+      "total_names": 2,
+      "pieces": {
+        "Helm": [],
+        "Armor": [],
+        "Gauntlets": [
+          "Noble's Gloves"
+        ],
+        "Greaves": [
+          "Noble's Trousers"
+        ]
+      }
+    },
+    {
+      "family": "nox monk",
+      "present_piece_count": 2,
+      "multi_in_piece": true,
+      "total_names": 4,
+      "pieces": {
+        "Helm": [
+          "Nox Monk Hood",
+          "Nox Monk Hood (Altered)"
+        ],
+        "Armor": [
+          "Nox Monk Armor",
+          "Nox Monk Armor (Altered)"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      }
+    },
+    {
+      "family": "nox swordstress",
+      "present_piece_count": 2,
+      "multi_in_piece": true,
+      "total_names": 4,
+      "pieces": {
+        "Helm": [
+          "Nox Swordstress Crown",
+          "Nox Swordstress Crown (Altered)"
+        ],
+        "Armor": [
+          "Nox Swordstress Armor",
+          "Nox Swordstress Armor (Altered)"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      }
+    },
+    {
+      "family": "old aristocrat",
+      "present_piece_count": 2,
+      "multi_in_piece": false,
+      "total_names": 2,
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Old Aristocrat Gown"
+        ],
+        "Gauntlets": [],
+        "Greaves": [
+          "Old Aristocrat Shoes"
+        ]
+      }
+    },
+    {
+      "family": "omenkiller",
+      "present_piece_count": 2,
+      "multi_in_piece": false,
+      "total_names": 2,
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Omenkiller Robe"
+        ],
+        "Gauntlets": [],
+        "Greaves": [
+          "Omenkiller Boots"
+        ]
+      }
+    },
+    {
+      "family": "preceptor's",
+      "present_piece_count": 2,
+      "multi_in_piece": false,
+      "total_names": 2,
+      "pieces": {
+        "Helm": [],
+        "Armor": [],
+        "Gauntlets": [
+          "Preceptor's Gloves"
+        ],
+        "Greaves": [
+          "Preceptor's Trousers"
+        ]
+      }
+    },
+    {
+      "family": "prophet",
+      "present_piece_count": 2,
+      "multi_in_piece": true,
+      "total_names": 3,
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Prophet Robe",
+          "Prophet Robe (Altered)"
+        ],
+        "Gauntlets": [],
+        "Greaves": [
+          "Prophet Trousers"
+        ]
+      }
+    },
+    {
+      "family": "queen's",
+      "present_piece_count": 2,
+      "multi_in_piece": false,
+      "total_names": 2,
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Queen's Robe"
+        ],
+        "Gauntlets": [],
+        "Greaves": [
+          "Queen's Leggings"
+        ]
+      }
+    },
+    {
+      "family": "radahn's",
+      "present_piece_count": 2,
+      "multi_in_piece": false,
+      "total_names": 2,
+      "pieces": {
+        "Helm": [],
+        "Armor": [],
+        "Gauntlets": [
+          "Radahn's Gauntlets"
+        ],
+        "Greaves": [
+          "Radahn's Greaves"
+        ]
+      }
+    },
+    {
+      "family": "rotten duelist",
+      "present_piece_count": 2,
+      "multi_in_piece": false,
+      "total_names": 2,
+      "pieces": {
+        "Helm": [
+          "Rotten Duelist Helm"
+        ],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": [
+          "Rotten Duelist Greaves"
+        ]
+      }
+    },
+    {
+      "family": "ruler's",
+      "present_piece_count": 2,
+      "multi_in_piece": false,
+      "total_names": 2,
+      "pieces": {
+        "Helm": [
+          "Ruler's Mask"
+        ],
+        "Armor": [
+          "Ruler's Robe"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      }
+    },
+    {
+      "family": "sanguine noble",
+      "present_piece_count": 2,
+      "multi_in_piece": false,
+      "total_names": 2,
+      "pieces": {
+        "Helm": [
+          "Sanguine Noble Hood"
+        ],
+        "Armor": [
+          "Sanguine Noble Robe"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      }
+    },
+    {
+      "family": "snow witch",
+      "present_piece_count": 2,
+      "multi_in_piece": true,
+      "total_names": 3,
+      "pieces": {
+        "Helm": [
+          "Snow Witch Hat"
+        ],
+        "Armor": [
+          "Snow Witch Robe",
+          "Snow Witch Robe (Altered)"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      }
+    },
+    {
+      "family": "sorcerer",
+      "present_piece_count": 2,
+      "multi_in_piece": false,
+      "total_names": 2,
+      "pieces": {
+        "Helm": [],
+        "Armor": [],
+        "Gauntlets": [
+          "Sorcerer Manchettes"
+        ],
+        "Greaves": [
+          "Sorcerer Leggings"
+        ]
+      }
+    },
+    {
+      "family": "spellblade's",
+      "present_piece_count": 2,
+      "multi_in_piece": false,
+      "total_names": 2,
+      "pieces": {
+        "Helm": [],
+        "Armor": [],
+        "Gauntlets": [
+          "Spellblade's Gloves"
+        ],
+        "Greaves": [
+          "Spellblade's Trousers"
+        ]
+      }
+    },
+    {
+      "family": "warrior",
+      "present_piece_count": 2,
+      "multi_in_piece": false,
+      "total_names": 2,
+      "pieces": {
+        "Helm": [],
+        "Armor": [],
+        "Gauntlets": [
+          "Warrior Gauntlets"
+        ],
+        "Greaves": [
+          "Warrior Greaves"
+        ]
+      }
+    },
+    {
+      "family": "zamor",
+      "present_piece_count": 2,
+      "multi_in_piece": false,
+      "total_names": 2,
+      "pieces": {
+        "Helm": [
+          "Zamor Mask"
+        ],
+        "Armor": [
+          "Zamor Armor"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      }
+    },
+    {
+      "family": "alberich's pointed",
+      "present_piece_count": 1,
+      "multi_in_piece": true,
+      "total_names": 2,
+      "pieces": {
+        "Helm": [
+          "Alberich's Pointed Hat",
+          "Alberich's Pointed Hat (Altered)"
+        ],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": []
+      }
+    },
+    {
+      "family": "ansbach's attire",
+      "present_piece_count": 1,
+      "multi_in_piece": true,
+      "total_names": 2,
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Ansbach's Attire",
+          "Ansbach's Attire (Altered)"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      }
+    },
+    {
+      "family": "brave's battlewear",
+      "present_piece_count": 1,
+      "multi_in_piece": true,
+      "total_names": 2,
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Brave's Battlewear",
+          "Brave's Battlewear (Altered)"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      }
+    },
+    {
+      "family": "commoner's simple",
+      "present_piece_count": 1,
+      "multi_in_piece": true,
+      "total_names": 2,
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Commoner's Simple Garb",
+          "Commoner's Simple Garb (Altered)"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      }
+    },
+    {
+      "family": "dancer's dress",
+      "present_piece_count": 1,
+      "multi_in_piece": true,
+      "total_names": 2,
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Dancer's Dress",
+          "Dancer's Dress (Altered)"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      }
+    },
+    {
+      "family": "dryleaf",
+      "present_piece_count": 1,
+      "multi_in_piece": true,
+      "total_names": 2,
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Dryleaf Robe",
+          "Dryleaf Robe (Altered)"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      }
+    },
+    {
+      "family": "gravekeeper cloak",
+      "present_piece_count": 1,
+      "multi_in_piece": true,
+      "total_names": 2,
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Gravekeeper Cloak",
+          "Gravekeeper Cloak (Altered)"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      }
+    },
+    {
+      "family": "high page clothes",
+      "present_piece_count": 1,
+      "multi_in_piece": true,
+      "total_names": 2,
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "High Page Clothes",
+          "High Page Clothes (Altered)"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      }
+    },
+    {
+      "family": "imp head",
+      "present_piece_count": 1,
+      "multi_in_piece": true,
+      "total_names": 7,
+      "pieces": {
+        "Helm": [
+          "Imp Head (Lion)",
+          "Imp Head (Cat)",
+          "Imp Head (Corpse)",
+          "Imp Head (Elder)",
+          "Imp Head (Fanged)",
+          "Imp Head (Long-Tongued)",
+          "Imp Head (Wolf)"
+        ],
+        "Armor": [],
+        "Gauntlets": [],
+        "Greaves": []
+      }
+    },
+    {
+      "family": "lord of blood's",
+      "present_piece_count": 1,
+      "multi_in_piece": true,
+      "total_names": 2,
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Lord of Blood's Robe",
+          "Lord of Blood's Robe (Altered)"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      }
+    },
+    {
+      "family": "nomadic merchant's finery",
+      "present_piece_count": 1,
+      "multi_in_piece": true,
+      "total_names": 2,
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Nomadic Merchant's Finery",
+          "Nomadic Merchant's Finery (Altered)"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      }
+    },
+    {
+      "family": "perfumer's traveling",
+      "present_piece_count": 1,
+      "multi_in_piece": true,
+      "total_names": 2,
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Perfumer's Traveling Garb",
+          "Perfumer's Traveling Garb (Altered)"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      }
+    },
+    {
+      "family": "preceptor's long",
+      "present_piece_count": 1,
+      "multi_in_piece": true,
+      "total_names": 2,
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Preceptor's Long Gown",
+          "Preceptor's Long Gown (Altered)"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      }
+    },
+    {
+      "family": "radahn's lion",
+      "present_piece_count": 1,
+      "multi_in_piece": true,
+      "total_names": 2,
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Radahn's Lion Armor",
+          "Radahn's Lion Armor (Altered)"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      }
+    },
+    {
+      "family": "rotten gravekeeper cloak",
+      "present_piece_count": 1,
+      "multi_in_piece": true,
+      "total_names": 2,
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Rotten Gravekeeper Cloak",
+          "Rotten Gravekeeper Cloak (Altered)"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      }
+    },
+    {
+      "family": "spellblade's traveling attire",
+      "present_piece_count": 1,
+      "multi_in_piece": true,
+      "total_names": 2,
+      "pieces": {
+        "Helm": [],
+        "Armor": [
+          "Spellblade's Traveling Attire",
+          "Spellblade's Traveling Attire (Altered)"
+        ],
+        "Gauntlets": [],
+        "Greaves": []
+      }
+    }
+  ]
+}

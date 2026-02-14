@@ -1031,19 +1031,44 @@ def main():
                 return " ".join(kept[:3]).strip()
 
             family_index_by_piece = {}
+            family_presence_types = {}
             for piece_label, names in piece_names_by_label.items():
                 fam_index = {}
                 for piece_name in names:
                     fam_key = armor_family_key(piece_name)
                     fam_index.setdefault(fam_key, []).append(piece_name)
+                    family_presence_types.setdefault(fam_key, set()).add(piece_label)
                 family_index_by_piece[piece_label] = fam_index
 
+            complete_family_keys = {
+                fam_key
+                for fam_key, present_piece_labels in family_presence_types.items()
+                if len(present_piece_labels) == len(ARMOR_PIECE_ORDER)
+            }
+
+            full_scope_names_by_label = {
+                piece_label: [
+                    piece_name
+                    for piece_name in names
+                    if armor_family_key(piece_name) in complete_family_keys
+                ]
+                for piece_label, names in piece_names_by_label.items()
+            }
+
+            full_scope_family_index_by_piece = {}
+            for piece_label, names in full_scope_names_by_label.items():
+                fam_index = {}
+                for piece_name in names:
+                    fam_key = armor_family_key(piece_name)
+                    fam_index.setdefault(fam_key, []).append(piece_name)
+                full_scope_family_index_by_piece[piece_label] = fam_index
+
             def resolve_complement_piece_name(source_name: str, target_label: str) -> str | None:
-                target_names = piece_names_by_label.get(target_label, [])
+                target_names = full_scope_names_by_label.get(target_label, [])
                 if not target_names:
                     return None
                 fam_key = armor_family_key(source_name)
-                fam_matches = family_index_by_piece.get(target_label, {}).get(fam_key, [])
+                fam_matches = full_scope_family_index_by_piece.get(target_label, {}).get(fam_key, [])
                 if fam_matches:
                     return fam_matches[0]
                 source_tokens = {
@@ -1091,7 +1116,7 @@ def main():
                 pending_sync = st.session_state.pop("armor_full_scope_sync_pending", None)
                 if isinstance(pending_sync, dict):
                     for piece_label, resolved_name in pending_sync.items():
-                        target_names = piece_names_by_label.get(piece_label, [])
+                        target_names = full_scope_names_by_label.get(piece_label, [])
                         target_key = f"armor_full_set_{safe_stat_key(piece_label)}"
                         if resolved_name in target_names:
                             st.session_state[target_key] = resolved_name
@@ -1112,7 +1137,7 @@ def main():
 
                 full_scope_current = {}
                 for piece_label in ARMOR_PIECE_ORDER:
-                    piece_names = piece_names_by_label.get(piece_label, [])
+                    piece_names = full_scope_names_by_label.get(piece_label, [])
                     if not piece_names:
                         continue
                     key = f"armor_full_set_{safe_stat_key(piece_label)}"
@@ -1128,6 +1153,10 @@ def main():
 
                 if full_scope_current:
                     armor_detail_set_selection = dict(full_scope_current)
+                else:
+                    st.sidebar.info(
+                        "No complete armor families are available for full scope with the current dataset."
+                    )
             else:
                 st.sidebar.markdown("---")
                 st.sidebar.subheader("Armor pieces (custom scope)")
