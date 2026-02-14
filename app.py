@@ -976,9 +976,12 @@ def main():
             if not candidates:
                 st.write(f"- {piece_name}: *(missing)*")
                 continue
-            first_name = str(candidates[0])
-            row = name_to_row.get(first_name)
-            label = f"{piece_name}: {', '.join([str(x) for x in candidates])}"
+            normalized_candidates = [str(x).strip() for x in candidates if str(x).strip()]
+            preferred_name = choose_variant_preferred_name(normalized_candidates, family)
+            if not preferred_name:
+                preferred_name = normalized_candidates[0]
+            row = name_to_row.get(preferred_name)
+            label = f"{piece_name}: {preferred_name}"
             st.write(label)
             if row is not None and "image" in arm_df.columns and pd.notna(row.get("image")):
                 try:
@@ -1026,14 +1029,22 @@ def main():
             if variant_preference == "paired":
                 regular_items = [item for item in items if not is_altered_variant_name(item["name"])]
                 altered_items = [item for item in items if is_altered_variant_name(item["name"])]
+                preferred_pool = regular_items if regular_items else altered_items if altered_items else items
+                chosen = sorted(preferred_pool, key=lambda x: (-x["score"], x["name"]))[0]
+                partner = None
                 if regular_items and altered_items:
-                    regular_best = sorted(regular_items, key=lambda x: (-x["score"], x["name"]))[0]
-                    altered_best = sorted(altered_items, key=lambda x: (-x["score"], x["name"]))[0]
-                    regular_best["variant_base"] = base_key
-                    altered_best["variant_base"] = base_key
-                    deduped.append(regular_best)
-                    deduped.append(altered_best)
-                    continue
+                    if is_altered_variant_name(chosen["name"]):
+                        partner = sorted(regular_items, key=lambda x: (-x["score"], x["name"]))[0]
+                    else:
+                        partner = sorted(altered_items, key=lambda x: (-x["score"], x["name"]))[0]
+                chosen = dict(chosen)
+                chosen["variant_base"] = base_key
+                if partner:
+                    chosen["paired_name"] = partner["name"]
+                    chosen["paired_family"] = partner["source_family"]
+                    chosen["pair_score"] = int(chosen["score"]) + int(partner["score"])
+                deduped.append(chosen)
+                continue
             preferred_items = items
             if variant_preference in {"altered", "regular"}:
                 preferred_items = [
@@ -1045,76 +1056,12 @@ def main():
                     )
                 ]
             chosen_pool = preferred_items if preferred_items else items
-            chosen = sorted(chosen_pool, key=lambda x: (-x["score"], x["name"]))[0]
+            chosen = dict(sorted(chosen_pool, key=lambda x: (-x["score"], x["name"]))[0])
             chosen["variant_base"] = base_key
             deduped.append(chosen)
 
         deduped = sorted(deduped, key=lambda x: (-x["score"], x["name"]))
         suggested = deduped[:8]
-
-        paired_candidates = []
-        for base_key, items in grouped_candidates.items():
-            regular_items = [item for item in items if not is_altered_variant_name(item["name"])]
-            altered_items = [item for item in items if is_altered_variant_name(item["name"])]
-            if not regular_items or not altered_items:
-                continue
-            regular_best = sorted(regular_items, key=lambda x: (-x["score"], x["name"]))[0]
-            altered_best = sorted(altered_items, key=lambda x: (-x["score"], x["name"]))[0]
-            pair_score = regular_best["score"] + altered_best["score"]
-            paired_candidates.append(
-                {
-                    "base": base_key,
-                    "regular_name": regular_best["name"],
-                    "regular_family": regular_best["source_family"],
-                    "altered_name": altered_best["name"],
-                    "altered_family": altered_best["source_family"],
-                    "pair_score": pair_score,
-                }
-            )
-        paired_candidates = sorted(paired_candidates, key=lambda x: (-x["pair_score"], x["base"]))
-
-        if variant_preference == "paired" and paired_candidates:
-            st.markdown("**Auto-paired variants**")
-            for pair_idx, pair in enumerate(paired_candidates[:4]):
-                st.write(
-                    f"{pair_idx + 1}. {pair['regular_name']} + {pair['altered_name']} "
-                    f"(score={pair['pair_score']})"
-                )
-                pair_cols = st.columns(2)
-                with pair_cols[0]:
-                    reg_row = name_to_row.get(pair["regular_name"])
-                    if reg_row is not None and "image" in arm_df.columns and pd.notna(reg_row.get("image")):
-                        try:
-                            st.image(reg_row.get("image"), width=110)
-                        except Exception:
-                            pass
-                with pair_cols[1]:
-                    alt_row = name_to_row.get(pair["altered_name"])
-                    if alt_row is not None and "image" in arm_df.columns and pd.notna(alt_row.get("image")):
-                        try:
-                            st.image(alt_row.get("image"), width=110)
-                        except Exception:
-                            pass
-                if st.button(
-                    f"Use pair #{pair_idx + 1}",
-                    key=f"review_pair_{queue_index}_{pair_idx}",
-                    use_container_width=True,
-                ):
-                    decisions_payload["decisions"].append(
-                        {
-                            "family": family,
-                            "missing_piece": missing_piece,
-                            "action": "match_pair",
-                            "candidate_regular": pair["regular_name"],
-                            "candidate_regular_family": pair["regular_family"],
-                            "candidate_altered": pair["altered_name"],
-                            "candidate_altered_family": pair["altered_family"],
-                            "pair_score": pair["pair_score"],
-                        }
-                    )
-                    if save_json_file(decisions_path, decisions_payload):
-                        st.session_state["review_queue_index"] = min(queue_index, max(0, len(queue) - 2))
-                        st.rerun()
 
         st.markdown("**Suggested matches**")
         if suggested:
@@ -1122,9 +1069,12 @@ def main():
             for idx, suggestion in enumerate(suggested):
                 with suggestion_cols[idx % 2]:
                     variant_label = "Altered" if is_altered_variant_name(suggestion["name"]) else "Regular"
+                    auto_pair_suffix = ""
+                    if suggestion.get("paired_name"):
+                        auto_pair_suffix = " · auto-pairs counterpart"
                     st.write(
                         f"{idx + 1}. {suggestion['name']} "
-                        f"(from {suggestion['source_family']}, {variant_label}, score={suggestion['score']})"
+                        f"(from {suggestion['source_family']}, {variant_label}, score={suggestion['score']}{auto_pair_suffix})"
                     )
                     s_row = name_to_row.get(suggestion["name"])
                     if s_row is not None and "image" in arm_df.columns and pd.notna(s_row.get("image")):
@@ -1137,16 +1087,31 @@ def main():
                         key=f"review_match_{queue_index}_{idx}",
                         use_container_width=True,
                     ):
-                        decisions_payload["decisions"].append(
-                            {
-                                "family": family,
-                                "missing_piece": missing_piece,
-                                "action": "match",
-                                "candidate_name": suggestion["name"],
-                                "candidate_family": suggestion["source_family"],
-                                "score": suggestion["score"],
-                            }
-                        )
+                        if suggestion.get("paired_name"):
+                            primary_is_altered = is_altered_variant_name(suggestion["name"])
+                            decisions_payload["decisions"].append(
+                                {
+                                    "family": family,
+                                    "missing_piece": missing_piece,
+                                    "action": "match_pair",
+                                    "candidate_regular": suggestion["paired_name"] if primary_is_altered else suggestion["name"],
+                                    "candidate_regular_family": suggestion.get("paired_family") if primary_is_altered else suggestion["source_family"],
+                                    "candidate_altered": suggestion["name"] if primary_is_altered else suggestion["paired_name"],
+                                    "candidate_altered_family": suggestion["source_family"] if primary_is_altered else suggestion.get("paired_family"),
+                                    "pair_score": suggestion.get("pair_score", suggestion["score"]),
+                                }
+                            )
+                        else:
+                            decisions_payload["decisions"].append(
+                                {
+                                    "family": family,
+                                    "missing_piece": missing_piece,
+                                    "action": "match",
+                                    "candidate_name": suggestion["name"],
+                                    "candidate_family": suggestion["source_family"],
+                                    "score": suggestion["score"],
+                                }
+                            )
                         if save_json_file(decisions_path, decisions_payload):
                             st.session_state["review_queue_index"] = min(queue_index, max(0, len(queue) - 2))
                             st.rerun()
