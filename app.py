@@ -1351,13 +1351,10 @@ def main():
                         method_options,
                         DEFAULT_OPTIMIZATION_METHOD,
                     )
-                    st.caption("Optimization method")
-                    st.markdown("<div style='height: 0.25rem;'></div>", unsafe_allow_html=True)
                     optimizer_method = st.selectbox(
                         "Optimization method",
                         options=method_options,
                         key="optimizer_method",
-                        label_visibility="collapsed",
                     )
 
                     optimizer_weights = None
