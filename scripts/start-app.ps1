@@ -42,6 +42,7 @@ if (-not (Test-Path $pythonExe)) {
 }
 
 $url = "http://localhost:$Port"
+$browserPidStatePath = Join-Path $repoRoot ".streamlit_browser_pid"
 
 Write-Step "Starting Streamlit in background on $url ..."
 $process = Start-Process -FilePath $pythonExe -ArgumentList @(
@@ -92,25 +93,76 @@ function Open-OrRefreshBrowser([string]$TargetUrl, [int]$TargetPort) {
         return "opened"
     }
 
-    $titleToken = "localhost:$TargetPort"
-    $activated = $false
-    try {
-        $activated = $wshell.AppActivate($titleToken)
-    } catch {
-        $activated = $false
-    }
-
-    if ($activated) {
-        Start-Sleep -Milliseconds 200
+    function Refresh-EdgeProcess([int]$PidToRefresh) {
         try {
+            $proc = Get-Process -Id $PidToRefresh -ErrorAction Stop
+            if (-not $proc -or $proc.MainWindowHandle -eq 0) {
+                return $false
+            }
+            $activated = $false
+            try {
+                $activated = $wshell.AppActivate($proc.Id)
+            } catch {
+                $activated = $false
+            }
+            if (-not $activated -and $proc.MainWindowTitle) {
+                try {
+                    $activated = $wshell.AppActivate($proc.MainWindowTitle)
+                } catch {
+                    $activated = $false
+                }
+            }
+            if (-not $activated) {
+                return $false
+            }
+            Start-Sleep -Milliseconds 200
             $wshell.SendKeys("{F5}")
             return "refreshed"
         } catch {
-            # fall through and open URL if send keys fails
+            return $false
         }
     }
 
-    Start-Process $TargetUrl | Out-Null
+    if (Test-Path $browserPidStatePath) {
+        try {
+            $savedPidRaw = Get-Content $browserPidStatePath -ErrorAction Stop | Select-Object -First 1
+            $savedPid = [int]$savedPidRaw
+            $refreshResult = Refresh-EdgeProcess -PidToRefresh $savedPid
+            if ($refreshResult -eq "refreshed") {
+                return "refreshed"
+            }
+        } catch {
+        }
+    }
+
+    try {
+        $knownEdgeWindow = Get-Process -Name "msedge" -ErrorAction SilentlyContinue |
+            Where-Object {
+                $_.MainWindowHandle -ne 0 -and (
+                    $_.MainWindowTitle -like "*localhost:$TargetPort*" -or
+                    $_.MainWindowTitle -like "*Elden Ring - Ranking UI*"
+                )
+            } |
+            Select-Object -First 1
+        if ($knownEdgeWindow) {
+            $refreshResult = Refresh-EdgeProcess -PidToRefresh $knownEdgeWindow.Id
+            if ($refreshResult -eq "refreshed") {
+                Set-Content -Path $browserPidStatePath -Value "$($knownEdgeWindow.Id)" -Encoding utf8
+                return "refreshed"
+            }
+        }
+    } catch {
+    }
+
+    $edgeCmd = Get-Command msedge -ErrorAction SilentlyContinue
+    if ($edgeCmd) {
+        $openedProc = Start-Process -FilePath $edgeCmd.Source -ArgumentList @("--new-window", $TargetUrl) -PassThru
+        if ($openedProc) {
+            Set-Content -Path $browserPidStatePath -Value "$($openedProc.Id)" -Encoding utf8
+        }
+    } else {
+        Start-Process $TargetUrl | Out-Null
+    }
     return "opened"
 }
 
