@@ -827,6 +827,50 @@ def main():
         except Exception:
             return False
 
+    def is_altered_variant_name(value: str) -> bool:
+        token = str(value or "").strip().lower()
+        if not token:
+            return False
+        if "(altered" in token:
+            return True
+        return bool(re.search(r"\baltered\b", token))
+
+    def normalize_variant_base_name(value: str) -> str:
+        token = str(value or "").strip().lower()
+        token = re.sub(r"\(\s*altered[^)]*\)", "", token)
+        token = re.sub(r"\baltered\b", "", token)
+        token = re.sub(r"\s+", " ", token).strip()
+        return token
+
+    def resolve_variant_preference(names: list[str]) -> str:
+        altered_count = sum(1 for item in names if is_altered_variant_name(item))
+        regular_count = max(0, len(names) - altered_count)
+        if altered_count > 0 and altered_count >= regular_count:
+            return "altered"
+        if regular_count > 0:
+            return "regular"
+        return "any"
+
+    def rank_variant_match_score(source_name: str, candidate_name: str) -> int:
+        source_variant = "altered" if is_altered_variant_name(source_name) else "regular"
+        candidate_variant = "altered" if is_altered_variant_name(candidate_name) else "regular"
+        if source_variant == candidate_variant:
+            return 2
+        return -1
+
+    def choose_variant_preferred_name(candidates: list[str], source_name: str) -> str | None:
+        if not candidates:
+            return None
+        sorted_candidates = sorted(
+            candidates,
+            key=lambda name: (
+                -rank_variant_match_score(source_name, name),
+                normalize_variant_base_name(name),
+                name,
+            ),
+        )
+        return sorted_candidates[0]
+
     def render_inline_set_review():
         st.markdown("---")
         st.subheader("Armor Set Review")
@@ -919,12 +963,23 @@ def main():
                 except Exception:
                     pass
 
+        current_piece_names = []
+        for piece_label in ["Helm", "Armor", "Gauntlets", "Greaves"]:
+            current_piece_names.extend([str(x) for x in (pieces.get(piece_label, []) or []) if str(x).strip()])
+        variant_preference = resolve_variant_preference(current_piece_names)
+
         def token_score(source: str, candidate: str) -> int:
             src_tokens = set(re.findall(r"[A-Za-z0-9']+", source.lower()))
             cand_tokens = set(re.findall(r"[A-Za-z0-9']+", candidate.lower()))
             overlap = len(src_tokens.intersection(cand_tokens))
             phrase_bonus = 3 if source and source in candidate.lower() else 0
-            return overlap * 2 + phrase_bonus
+            candidate_variant = "altered" if is_altered_variant_name(candidate) else "regular"
+            variant_bonus = 0
+            if variant_preference == "altered":
+                variant_bonus = 2 if candidate_variant == "altered" else -1
+            elif variant_preference == "regular":
+                variant_bonus = 1 if candidate_variant == "regular" else -1
+            return overlap * 2 + phrase_bonus + variant_bonus
 
         lookup = []
         for entry in incomplete:
@@ -943,14 +998,29 @@ def main():
                     }
                 )
 
-        seen = set()
+        grouped_candidates = {}
+        for item in lookup:
+            base_key = normalize_variant_base_name(item["name"])
+            grouped_candidates.setdefault(base_key, []).append(item)
+
         deduped = []
-        for item in sorted(lookup, key=lambda x: (-x["score"], x["name"])):
-            key = item["name"]
-            if key in seen:
-                continue
-            seen.add(key)
-            deduped.append(item)
+        for base_key, items in grouped_candidates.items():
+            preferred_items = items
+            if variant_preference in {"altered", "regular"}:
+                preferred_items = [
+                    item
+                    for item in items
+                    if (
+                        (variant_preference == "altered" and is_altered_variant_name(item["name"]))
+                        or (variant_preference == "regular" and not is_altered_variant_name(item["name"]))
+                    )
+                ]
+            chosen_pool = preferred_items if preferred_items else items
+            chosen = sorted(chosen_pool, key=lambda x: (-x["score"], x["name"]))[0]
+            chosen["variant_base"] = base_key
+            deduped.append(chosen)
+
+        deduped = sorted(deduped, key=lambda x: (-x["score"], x["name"]))
         suggested = deduped[:8]
 
         st.markdown("**Suggested matches**")
@@ -958,9 +1028,10 @@ def main():
             suggestion_cols = st.columns(2)
             for idx, suggestion in enumerate(suggested):
                 with suggestion_cols[idx % 2]:
+                    variant_label = "Altered" if is_altered_variant_name(suggestion["name"]) else "Regular"
                     st.write(
                         f"{idx + 1}. {suggestion['name']} "
-                        f"(from {suggestion['source_family']}, score={suggestion['score']})"
+                        f"(from {suggestion['source_family']}, {variant_label}, score={suggestion['score']})"
                     )
                     s_row = name_to_row.get(suggestion["name"])
                     if s_row is not None and "image" in arm_df.columns and pd.notna(s_row.get("image")):
@@ -1308,6 +1379,9 @@ def main():
                 fam_key = armor_family_key(source_name)
                 fam_matches = full_scope_family_index_by_piece.get(target_label, {}).get(fam_key, [])
                 if fam_matches:
+                    preferred = choose_variant_preferred_name(fam_matches, source_name)
+                    if preferred:
+                        return preferred
                     return fam_matches[0]
                 source_tokens = {
                     token
@@ -1322,7 +1396,7 @@ def main():
                         for token in re.findall(r"[A-Za-z0-9']+", candidate.lower())
                         if token not in armor_piece_name_tokens
                     }
-                    score = len(source_tokens.intersection(candidate_tokens))
+                    score = len(source_tokens.intersection(candidate_tokens)) * 2 + rank_variant_match_score(source_name, candidate)
                     if score > best_score:
                         best_score = score
                         best_name = candidate
