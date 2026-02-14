@@ -2407,6 +2407,20 @@ def main():
             if not items:
                 return
 
+            def slot_icon(label: str) -> str:
+                token = str(label or "").strip().lower()
+                if "helm" in token or "hat" in token or "hood" in token:
+                    return "🪖"
+                if "armor" in token or "chest" in token or "robe" in token or "garb" in token:
+                    return "🛡️"
+                if "gaunt" in token or "glove" in token or "bracer" in token:
+                    return "🧤"
+                if "greave" in token or "leg" in token or "boot" in token or "trouser" in token:
+                    return "👢"
+                if token.startswith("slot"):
+                    return "🔹"
+                return "🧩"
+
             def resolve_detail_stat_columns() -> list[str]:
                 stats = [c for c in numeric_cols if c not in ["id"]]
                 if dataset == "armors":
@@ -2441,13 +2455,11 @@ def main():
                 detail_stat_cols = resolve_detail_stat_columns()
 
                 name_cols = st.columns(len(valid_items))
-                for col, (label, row) in zip(name_cols, valid_items):
+                for col, (label, _) in zip(name_cols, valid_items):
                     with col:
                         slot_name = str(label or "").strip()
-                        item_name = str(row.get("name", "")).strip()
                         if slot_name:
-                            st.markdown(f"**{slot_name}**")
-                        st.markdown(f"**{item_name or '—'}**")
+                            st.markdown(f"**{slot_icon(slot_name)} {slot_name}**")
 
                 st.markdown(section_gap, unsafe_allow_html=True)
                 image_cols = st.columns(len(valid_items))
@@ -2460,6 +2472,8 @@ def main():
                                 st.write("📦")
                         else:
                             st.write("📦")
+                        item_name = str(row.get("name", "")).strip()
+                        st.markdown(f"**{item_name or '—'}**")
 
                     st.markdown("<div style='height:6px;'></div>", unsafe_allow_html=True)
                 desc_cols = st.columns(len(valid_items))
