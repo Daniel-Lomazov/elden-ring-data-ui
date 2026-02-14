@@ -2440,18 +2440,16 @@ def main():
                 section_gap = "<div style='height:10px;'></div>"
                 detail_stat_cols = resolve_detail_stat_columns()
 
-                st.markdown("##### Name")
                 name_cols = st.columns(len(valid_items))
                 for col, (label, row) in zip(name_cols, valid_items):
                     with col:
                         slot_name = str(label or "").strip()
                         item_name = str(row.get("name", "")).strip()
                         if slot_name:
-                            st.caption(slot_name)
+                            st.markdown(f"**{slot_name}**")
                         st.markdown(f"**{item_name or '—'}**")
 
                 st.markdown(section_gap, unsafe_allow_html=True)
-                st.markdown("##### Image")
                 image_cols = st.columns(len(valid_items))
                 for col, (_, row) in zip(image_cols, valid_items):
                     with col:
@@ -2463,16 +2461,14 @@ def main():
                         else:
                             st.write("📦")
 
-                st.markdown(section_gap, unsafe_allow_html=True)
-                st.markdown("##### Description")
+                    st.markdown("<div style='height:6px;'></div>", unsafe_allow_html=True)
                 desc_cols = st.columns(len(valid_items))
                 for col, (_, row) in zip(desc_cols, valid_items):
                     with col:
                         description = str(row.get("description", "")).strip()
                         st.caption(description if description else "—")
 
-                st.markdown(section_gap, unsafe_allow_html=True)
-                st.markdown("##### Stats")
+                    st.markdown("<div style='height:6px;'></div>", unsafe_allow_html=True)
                 stat_cols = st.columns(len(valid_items))
                 for col, (_, row) in zip(stat_cols, valid_items):
                     with col:
