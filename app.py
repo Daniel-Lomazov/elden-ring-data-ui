@@ -1054,7 +1054,6 @@ def main():
                     "This selector is ready for upcoming set-based grouping."
                 )
             else:
-                st.sidebar.subheader("Scope view")
                 ensure_state_in_options(
                     "armor_custom_stack_view",
                     custom_stack_view_options,
@@ -1144,7 +1143,6 @@ def main():
                     "This selector will be connected once family definitions are added."
                 )
             else:
-                st.sidebar.subheader("Scope view")
                 ensure_state_in_options(
                     "talisman_custom_stack_view",
                     custom_stack_view_options,
