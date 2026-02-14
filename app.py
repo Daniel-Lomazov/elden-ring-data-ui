@@ -1343,45 +1343,6 @@ def main():
 
                 if full_scope_current:
                     armor_detail_set_selection = dict(full_scope_current)
-                    st.sidebar.markdown("---")
-                    if st.sidebar.button(
-                        "Save full-scope mapping permanently",
-                        key="armor_full_scope_save_overrides",
-                        use_container_width=True,
-                    ):
-                        current_names = [
-                            str(name).strip()
-                            for name in full_scope_current.values()
-                            if str(name).strip()
-                        ]
-                        variant_mode = resolve_variant_mode_for_names(current_names)
-                        anchor_name = full_scope_current.get("Armor") or next(
-                            iter(full_scope_current.values()),
-                            "",
-                        )
-                        family_key = armor_family_key(anchor_name)
-
-                        for piece_label, selected_name in full_scope_current.items():
-                            override_key = build_full_scope_override_key(
-                                family_key,
-                                piece_label,
-                                variant_mode,
-                            )
-                            full_scope_override_entries[override_key] = {
-                                "family": family_key,
-                                "target_label": piece_label,
-                                "variant_mode": variant_mode,
-                                "preferred_name": selected_name,
-                            }
-
-                        payload = {
-                            "version": 1,
-                            "entries": full_scope_override_entries,
-                        }
-                        if save_json_file(FULL_SCOPE_OVERRIDE_PATH, payload):
-                            st.sidebar.success("Saved full-scope mapping overrides.")
-                        else:
-                            st.sidebar.error("Could not save full-scope mapping overrides.")
                 else:
                     st.sidebar.info(
                         "No complete armor families are available for full scope with the current dataset."
@@ -2065,6 +2026,7 @@ def main():
         compact_mode: bool = False,
         full_set_mode: bool = False,
         image_mode: str = "auto",
+        allow_nested_columns: bool = True,
     ):
         if full_set_mode and compact_mode:
             cards_html = []
@@ -2185,6 +2147,71 @@ def main():
                         display_h = format_metric_value(val_h)
                         st.metric(f"⭐ {hs}", display_h)
             else:
+                if not allow_nested_columns:
+                    if "image" in df.columns and pd.notna(row.get("image")):
+                        try:
+                            st.image(row["image"], width=140)
+                        except Exception:
+                            st.write("📦")
+                    else:
+                        st.write("📦")
+
+                    if "name" in df.columns:
+                        st.markdown(f"### {row['name']}")
+                    if "__overall_score_100" in row and pd.notna(row.get("__overall_score_100")):
+                        overall_val = float(row.get("__overall_score_100", 0.0))
+                        st.metric("Overall", f"{overall_val:.2f}")
+
+                    if "description" in df.columns and pd.notna(row.get("description")):
+                        st.caption(row["description"])
+
+                    for hs in highlighted_stats:
+                        if hs in row:
+                            val_h = row.get(hs)
+                            display_h = format_metric_value(val_h)
+                            st.metric(f"⭐ {hs}", display_h)
+
+                    stats = [c for c in numeric_cols if c not in ["id"]]
+                    if dataset == "armors":
+                        desired_cols = ["weight", "Dmg: Phy", "bleed", "frost", "Res: Poi."]
+                        found_cols = [c for c in desired_cols if c in numeric_cols]
+                        for c in numeric_cols:
+                            if (
+                                c.startswith("Dmg:") or c.startswith("Res:")
+                            ) and c not in found_cols:
+                                found_cols.append(c)
+                        display_stats = [
+                            s
+                            for s in found_cols
+                            if s in stats and s not in highlighted_stats
+                        ]
+                    elif dataset == "talismans":
+                        desired_cols = ["weight"]
+                        found_cols = [c for c in desired_cols if c in numeric_cols]
+                        display_stats = [
+                            s
+                            for s in found_cols
+                            if s in stats and s not in highlighted_stats and str(s).strip().lower() != "dlc"
+                        ]
+                    else:
+                        display_stats = [s for s in stats if s not in highlighted_stats]
+
+                    for s in display_stats:
+                        val = row.get(s, 0)
+                        num_val = None
+                        try:
+                            num_val = float(val)
+                        except Exception:
+                            num_val = None
+                        if num_val is not None and num_val == 0 and s not in highlighted_stats:
+                            continue
+                        display_val = format_metric_value(val)
+                        st.metric(s, display_val)
+                    st.markdown("</div>", unsafe_allow_html=True)
+                    gap_px = FULL_SET_ROW_GAP_PX if full_set_mode and compact_mode else 8
+                    st.markdown(f"<div style='height:{gap_px}px'></div>", unsafe_allow_html=True)
+                    continue
+
                 c1, c2 = st.columns([1, 3])
                 with c1:
                     if "image" in df.columns and pd.notna(row.get("image")):
@@ -2379,7 +2406,12 @@ def main():
                 for col, (label, rows) in zip(columns, items):
                     with col:
                         st.markdown(f"#### {label}")
-                        render_card_rows(rows, compact_mode=False, full_set_mode=False)
+                        render_card_rows(
+                            rows,
+                            compact_mode=False,
+                            full_set_mode=False,
+                            allow_nested_columns=False,
+                        )
             else:
                 for label, rows in items:
                     st.markdown(f"#### {label}")
