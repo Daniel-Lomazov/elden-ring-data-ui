@@ -243,35 +243,35 @@ def main():
         elif token.startswith("Dmg:"):
             damage_token = lowered
             if "phy" in damage_token:
-                icon = "🗡️"
+                icon = "🛡️"
             elif "str" in damage_token:
-                icon = "💥"
+                icon = "⚒️"
             elif "sla" in damage_token:
-                icon = "🪚"
+                icon = "🗡️"
             elif "pie" in damage_token:
-                icon = "📌"
+                icon = "🏹"
             elif "mag" in damage_token:
-                icon = "🔮"
+                icon = "✨"
             elif "fir" in damage_token:
                 icon = "🔥"
             elif "lit" in damage_token:
                 icon = "⚡"
             elif "hol" in damage_token:
-                icon = "✨"
+                icon = "☀️"
             else:
-                icon = "⚔️"
+                icon = "🛡️"
         elif token.startswith("Res:") or "resistance" in lowered:
             resist_token = lowered
             if "poi" in resist_token:
                 icon = "🧱"
             elif "imm" in resist_token or "poison" in resist_token or "rot" in resist_token:
-                icon = "☣️"
+                icon = "🧪"
             elif "rob" in resist_token or "bleed" in resist_token:
                 icon = "🩸"
             elif "foc" in resist_token or "mad" in resist_token or "sleep" in resist_token:
                 icon = "🧠"
             elif "vit" in resist_token or "death" in resist_token:
-                icon = "🕯️"
+                icon = "💀"
             elif "fro" in resist_token:
                 icon = "❄️"
             else:
@@ -284,7 +284,7 @@ def main():
             elif "frost" in lowered:
                 icon = "❄️"
             elif "poison" in lowered or "rot" in lowered:
-                icon = "☣️"
+                icon = "🧪"
             else:
                 icon = "🧠"
         elif "poise" in lowered:
