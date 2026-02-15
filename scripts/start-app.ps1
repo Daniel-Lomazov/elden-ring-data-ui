@@ -113,6 +113,52 @@ function Open-OrRefreshBrowser([string]$TargetUrl, [int]$TargetPort) {
         }
     }
 
+    function Try-FocusAndRefresh([object]$ProcToRefresh) {
+        if (-not $ProcToRefresh) {
+            return $false
+        }
+        $activated = $false
+        try {
+            $activated = $wshell.AppActivate([int]$ProcToRefresh.Id)
+        } catch {
+            $activated = $false
+        }
+        if (-not $activated -and $ProcToRefresh.MainWindowTitle) {
+            try {
+                $activated = $wshell.AppActivate($ProcToRefresh.MainWindowTitle)
+            } catch {
+                $activated = $false
+            }
+        }
+        if (-not $activated) {
+            return $false
+        }
+        Start-Sleep -Milliseconds 250
+        $wshell.SendKeys("{F5}")
+        return $true
+    }
+
+    function Open-NewEdgeTab([string]$UrlToOpen) {
+        $edgeCmd = Get-Command msedge -ErrorAction SilentlyContinue
+        if ($edgeCmd) {
+            $openedProc = Start-Process -FilePath $edgeCmd.Source -ArgumentList @("--new-tab", $UrlToOpen) -PassThru
+            if ($openedProc) {
+                Set-Content -Path $browserPidStatePath -Value "$($openedProc.Id)" -Encoding utf8
+            }
+            Start-Sleep -Milliseconds 500
+            $candidateWindows = @(Find-TargetEdgeWindows -PortToMatch $TargetPort)
+            if ($candidateWindows.Count -gt 0) {
+                $focusProc = $candidateWindows | Select-Object -Last 1
+                if (Try-FocusAndRefresh -ProcToRefresh $focusProc) {
+                    return "opened_refreshed"
+                }
+            }
+            return "opened"
+        }
+        Start-Process $UrlToOpen | Out-Null
+        return "opened"
+    }
+
     $targetWindows = @(Find-TargetEdgeWindows -PortToMatch $TargetPort)
     if ($targetWindows.Count -gt 1) {
         foreach ($proc in $targetWindows) {
@@ -122,41 +168,48 @@ function Open-OrRefreshBrowser([string]$TargetUrl, [int]$TargetPort) {
             }
         }
         Start-Sleep -Milliseconds 400
+        return Open-NewEdgeTab -UrlToOpen $TargetUrl
     }
 
-    $edgeCmd = Get-Command msedge -ErrorAction SilentlyContinue
-    if ($edgeCmd) {
-        $openedProc = Start-Process -FilePath $edgeCmd.Source -ArgumentList @("--new-tab", $TargetUrl) -PassThru
-        if ($openedProc) {
-            Set-Content -Path $browserPidStatePath -Value "$($openedProc.Id)" -Encoding utf8
+    if ($targetWindows.Count -eq 1) {
+        $single = $targetWindows[0]
+        if (Try-FocusAndRefresh -ProcToRefresh $single) {
+            Set-Content -Path $browserPidStatePath -Value "$($single.Id)" -Encoding utf8
+            return "refreshed"
         }
-        Start-Sleep -Milliseconds 500
-        $candidateWindows = @(Find-TargetEdgeWindows -PortToMatch $TargetPort)
-        if ($candidateWindows.Count -gt 0) {
-            $focusProc = $candidateWindows | Select-Object -Last 1
-            $activated = $false
-            try {
-                $activated = $wshell.AppActivate($focusProc.Id)
-            } catch {
-                $activated = $false
-            }
-            if (-not $activated -and $focusProc.MainWindowTitle) {
-                try {
-                    $activated = $wshell.AppActivate($focusProc.MainWindowTitle)
-                } catch {
-                    $activated = $false
+        return Open-NewEdgeTab -UrlToOpen $TargetUrl
+    }
+
+    if (Test-Path $browserPidStatePath) {
+        try {
+            $savedPidRaw = Get-Content $browserPidStatePath -ErrorAction Stop | Select-Object -First 1
+            $savedPid = [int]$savedPidRaw
+            $savedProc = Get-Process -Id $savedPid -ErrorAction SilentlyContinue
+            if ($savedProc -and $savedProc.MainWindowHandle -ne 0) {
+                if (Try-FocusAndRefresh -ProcToRefresh $savedProc) {
+                    return "refreshed"
                 }
             }
-            if ($activated) {
-                Start-Sleep -Milliseconds 250
-                $wshell.SendKeys("{F5}")
-                return "opened_refreshed"
+        } catch {
+        }
+    }
+
+    try {
+        $appTitleWindow = Get-Process -Name "msedge" -ErrorAction SilentlyContinue |
+            Where-Object {
+                $_.MainWindowHandle -ne 0 -and $_.MainWindowTitle -like "*Elden Ring - Ranking UI*"
+            } |
+            Select-Object -First 1
+        if ($appTitleWindow) {
+            if (Try-FocusAndRefresh -ProcToRefresh $appTitleWindow) {
+                Set-Content -Path $browserPidStatePath -Value "$($appTitleWindow.Id)" -Encoding utf8
+                return "refreshed"
             }
         }
-    } else {
-        Start-Process $TargetUrl | Out-Null
+    } catch {
     }
-    return "opened"
+
+    return Open-NewEdgeTab -UrlToOpen $TargetUrl
 }
 
 $listenerPid = $null
@@ -191,7 +244,7 @@ if (-not $ready) {
 if ($ready -and $OpenBrowser) {
     try {
         $browserAction = Open-OrRefreshBrowser -TargetUrl $url -TargetPort $Port
-        if ($browserAction -eq "opened_refreshed") {
+            if ($browserAction -eq "opened_refreshed" -or $browserAction -eq "refreshed") {
             Write-Host "BROWSER_REFRESHED=True"
         } else {
             Write-Host "BROWSER_OPENED=True"
