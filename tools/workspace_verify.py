@@ -32,7 +32,13 @@ def main() -> int:
     steps: list[tuple[str, object]] = []
 
     def run_final_entry() -> None:
-        exit_code = int(run_final_checks(include_app_import=not args.quick) or 0)
+        exit_code = int(
+            run_final_checks(
+                include_app_import=not args.quick,
+                include_data_probe=not args.quick,
+            )
+            or 0
+        )
         if exit_code != 0:
             raise SystemExit(exit_code)
 

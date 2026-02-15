@@ -102,72 +102,56 @@ function Open-OrRefreshBrowser([string]$TargetUrl, [int]$TargetPort) {
         return "opened"
     }
 
-    function Refresh-EdgeProcess([int]$PidToRefresh) {
+    function Find-TargetEdgeWindows([int]$PortToMatch) {
         try {
-            $proc = Get-Process -Id $PidToRefresh -ErrorAction Stop
-            if (-not $proc -or $proc.MainWindowHandle -eq 0) {
-                return $false
-            }
-            $activated = $false
-            try {
-                $activated = $wshell.AppActivate($proc.Id)
-            } catch {
-                $activated = $false
-            }
-            if (-not $activated -and $proc.MainWindowTitle) {
-                try {
-                    $activated = $wshell.AppActivate($proc.MainWindowTitle)
-                } catch {
-                    $activated = $false
+            return Get-Process -Name "msedge" -ErrorAction SilentlyContinue |
+                Where-Object {
+                    $_.MainWindowHandle -ne 0 -and $_.MainWindowTitle -like "*localhost:$PortToMatch*"
                 }
-            }
-            if (-not $activated) {
-                return $false
-            }
-            Start-Sleep -Milliseconds 200
-            $wshell.SendKeys("{F5}")
-            return "refreshed"
         } catch {
-            return $false
+            return @()
         }
     }
 
-    if (Test-Path $browserPidStatePath) {
-        try {
-            $savedPidRaw = Get-Content $browserPidStatePath -ErrorAction Stop | Select-Object -First 1
-            $savedPid = [int]$savedPidRaw
-            $refreshResult = Refresh-EdgeProcess -PidToRefresh $savedPid
-            if ($refreshResult -eq "refreshed") {
-                return "refreshed"
-            }
-        } catch {
-        }
-    }
-
-    try {
-        $knownEdgeWindow = Get-Process -Name "msedge" -ErrorAction SilentlyContinue |
-            Where-Object {
-                $_.MainWindowHandle -ne 0 -and (
-                    $_.MainWindowTitle -like "*localhost:$TargetPort*" -or
-                    $_.MainWindowTitle -like "*Elden Ring - Ranking UI*"
-                )
-            } |
-            Select-Object -First 1
-        if ($knownEdgeWindow) {
-            $refreshResult = Refresh-EdgeProcess -PidToRefresh $knownEdgeWindow.Id
-            if ($refreshResult -eq "refreshed") {
-                Set-Content -Path $browserPidStatePath -Value "$($knownEdgeWindow.Id)" -Encoding utf8
-                return "refreshed"
+    $targetWindows = @(Find-TargetEdgeWindows -PortToMatch $TargetPort)
+    if ($targetWindows.Count -gt 1) {
+        foreach ($proc in $targetWindows) {
+            try {
+                Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
+            } catch {
             }
         }
-    } catch {
+        Start-Sleep -Milliseconds 400
     }
 
     $edgeCmd = Get-Command msedge -ErrorAction SilentlyContinue
     if ($edgeCmd) {
-        $openedProc = Start-Process -FilePath $edgeCmd.Source -ArgumentList @("--new-window", $TargetUrl) -PassThru
+        $openedProc = Start-Process -FilePath $edgeCmd.Source -ArgumentList @("--new-tab", $TargetUrl) -PassThru
         if ($openedProc) {
             Set-Content -Path $browserPidStatePath -Value "$($openedProc.Id)" -Encoding utf8
+        }
+        Start-Sleep -Milliseconds 500
+        $candidateWindows = @(Find-TargetEdgeWindows -PortToMatch $TargetPort)
+        if ($candidateWindows.Count -gt 0) {
+            $focusProc = $candidateWindows | Select-Object -Last 1
+            $activated = $false
+            try {
+                $activated = $wshell.AppActivate($focusProc.Id)
+            } catch {
+                $activated = $false
+            }
+            if (-not $activated -and $focusProc.MainWindowTitle) {
+                try {
+                    $activated = $wshell.AppActivate($focusProc.MainWindowTitle)
+                } catch {
+                    $activated = $false
+                }
+            }
+            if ($activated) {
+                Start-Sleep -Milliseconds 250
+                $wshell.SendKeys("{F5}")
+                return "opened_refreshed"
+            }
         }
     } else {
         Start-Process $TargetUrl | Out-Null
@@ -207,7 +191,7 @@ if (-not $ready) {
 if ($ready -and $OpenBrowser) {
     try {
         $browserAction = Open-OrRefreshBrowser -TargetUrl $url -TargetPort $Port
-        if ($browserAction -eq "refreshed") {
+        if ($browserAction -eq "opened_refreshed") {
             Write-Host "BROWSER_REFRESHED=True"
         } else {
             Write-Host "BROWSER_OPENED=True"

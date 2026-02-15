@@ -5,7 +5,7 @@ from data_loader import DataLoader
 from ui_components import parse_armor_stats
 
 
-def run_checks(include_app_import: bool = True) -> int:
+def run_checks(include_app_import: bool = True, include_data_probe: bool = True) -> int:
     print("FINAL_CHECK: Starting import verification...")
     errors = []
 
@@ -21,22 +21,23 @@ def run_checks(include_app_import: bool = True) -> int:
             print(f"ERR: failed to import {module_name}: {exc}")
             errors.append((module_name, str(exc)))
 
-    loader = DataLoader(data_dir="data")
-    available = loader.get_available_datasets()
-    print("Available datasets:", available)
-    if available:
-        path = f"data/{available[0]}.csv"
-        print("Trying to load", path)
-        df = DataLoader.load_file(path)
-        if df is None:
-            print("WARN: file could not be loaded")
-        else:
-            try:
-                parsed = parse_armor_stats(df)
-                print("Parsed columns sample:", parsed.columns.tolist()[:20])
-            except Exception as exc:
-                print("ERR parsing stats:", exc)
-                errors.append(("parse", str(exc)))
+    if include_data_probe:
+        loader = DataLoader(data_dir="data")
+        available = loader.get_available_datasets()
+        print("Available datasets:", available)
+        if available:
+            path = f"data/{available[0]}.csv"
+            print("Trying to load", path)
+            df = DataLoader.load_file(path)
+            if df is None:
+                print("WARN: file could not be loaded")
+            else:
+                try:
+                    parsed = parse_armor_stats(df)
+                    print("Parsed columns sample:", parsed.columns.tolist()[:20])
+                except Exception as exc:
+                    print("ERR parsing stats:", exc)
+                    errors.append(("parse", str(exc)))
 
     if errors:
         print("\nFINAL_CHECK: FAILED")

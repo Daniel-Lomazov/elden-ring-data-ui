@@ -29,6 +29,13 @@ Set-Location $repoRoot
 
 $totalTimer = [System.Diagnostics.Stopwatch]::StartNew()
 
+$autoFastLaunch = $RunApp -and -not $PSBoundParameters.ContainsKey("UltraQuick") -and -not $PSBoundParameters.ContainsKey("QuickVerify") -and -not $PSBoundParameters.ContainsKey("SkipVerify") -and -not $PSBoundParameters.ContainsKey("AlwaysUpdateEnv") -and -not $PSBoundParameters.ContainsKey("AlwaysSyncPip") -and -not $PSBoundParameters.ContainsKey("SkipReset")
+if ($autoFastLaunch) {
+    $UltraQuick = $true
+    $OpenBrowser = $true
+    Write-Step "Defaulting to fastest launch profile (UltraQuick + OpenBrowser)."
+}
+
 if ($UltraQuick) {
     $SkipReset = $true
     $SkipVerify = $true
