@@ -997,7 +997,21 @@ def main():
     talisman_detail_set_selection = []
     armor_detailed_scope_mode = DETAILED_SCOPE_CUSTOM
     talisman_detailed_scope_mode = DETAILED_SCOPE_CUSTOM
-    custom_stack_view_options = [STACK_VIEW_VERTICAL, STACK_VIEW_HORIZONTAL]
+    custom_stack_view_options = [STACK_VIEW_HORIZONTAL, STACK_VIEW_VERTICAL]
+
+    stack_view_default_migration_key = "_stack_view_default_migration_v1"
+    if st.session_state.get(stack_view_default_migration_key) is not True:
+        stack_keys = [
+            "armor_full_stack_view",
+            "armor_custom_stack_view",
+            "talisman_custom_stack_view",
+            "generic_custom_stack_view",
+        ]
+        for stack_key in stack_keys:
+            current_value = st.session_state.get(stack_key)
+            if current_value in (None, "", STACK_VIEW_VERTICAL):
+                st.session_state[stack_key] = STACK_VIEW_HORIZONTAL
+        st.session_state[stack_view_default_migration_key] = True
 
     def resolve_armor_piece_types(arm_df: pd.DataFrame | None):
         raw_to_display = {
