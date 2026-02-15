@@ -2567,13 +2567,12 @@ def main():
                             f"<div style='text-align:center;'><strong>{safe_item_name}</strong></div>",
                             unsafe_allow_html=True,
                         )
-
-                    st.markdown("<div style='height:6px;'></div>", unsafe_allow_html=True)
-                desc_cols = st.columns(len(valid_items))
-                for col, (_, row) in zip(desc_cols, valid_items):
-                    with col:
                         description = str(row.get("description", "")).strip()
-                        st.caption(description if description else "—")
+                        safe_description = html.escape(description if description else "—")
+                        st.markdown(
+                            f"<div style='text-align:center;'><small>{safe_description}</small></div>",
+                            unsafe_allow_html=True,
+                        )
 
                     st.markdown("<div style='height:6px;'></div>", unsafe_allow_html=True)
                 stat_cols = st.columns(len(valid_items))
