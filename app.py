@@ -1064,7 +1064,7 @@ def main():
             ensure_state_in_options(
                 stack_view_key,
                 custom_stack_view_options,
-                STACK_VIEW_VERTICAL,
+                STACK_VIEW_HORIZONTAL,
             )
             st.sidebar.selectbox(
                 "Choose view:",
@@ -1094,7 +1094,7 @@ def main():
             ensure_state_in_options(
                 "talisman_custom_stack_view",
                 custom_stack_view_options,
-                STACK_VIEW_VERTICAL,
+                STACK_VIEW_HORIZONTAL,
             )
             st.sidebar.selectbox(
                 "Choose view:",
@@ -1525,7 +1525,7 @@ def main():
             ensure_state_in_options(
                 "generic_custom_stack_view",
                 custom_stack_view_options,
-                STACK_VIEW_VERTICAL,
+                STACK_VIEW_HORIZONTAL,
             )
             st.sidebar.selectbox(
                 "Choose view:",
@@ -2597,7 +2597,7 @@ def main():
                 if custom_items:
                     render_detail_items(
                         custom_items,
-                        str(st.session_state.get("armor_full_stack_view", STACK_VIEW_VERTICAL)),
+                        str(st.session_state.get("armor_full_stack_view", STACK_VIEW_HORIZONTAL)),
                     )
                 else:
                     st.info("No full armor set selection available.")
@@ -2614,7 +2614,7 @@ def main():
                 if custom_items:
                     render_detail_items(
                         custom_items,
-                        str(st.session_state.get("armor_custom_stack_view", STACK_VIEW_VERTICAL)),
+                        str(st.session_state.get("armor_custom_stack_view", STACK_VIEW_HORIZONTAL)),
                     )
                 else:
                     st.info("No complete armor set selection available.")
@@ -2647,7 +2647,7 @@ def main():
                 if custom_items:
                     render_detail_items(
                         custom_items,
-                        str(st.session_state.get("talisman_custom_stack_view", STACK_VIEW_VERTICAL)),
+                        str(st.session_state.get("talisman_custom_stack_view", STACK_VIEW_HORIZONTAL)),
                     )
                 else:
                     st.info("No complete talisman set selection available.")
@@ -2665,7 +2665,7 @@ def main():
             if custom_items:
                 render_detail_items(
                     custom_items,
-                    str(st.session_state.get("generic_custom_stack_view", STACK_VIEW_VERTICAL)),
+                    str(st.session_state.get("generic_custom_stack_view", STACK_VIEW_HORIZONTAL)),
                 )
             else:
                 st.info("No complete set selection available for detailed view.")
