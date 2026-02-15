@@ -2533,14 +2533,7 @@ def main():
                     with col:
                         slot_name = str(label or "").strip()
                         if slot_name:
-                            st.markdown(
-                                (
-                                    "<div style='text-align:center;'>"
-                                    f"<strong>{slot_icon_for_label(slot_name)} {html.escape(slot_name)}</strong>"
-                                    "</div>"
-                                ),
-                                unsafe_allow_html=True,
-                            )
+                            st.markdown(f"**{slot_icon_for_label(slot_name)} {slot_name}**")
 
                 st.markdown(section_gap, unsafe_allow_html=True)
                 image_cols = st.columns(len(valid_items))
@@ -2548,25 +2541,13 @@ def main():
                     with col:
                         if "image" in df.columns and pd.notna(row.get("image")):
                             try:
-                                image_url = html.escape(str(row.get("image", "")))
-                                st.markdown(
-                                    (
-                                        "<div style='text-align:center;'>"
-                                        f"<img src='{image_url}' style='width:140px; max-width:100%;' />"
-                                        "</div>"
-                                    ),
-                                    unsafe_allow_html=True,
-                                )
+                                st.image(row.get("image"), width=140)
                             except Exception:
-                                st.markdown("<div style='text-align:center;'>📦</div>", unsafe_allow_html=True)
+                                st.write("📦")
                         else:
-                            st.markdown("<div style='text-align:center;'>📦</div>", unsafe_allow_html=True)
+                            st.write("📦")
                         item_name = str(row.get("name", "")).strip()
-                        safe_item_name = html.escape(item_name or "—")
-                        st.markdown(
-                            f"<div style='text-align:center;'><strong>{safe_item_name}</strong></div>",
-                            unsafe_allow_html=True,
-                        )
+                        st.markdown(f"**{item_name or '—'}**")
 
                     st.markdown("<div style='height:6px;'></div>", unsafe_allow_html=True)
                 desc_cols = st.columns(len(valid_items))
