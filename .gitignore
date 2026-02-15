@@ -33,6 +33,7 @@ Thumbs.db
 # Streamlit cache
 .streamlit/
 .streamlit_browser_pid
+.cache/
 
 # Jupyter
 .ipynb_checkpoints/

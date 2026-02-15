@@ -5,11 +5,13 @@ from data_loader import DataLoader
 from ui_components import parse_armor_stats
 
 
-def run_checks() -> int:
+def run_checks(include_app_import: bool = True) -> int:
     print("FINAL_CHECK: Starting import verification...")
     errors = []
 
-    modules = ["pandas", "streamlit", "data_loader", "ui_components", "app"]
+    modules = ["pandas", "streamlit", "data_loader", "ui_components"]
+    if include_app_import:
+        modules.append("app")
 
     for module_name in modules:
         try:

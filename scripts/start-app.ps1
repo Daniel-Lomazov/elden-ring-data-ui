@@ -12,8 +12,14 @@ function Write-Step([string]$Message) {
     Write-Host "[start-app] $Message" -ForegroundColor Green
 }
 
+function Write-Timing([string]$Label, [double]$Seconds) {
+    Write-Host ("[start-app] {0}: {1:N2}s" -f $Label, $Seconds) -ForegroundColor DarkGreen
+}
+
 $repoRoot = Split-Path -Parent $PSScriptRoot
 Set-Location $repoRoot
+
+$totalTimer = [System.Diagnostics.Stopwatch]::StartNew()
 
 if ($ResetFirst) {
     & "$PSScriptRoot\reset-dev-session.ps1" -Port $Port
@@ -45,6 +51,7 @@ $url = "http://localhost:$Port"
 $browserPidStatePath = Join-Path $repoRoot ".streamlit_browser_pid"
 
 Write-Step "Starting Streamlit in background on $url ..."
+$spawnTimer = [System.Diagnostics.Stopwatch]::StartNew()
 $process = Start-Process -FilePath $pythonExe -ArgumentList @(
     "-m",
     "streamlit",
@@ -55,6 +62,8 @@ $process = Start-Process -FilePath $pythonExe -ArgumentList @(
     "--server.headless",
     "true"
 ) -WorkingDirectory $repoRoot -WindowStyle Minimized -PassThru
+$spawnTimer.Stop()
+Write-Timing "Spawn Streamlit process" $spawnTimer.Elapsed.TotalSeconds
 
 Start-Sleep -Milliseconds 500
 
@@ -179,6 +188,8 @@ while ((Get-Date) -lt $deadline) {
     Start-Sleep -Milliseconds 600
 }
 
+$totalTimer.Stop()
+
 Write-Host "APP_URL=$url"
 Write-Host "START_PID=$($process.Id)"
 if ($listenerPid) {
@@ -187,6 +198,7 @@ if ($listenerPid) {
     Write-Host "LISTENER_PID=unknown"
 }
 Write-Host "READY=$ready"
+Write-Host ("STARTUP_SECONDS={0:N2}" -f $totalTimer.Elapsed.TotalSeconds)
 
 if (-not $ready) {
     Write-Step "App readiness not confirmed within $WaitForReadySeconds seconds."

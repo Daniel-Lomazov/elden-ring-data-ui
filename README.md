@@ -80,13 +80,19 @@ Use the script suite in [scripts/](scripts/) for clean, repeatable CLI control.
 - [scripts/ensure-conda-env.ps1](scripts/ensure-conda-env.ps1)
    - Ensures `elden_ring_ui` exists (creates if missing).
    - Installs/updates `requirements.txt` via `conda run`.
+   - Uses a requirements hash cache to skip pip sync when dependencies are unchanged.
+   - Use `-AlwaysSyncPip` to force a pip refresh.
 - [scripts/verify-workspace.ps1](scripts/verify-workspace.ps1)
    - Verifies required files exist.
-   - Runs `final_check.py` and `optimizer_check.py`.
+   - Runs consolidated checks through `tools.workspace_verify` in a single conda process.
+   - Prints timing information for verification and total script runtime.
+   - Supports `-Quick` to skip optimizer check and app import check for faster relaunch loops.
 - [scripts/run-all.ps1](scripts/run-all.ps1)
    - Orchestrator that runs reset → env setup → verification.
    - Optionally starts app with `-RunApp` via `start-app.ps1`.
-   - Use `-OpenBrowser` to open the app URL automatically.
+   - Use `-OpenBrowser` to open the app URL automatically (it remains closed unless this flag is set).
+   - Supports `-QuickVerify` for faster iterations.
+   - Supports `-AlwaysSyncPip` to force pip dependency reinstall.
 - [scripts/start-app.ps1](scripts/start-app.ps1)
    - Starts Streamlit in background using the selected env `python -m streamlit` and prints `APP_URL`, `START_PID`, `LISTENER_PID`, and `READY`.
    - Waits for listener + HTTP readiness (`-WaitForReadySeconds`, default `45`).
@@ -113,6 +119,18 @@ Seamless startup (auto-open browser):
 ./scripts/run-all.ps1 -RunApp -OpenBrowser -WaitForReadySeconds 60
 ```
 
+Fast relaunch loop (recommended while actively editing app UI):
+
+```powershell
+./scripts/run-all.ps1 -SkipReset -QuickVerify -RunApp -OpenBrowser
+```
+
+When dependencies changed and you want a full dependency refresh:
+
+```powershell
+./scripts/run-all.ps1 -AlwaysSyncPip -RunApp
+```
+
 ### Common commands
 
 ```powershell
@@ -124,6 +142,9 @@ Seamless startup (auto-open browser):
 
 # verify app checks only
 ./scripts/verify-workspace.ps1
+
+# fast verify (skip optimizer_check)
+./scripts/verify-workspace.ps1 -Quick
 
 # start app in background with URL + PID output
 ./scripts/start-app.ps1 -ResetFirst
