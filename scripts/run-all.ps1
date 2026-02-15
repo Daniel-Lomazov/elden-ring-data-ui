@@ -29,6 +29,11 @@ Set-Location $repoRoot
 
 $totalTimer = [System.Diagnostics.Stopwatch]::StartNew()
 
+if ($RunApp -and -not $PSBoundParameters.ContainsKey("OpenBrowser")) {
+    $OpenBrowser = $true
+    Write-Step "Browser handling enabled by default for app launch."
+}
+
 $autoFastLaunch = $RunApp -and -not $PSBoundParameters.ContainsKey("UltraQuick") -and -not $PSBoundParameters.ContainsKey("QuickVerify") -and -not $PSBoundParameters.ContainsKey("SkipVerify") -and -not $PSBoundParameters.ContainsKey("AlwaysUpdateEnv") -and -not $PSBoundParameters.ContainsKey("AlwaysSyncPip") -and -not $PSBoundParameters.ContainsKey("SkipReset")
 if ($autoFastLaunch) {
     $UltraQuick = $true
