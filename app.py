@@ -9,6 +9,8 @@ import subprocess
 import sys
 import html
 import copy
+import random
+from datetime import datetime
 from pathlib import Path
 
 try:
@@ -558,6 +560,12 @@ def main():
             return TALISMAN_MODE_SINGLE
         return normalized
 
+    def sidebar_title_case(value: str) -> str:
+        token = str(value or "").strip()
+        if not token:
+            return ""
+        return " ".join(part.capitalize() for part in token.split())
+
     def on_hist_view_mode_change():
         st.session_state["hist_view_mode"] = normalize_hist_view_mode(
             st.session_state.get("hist_view_mode_widget", "Interactive (click-to-set)")
@@ -681,12 +689,6 @@ def main():
             filtered = [x for x in fallback if x in options]
         st.session_state[key] = filtered
 
-
-    # Ensure manifest exists
-    if not manifest_path.exists():
-        st.sidebar.info("No checksum manifest found — generating now...")
-        generate_manifest()
-
     # Ensure armor_column_map exists; if missing, inform the user how to generate it
     armor_map_path = ROOT / "armor_column_map.json"
     if not armor_map_path.exists():
@@ -694,43 +696,42 @@ def main():
             "No armor mapping found — run the mapping helper to create `armor_column_map.json` if desired."
         )
 
-    check = verify_manifest()
-    integrity_ok = bool(
-        check is not None and not check.get("missing") and not check.get("mismatches")
-    )
+    if "integrity_last_check" not in st.session_state:
+        st.session_state["integrity_last_check"] = verify_manifest()
+        st.session_state["integrity_last_checked_at"] = datetime.now().strftime(
+            "%Y-%m-%d %H:%M:%S"
+        )
+    if "integrity_last_checked_at" not in st.session_state:
+        st.session_state["integrity_last_checked_at"] = None
+
     integrity_btn_col, integrity_status_col = st.sidebar.columns([8, 1])
     with integrity_btn_col:
         integrity_test_clicked = st.button(
             "Test data integrity",
             key="test_data_integrity",
         )
+    if integrity_test_clicked:
+        st.session_state["integrity_last_check"] = verify_manifest()
+        st.session_state["integrity_last_checked_at"] = datetime.now().strftime(
+            "%Y-%m-%d %H:%M:%S"
+        )
+
+    check = st.session_state.get("integrity_last_check")
+    integrity_ok = bool(
+        check is not None and not check.get("missing") and not check.get("mismatches")
+    )
+
     with integrity_status_col:
         if integrity_ok:
             st.markdown(
                 "<div style='display:flex;justify-content:center;align-items:center;height:2.2rem;'>✅</div>",
                 unsafe_allow_html=True,
             )
-
-    if check is None:
-        st.sidebar.warning(
-            "Checksum manifest not loadable or missing. You can regenerate it."
-        )
-    else:
-        if check["missing"] or check["mismatches"]:
-            with st.sidebar.expander("Data integrity: Issues detected", expanded=True):
-                if check["missing"]:
-                    st.write("Missing files:")
-                    for mfile in check["missing"]:
-                        st.write("- ", mfile)
-                if check["mismatches"]:
-                    st.write("Mismatched files:")
-                    for mm in check["mismatches"]:
-                        st.write("- ", mm["path"])
-            st.sidebar.error("Data integrity check failed")
-            st.sidebar.info("Run secure_data.py to regenerate the manifest if needed.")
         else:
-            if integrity_test_clicked:
-                st.sidebar.info("Integrity test completed successfully.")
+            st.markdown(
+                "<div style='display:flex;justify-content:center;align-items:center;height:2.2rem;'>❌</div>",
+                unsafe_allow_html=True,
+            )
 
     st.title("🏆 Elden Ring — Ranking & Sorting")
     st.markdown(
@@ -773,7 +774,6 @@ def main():
     active_dataset_set = set(active_dataset_keys)
 
     # Sidebar dataset chooser
-    st.sidebar.header("Dataset")
     active_ds_keys = [key for key in active_dataset_keys if key in datasets]
     inactive_ds_keys = [key for key in datasets if key not in active_dataset_set]
     ds_keys = [*active_ds_keys, *inactive_ds_keys]
@@ -810,7 +810,7 @@ def main():
             unsafe_allow_html=True,
         )
     selected_dataset_label = st.sidebar.selectbox(
-        "Choose dataset:", options=ds_labels, key="selected_dataset_label"
+        "Choose Dataset:", options=ds_labels, key="selected_dataset_label"
     )
     dataset = dataset_label_map.get(selected_dataset_label)
 
@@ -818,21 +818,21 @@ def main():
     if dataset == "armors":
         ensure_state_in_options("armor_view_mode", view_mode_options, VIEW_MODE_DETAILED)
         st.sidebar.selectbox(
-            "Choose view:",
+            "Choose View:",
             options=view_mode_options,
             key="armor_view_mode",
         )
     elif dataset == "talismans":
         ensure_state_in_options("talisman_view_mode", view_mode_options, VIEW_MODE_DETAILED)
         st.sidebar.selectbox(
-            "Choose view:",
+            "Choose View:",
             options=view_mode_options,
             key="talisman_view_mode",
         )
     else:
         ensure_state_in_options("generic_view_mode", view_mode_options, VIEW_MODE_DETAILED)
         st.sidebar.selectbox(
-            "Choose view:",
+            "Choose View:",
             options=view_mode_options,
             key="generic_view_mode",
         )
@@ -928,6 +928,10 @@ def main():
 
     def slot_icon_for_label(label: str) -> str:
         token = str(label or "").strip().lower()
+        if "armor set" in token or "full set" in token or token == "set":
+            return "🥋"
+        if "armor piece" in token or "single piece" in token or token == "piece":
+            return "🛡️"
         if "helm" in token or "hat" in token or "hood" in token:
             return "🪖"
         if "armor" in token or "chest" in token or "robe" in token or "garb" in token:
@@ -1002,7 +1006,6 @@ def main():
     stack_view_default_migration_key = "_stack_view_default_migration_v1"
     if st.session_state.get(stack_view_default_migration_key) is not True:
         stack_keys = [
-            "armor_full_stack_view",
             "armor_custom_stack_view",
             "talisman_custom_stack_view",
             "generic_custom_stack_view",
@@ -1065,25 +1068,140 @@ def main():
             DETAILED_SCOPE_CUSTOM,
         )
         armor_detailed_scope_mode = st.sidebar.selectbox(
-            "Choose scope:",
+            "Choose Scope:",
             options=detail_scope_options,
             key="armor_detailed_scope_mode",
+            format_func=sidebar_title_case,
         )
+        scope_family_options = []
+        scope_family_label_map = {}
         if armor_detailed_scope_mode in {DETAILED_SCOPE_FULL, DETAILED_SCOPE_CUSTOM}:
-            stack_view_key = (
-                "armor_full_stack_view"
-                if armor_detailed_scope_mode == DETAILED_SCOPE_FULL
-                else "armor_custom_stack_view"
+            type_label_map_scope, piece_labels_scope = resolve_armor_piece_types(df)
+            armor_piece_name_tokens_scope = {
+                "helm", "hood", "hat", "mask", "crown", "headband",
+                "armor", "mail", "robe", "garb", "gown", "coat", "vest", "chest", "cuirass",
+                "gauntlets", "gloves", "manchettes", "bracers",
+                "greaves", "leggings", "trousers", "boots", "shoes", "altered",
+            }
+
+            def scope_family_key(piece_name: str) -> str:
+                base = re.sub(r"\([^)]*\)", "", str(piece_name or "").strip())
+                tokens = re.findall(r"[A-Za-z0-9']+", base.lower())
+                kept = [tok for tok in tokens if tok and tok not in armor_piece_name_tokens_scope]
+                if not kept:
+                    kept = tokens
+                return " ".join(kept[:4]).strip()
+
+            names_by_piece_scope = {}
+            family_presence_scope = {}
+            for piece_label in ARMOR_PIECE_ORDER:
+                raw_type = type_label_map_scope.get(piece_label, piece_label)
+                names = sorted(
+                    {
+                        str(name).strip()
+                        for name in df.loc[df["type"].astype(str) == str(raw_type), "name"].dropna().tolist()
+                        if str(name).strip()
+                    }
+                )
+                names_by_piece_scope[piece_label] = names
+                for piece_name in names:
+                    fam_key = scope_family_key(piece_name)
+                    if fam_key:
+                        family_presence_scope.setdefault(fam_key, set()).add(piece_label)
+
+            scope_family_options = sorted(
+                [
+                    fam_key
+                    for fam_key, present_labels in family_presence_scope.items()
+                    if len(present_labels) == len(ARMOR_PIECE_ORDER)
+                ]
             )
+            for fam_key in scope_family_options:
+                sample_names = []
+                for piece_label in ARMOR_PIECE_ORDER:
+                    candidates = [
+                        piece_name
+                        for piece_name in names_by_piece_scope.get(piece_label, [])
+                        if scope_family_key(piece_name) == fam_key
+                    ]
+                    if candidates:
+                        sample_names.append(candidates[0])
+                scope_family_label_map[fam_key] = str(fam_key or "Set").title()
+        if armor_detailed_scope_mode == DETAILED_SCOPE_FULL:
+            pending_family_key = str(
+                st.session_state.pop("armor_full_scope_pending_family_key", "")
+            ).strip()
+            if pending_family_key and pending_family_key in scope_family_options:
+                st.session_state["armor_full_scope_family_key"] = pending_family_key
+            full_btn_left, full_btn_mid, full_btn_right = st.sidebar.columns([1, 3, 1])
+            with full_btn_mid:
+                if st.button(
+                    "Select Random Armor Set",
+                    key="armor_full_scope_random_set",
+                    use_container_width=True,
+                ):
+                    if scope_family_options:
+                        random_family_choice = random.choice(scope_family_options)
+                        st.session_state["armor_full_scope_family_key"] = random_family_choice
+                        st.session_state["armor_full_scope_random_family_key"] = random_family_choice
+                    st.session_state["armor_full_scope_random_requested"] = True
+            if scope_family_options:
+                ensure_state_in_options(
+                    "armor_full_scope_family_key",
+                    scope_family_options,
+                    scope_family_options[0],
+                )
+                st.sidebar.selectbox(
+                    "Choose Set:",
+                    options=scope_family_options,
+                    key="armor_full_scope_family_key",
+                    format_func=lambda fam_key: scope_family_label_map.get(fam_key, str(fam_key)),
+                )
+        elif armor_detailed_scope_mode == DETAILED_SCOPE_CUSTOM:
+            custom_btn_left, custom_btn_mid, custom_btn_right = st.sidebar.columns([1, 3, 1])
+            with custom_btn_mid:
+                if st.button(
+                    "Select Random Armor Pieces",
+                    key="armor_custom_scope_random_set",
+                    use_container_width=True,
+                ):
+                    st.session_state["armor_custom_scope_random_requested"] = True
+            custom_piece_names_by_label = {}
+            for piece_label in ARMOR_PIECE_ORDER:
+                raw_type = type_label_map_scope.get(piece_label, piece_label)
+                piece_names = sorted(
+                    {
+                        str(name).strip()
+                        for name in df.loc[df["type"].astype(str) == str(raw_type), "name"].dropna().tolist()
+                        if str(name).strip()
+                    }
+                )
+                custom_piece_names_by_label[piece_label] = piece_names
+
+            if st.session_state.pop("armor_custom_scope_random_requested", False):
+                for piece_label in ARMOR_PIECE_ORDER:
+                    piece_names = custom_piece_names_by_label.get(piece_label, [])
+                    if not piece_names:
+                        continue
+                    st.session_state[f"armor_detail_set_{safe_stat_key(piece_label)}"] = random.choice(piece_names)
+
+            for piece_label in ARMOR_PIECE_ORDER:
+                piece_names = custom_piece_names_by_label.get(piece_label, [])
+                if not piece_names:
+                    continue
+                key = f"armor_detail_set_{safe_stat_key(piece_label)}"
+                ensure_state_in_options(key, piece_names, piece_names[0])
+                armor_detail_set_selection[piece_label] = st.sidebar.selectbox(
+                    f"{piece_label}:",
+                    options=piece_names,
+                    key=key,
+                    label_visibility="collapsed",
+                )
+        if armor_detailed_scope_mode == DETAILED_SCOPE_CUSTOM:
             ensure_state_in_options(
-                stack_view_key,
+                "armor_custom_stack_view",
                 custom_stack_view_options,
                 STACK_VIEW_HORIZONTAL,
-            )
-            st.sidebar.selectbox(
-                "Choose view:",
-                options=custom_stack_view_options,
-                key=stack_view_key,
             )
 
     if dataset == "talismans" and str(
@@ -1100,9 +1218,10 @@ def main():
             DETAILED_SCOPE_CUSTOM,
         )
         talisman_detailed_scope_mode = st.sidebar.selectbox(
-            "Choose scope:",
+            "Choose Scope:",
             options=detail_scope_options,
             key="talisman_detailed_scope_mode",
+            format_func=sidebar_title_case,
         )
         if talisman_detailed_scope_mode == DETAILED_SCOPE_CUSTOM:
             ensure_state_in_options(
@@ -1111,7 +1230,7 @@ def main():
                 STACK_VIEW_HORIZONTAL,
             )
             st.sidebar.selectbox(
-                "Choose view:",
+                "Choose View:",
                 options=custom_stack_view_options,
                 key="talisman_custom_stack_view",
             )
@@ -1122,16 +1241,35 @@ def main():
         )
 
         if armor_view_mode == VIEW_MODE_OPTIMIZATION:
-            st.sidebar.subheader("Optimization view")
-            mode_options = list(ARMOR_MODE_LABELS.keys())
-            ensure_state_in_options("armor_mode", mode_options, ARMOR_MODE_SINGLE_PIECE)
-            armor_mode = st.sidebar.radio(
-                "Mode:",
-                mode_options,
-                key="armor_mode",
-                format_func=lambda mode_key: ARMOR_MODE_LABELS.get(mode_key, str(mode_key)),
+            optimization_scope_options = [
+                DETAILED_SCOPE_SINGLE,
+                DETAILED_SCOPE_FULL,
+                DETAILED_SCOPE_CUSTOM,
+            ]
+            if "armor_optimization_scope_mode" not in st.session_state:
+                current_mode = str(
+                    st.session_state.get("armor_mode", ARMOR_MODE_SINGLE_PIECE)
+                )
+                if current_mode == ARMOR_MODE_FULL_ARMOR_SET:
+                    st.session_state["armor_optimization_scope_mode"] = DETAILED_SCOPE_FULL
+                elif current_mode == ARMOR_MODE_COMPLETE_ARMOR_SET:
+                    st.session_state["armor_optimization_scope_mode"] = DETAILED_SCOPE_CUSTOM
+                else:
+                    st.session_state["armor_optimization_scope_mode"] = DETAILED_SCOPE_SINGLE
+            ensure_state_in_options(
+                "armor_optimization_scope_mode",
+                optimization_scope_options,
+                DETAILED_SCOPE_SINGLE,
             )
-            if armor_mode == ARMOR_MODE_SINGLE_PIECE:
+            armor_optimization_scope_mode = st.sidebar.selectbox(
+                "Choose Scope:",
+                options=optimization_scope_options,
+                key="armor_optimization_scope_mode",
+                format_func=sidebar_title_case,
+            )
+
+            if armor_optimization_scope_mode == DETAILED_SCOPE_SINGLE:
+                st.session_state["armor_mode"] = ARMOR_MODE_SINGLE_PIECE
                 armor_single_piece = True
                 type_label_map, armor_piece_labels = resolve_armor_piece_types(df)
 
@@ -1146,13 +1284,15 @@ def main():
                     "Piece type:", options=armor_piece_labels, key="armor_piece_type"
                 )
                 armor_piece_type = type_label_map.get(selected_label, selected_label)
-            elif armor_mode == ARMOR_MODE_FULL_ARMOR_SET:
+            elif armor_optimization_scope_mode == DETAILED_SCOPE_FULL:
+                st.session_state["armor_mode"] = ARMOR_MODE_FULL_ARMOR_SET
                 armor_full_set = True
                 type_label_map, armor_piece_labels = resolve_armor_piece_types(df)
-            elif armor_mode == ARMOR_MODE_COMPLETE_ARMOR_SET:
+            elif armor_optimization_scope_mode == DETAILED_SCOPE_CUSTOM:
+                st.session_state["armor_mode"] = ARMOR_MODE_COMPLETE_ARMOR_SET
                 armor_placeholder_mode = True
                 st.sidebar.info(
-                    "Complete armor set is planned as a meticulous full-set optimizer. "
+                    "Custom scope in optimization is planned as a meticulous full-set optimizer. "
                     "It is not implemented yet, so no results are shown in this mode."
                 )
         else:
@@ -1206,13 +1346,119 @@ def main():
                 "altered",
             }
 
+            def tokenize_armor_name(piece_name: str) -> list[str]:
+                cleaned = re.sub(r"\([^)]*\)", "", str(piece_name or "").strip())
+                cleaned = re.sub(r"[^A-Za-z0-9'\-\s]+", " ", cleaned)
+                tokens = [
+                    token.strip("-_").lower()
+                    for token in cleaned.split()
+                    if token.strip("-_")
+                ]
+                return tokens
+
+            def infer_set_tokens_from_name(piece_name: str) -> list[str]:
+                tokens = tokenize_armor_name(piece_name)
+                if not tokens:
+                    return []
+
+                cut_idx = None
+                for idx, token in enumerate(tokens):
+                    if token in armor_piece_name_tokens:
+                        cut_idx = idx
+                        break
+
+                if cut_idx is not None and cut_idx > 0:
+                    return tokens[:cut_idx]
+
+                kept = [t for t in tokens if t not in armor_piece_name_tokens]
+                return kept if kept else tokens
+
+            def prettify_set_name(tokens: list[str]) -> str:
+                if not tokens:
+                    return "Unknown Set"
+                normalized = [str(token or "").strip().lower() for token in tokens if str(token or "").strip()]
+                if not normalized:
+                    return "Unknown Set"
+
+                if len(normalized) >= 2 and normalized[0] == "all" and normalized[1] == "knowing":
+                    normalized = ["all-knowing"] + normalized[2:]
+
+                if len(normalized) >= 2 and normalized[0] == "of" and normalized[1] == "the":
+                    normalized = normalized[2:]
+                elif normalized and normalized[0] in {"of", "the"}:
+                    normalized = normalized[1:]
+
+                if not normalized:
+                    return "Unknown Set"
+
+                roman_tokens = {"i", "ii", "iii", "iv", "v", "vi", "vii", "viii", "ix", "x"}
+                minor_words = {"of", "the", "and", "for", "to", "in", "on", "at", "by", "a", "an"}
+
+                def format_word(word: str) -> str:
+                    if word in roman_tokens:
+                        return word.upper()
+                    if "-" in word:
+                        return "-".join(format_word(part) for part in word.split("-") if part)
+                    return word.capitalize()
+
+                parts = []
+                for idx, token in enumerate(normalized):
+                    if idx > 0 and token in minor_words:
+                        parts.append(token)
+                    else:
+                        parts.append(format_word(token))
+
+                return "Set of the " + " ".join(parts)
+
+            def infer_set_name_from_names(piece_names: list[str]) -> str:
+                token_lists = [
+                    infer_set_tokens_from_name(name)
+                    for name in piece_names
+                    if str(name or "").strip()
+                ]
+                token_lists = [tokens for tokens in token_lists if tokens]
+                if not token_lists:
+                    return "Unknown Set"
+
+                common_prefix = list(token_lists[0])
+                for tokens in token_lists[1:]:
+                    max_len = min(len(common_prefix), len(tokens))
+                    idx = 0
+                    while idx < max_len and common_prefix[idx] == tokens[idx]:
+                        idx += 1
+                    common_prefix = common_prefix[:idx]
+                    if not common_prefix:
+                        break
+
+                if common_prefix:
+                    return prettify_set_name(common_prefix)
+
+                score_map = {}
+                for tokens in token_lists:
+                    dedup_tokens = list(dict.fromkeys(tokens))
+                    for token in dedup_tokens:
+                        score_map[token] = score_map.get(token, 0) + 1
+
+                top_tokens = [
+                    token
+                    for token, _count in sorted(
+                        score_map.items(), key=lambda item: (-item[1], item[0])
+                    )
+                    if token not in armor_piece_name_tokens
+                ]
+                return prettify_set_name(top_tokens[:3] if top_tokens else token_lists[0][:3])
+
             def armor_family_key(piece_name: str) -> str:
-                base = re.sub(r"\([^)]*\)", "", str(piece_name or "").strip())
-                tokens = re.findall(r"[A-Za-z0-9']+", base.lower())
-                kept = [tok for tok in tokens if tok and tok not in armor_piece_name_tokens]
-                if not kept:
-                    kept = tokens
-                return " ".join(kept[:3]).strip()
+                set_tokens = infer_set_tokens_from_name(piece_name)
+                if not set_tokens:
+                    return ""
+                return " ".join(set_tokens[:4]).strip()
+
+            filtered_armor_df = filtered_armor_df.copy()
+            if "name" in filtered_armor_df.columns:
+                filtered_armor_df["set_name"] = filtered_armor_df["name"].apply(
+                    lambda value: infer_set_name_from_names([str(value)])
+                )
 
             family_index_by_piece = {}
             family_presence_types = {}
@@ -1352,19 +1598,68 @@ def main():
                     }
                 )
                 if single_armor_names:
+                    single_btn_left, single_btn_mid, single_btn_right = st.sidebar.columns([1, 3, 1])
+                    with single_btn_mid:
+                        if st.button(
+                            "Select Random Armor Piece",
+                            key="armor_single_scope_random_piece",
+                            use_container_width=True,
+                        ):
+                            st.session_state["armor_detail_single_item"] = random.choice(single_armor_names)
                     ensure_state_in_options(
                         "armor_detail_single_item",
                         single_armor_names,
                         single_armor_names[0],
                     )
                     armor_detail_item_name = st.sidebar.selectbox(
-                        "Choose piece:",
+                        "Choose Piece:",
                         options=single_armor_names,
                         key="armor_detail_single_item",
                     )
             elif armor_detailed_scope_mode == DETAILED_SCOPE_FULL:
-                st.sidebar.markdown("---")
-                st.sidebar.subheader("Armor pieces (full scope)")
+                if st.session_state.pop("armor_full_scope_random_requested", False):
+                    random_family_key = str(
+                        st.session_state.pop("armor_full_scope_random_family_key", "")
+                    ).strip()
+                    available_families = sorted(list(complete_family_keys))
+                    if available_families:
+                        if not random_family_key:
+                            random_family_key = random.choice(available_families)
+                        chosen_names = []
+                        for piece_label in ARMOR_PIECE_ORDER:
+                            piece_pool = full_scope_family_index_by_piece.get(piece_label, {}).get(
+                                random_family_key,
+                                [],
+                            )
+                            if not piece_pool:
+                                continue
+                            selected_random_name = random.choice(piece_pool)
+                            st.session_state[f"armor_full_set_{safe_stat_key(piece_label)}"] = selected_random_name
+                            chosen_names.append(selected_random_name)
+                        if chosen_names:
+                            st.session_state["armor_full_scope_last_source_name"] = chosen_names[0]
+                        st.session_state.pop("armor_full_scope_sync_pending", None)
+                        st.session_state["armor_full_scope_last_applied_family"] = random_family_key
+                    else:
+                        st.sidebar.info("No complete armor families available for random full-set selection.")
+
+                selected_family_key = str(
+                    st.session_state.get("armor_full_scope_family_key", "")
+                ).strip()
+                last_applied_family = str(
+                    st.session_state.get("armor_full_scope_last_applied_family", "")
+                ).strip()
+                if selected_family_key and selected_family_key != last_applied_family:
+                    for piece_label in ARMOR_PIECE_ORDER:
+                        piece_pool = full_scope_family_index_by_piece.get(piece_label, {}).get(
+                            selected_family_key,
+                            [],
+                        )
+                        if not piece_pool:
+                            continue
+                        st.session_state[f"armor_full_set_{safe_stat_key(piece_label)}"] = piece_pool[0]
+                    st.session_state["armor_full_scope_last_applied_family"] = selected_family_key
+                    st.session_state.pop("armor_full_scope_sync_pending", None)
 
                 pending_sync = st.session_state.pop("armor_full_scope_sync_pending", None)
                 if isinstance(pending_sync, dict):
@@ -1380,6 +1675,9 @@ def main():
                     if not source_name:
                         return
                     st.session_state["armor_full_scope_last_source_name"] = source_name
+                    source_family_key = armor_family_key(source_name)
+                    if source_family_key:
+                        st.session_state["armor_full_scope_pending_family_key"] = source_family_key
                     sync_updates = {}
                     for piece_label in ARMOR_PIECE_ORDER:
                         if piece_label == changed_piece_label:
@@ -1390,7 +1688,7 @@ def main():
                     st.session_state["armor_full_scope_sync_pending"] = sync_updates
 
                 full_scope_current = {}
-                for piece_label in ARMOR_PIECE_ORDER:
+                for piece_idx, piece_label in enumerate(ARMOR_PIECE_ORDER):
                     piece_names = full_scope_names_by_label.get(piece_label, [])
                     if not piece_names:
                         continue
@@ -1423,12 +1721,13 @@ def main():
                     ]
 
                     selected_piece_name = st.sidebar.selectbox(
-                        f"{piece_label}:",
+                        "Choose Set by Piece:" if piece_idx == 0 else f"{piece_label}:",
                         options=ordered_options,
                         format_func=lambda name, marks=suggested_set: (
                             f"★ {name}" if name in marks else name
                         ),
                         key=key,
+                        label_visibility="visible" if piece_idx == 0 else "collapsed",
                         on_change=on_armor_full_piece_change,
                         args=(piece_label,),
                     )
@@ -1436,31 +1735,30 @@ def main():
 
                 if full_scope_current:
                     armor_detail_set_selection = dict(full_scope_current)
+                    selected_full_names = [
+                        str(name).strip()
+                        for name in full_scope_current.values()
+                        if str(name).strip()
+                    ]
+                    if selected_full_names:
+                        inferred_full_set_name = infer_set_name_from_names(selected_full_names)
+                        st.sidebar.caption(f"Detected Set: {inferred_full_set_name}")
                 else:
                     st.sidebar.info(
                         "No complete armor families are available for full scope with the current dataset."
                     )
             else:
-                st.sidebar.markdown("---")
-                st.sidebar.subheader("Armor pieces (custom scope)")
                 for piece_label in ARMOR_PIECE_ORDER:
-                    piece_names = piece_names_by_label.get(piece_label, [])
-                    if not piece_names:
-                        continue
                     key = f"armor_detail_set_{safe_stat_key(piece_label)}"
-                    ensure_state_in_options(key, piece_names, piece_names[0])
-                    armor_detail_set_selection[piece_label] = st.sidebar.selectbox(
-                        f"{piece_label}:",
-                        options=piece_names,
-                        key=key,
-                    )
+                    selected_name = str(st.session_state.get(key, "")).strip()
+                    if selected_name:
+                        armor_detail_set_selection[piece_label] = selected_name
     elif dataset == "talismans":
         talisman_view_mode = str(
             st.session_state.get("talisman_view_mode", VIEW_MODE_DETAILED)
         )
 
         if talisman_view_mode == VIEW_MODE_OPTIMIZATION:
-            st.sidebar.subheader("Optimization view")
             talisman_mode_options = list(TALISMAN_MODE_LABELS.keys())
             ensure_state_in_options("talisman_mode", talisman_mode_options, TALISMAN_MODE_SINGLE)
             talisman_mode = st.sidebar.radio(
@@ -1492,7 +1790,7 @@ def main():
                         talisman_names[0],
                     )
                     talisman_detail_item_name = st.sidebar.selectbox(
-                        "Choose talisman:",
+                        "Choose Talisman:",
                         options=talisman_names,
                         key="talisman_detail_single_item",
                     )
@@ -1542,7 +1840,7 @@ def main():
                 STACK_VIEW_HORIZONTAL,
             )
             st.sidebar.selectbox(
-                "Choose view:",
+                "Choose View:",
                 options=custom_stack_view_options,
                 key="generic_custom_stack_view",
             )
@@ -1580,12 +1878,6 @@ def main():
         stat_options = [
             s for s in numeric_cols if str(s).strip().lower() not in ["id", "dlc", "weight"]
         ]
-
-    col1, col2 = st.columns([3, 1])
-    with col1:
-        st.header(f"Dataset: {dataset}")
-    with col2:
-        st.info(f"Total Rows: {len(df)}")
 
     if dataset not in ["armors", "talismans"] and not detailed_view_active:
         st.markdown("---")
@@ -2121,6 +2413,51 @@ def main():
         image_mode: str = "auto",
         allow_nested_columns: bool = True,
     ):
+        def render_image_or_grid(row: pd.Series, width_px: int = 140):
+            grid_urls = row.get("__image_grid_urls")
+            if isinstance(grid_urls, (list, tuple)):
+                cleaned_urls = [
+                    str(url).strip()
+                    for url in grid_urls
+                    if str(url).strip() and str(url).strip().lower() != "nan"
+                ][:4]
+                if cleaned_urls:
+                    while len(cleaned_urls) < 4:
+                        cleaned_urls.append("")
+                    tile_size = max(28, int((width_px - 6) / 2))
+                    tile_style = (
+                        f"width:{tile_size}px;height:{tile_size}px;object-fit:cover;"
+                        "border-radius:6px;background:rgba(255,255,255,0.06);"
+                    )
+                    cell_html = []
+                    for image_url in cleaned_urls:
+                        if image_url:
+                            cell_html.append(
+                                f"<img src='{html.escape(image_url)}' style='{tile_style}' alt='' />"
+                            )
+                        else:
+                            cell_html.append(
+                                f"<div style='{tile_style};display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.6);font-size:0.75rem;'>—</div>"
+                            )
+                    st.markdown(
+                        (
+                            f"<div style='width:{width_px}px;margin:0 auto;display:grid;grid-template-columns:repeat(2,1fr);"
+                            "gap:6px;justify-items:center;'>"
+                            + "".join(cell_html)
+                            + "</div>"
+                        ),
+                        unsafe_allow_html=True,
+                    )
+                    return
+
+            if "image" in df.columns and pd.notna(row.get("image")):
+                try:
+                    st.image(row["image"], width=width_px)
+                except Exception:
+                    st.write("📦")
+            else:
+                st.write("📦")
+
         if full_set_mode and compact_mode:
             cards_html = []
             for _, row in display_rows.iterrows():
@@ -2217,23 +2554,19 @@ def main():
                         f"<div class='full-set-bar' style='background:{bar_color};'></div>",
                         unsafe_allow_html=True,
                     )
-                if "image" in df.columns and pd.notna(row.get("image")):
-                    try:
-                        st.image(row["image"], width=140)
-                    except Exception:
-                        st.write("📦")
-                else:
-                    st.write("📦")
+                render_image_or_grid(row, width_px=140)
                 if "name" in df.columns:
-                    title_class = "full-set-title" if full_set_mode else ""
-                    if title_class:
-                        safe_name = html.escape(str(row.get("name", "")))
-                        st.markdown(
-                            f"<div class='{title_class}'><strong>{safe_name}</strong></div>",
-                            unsafe_allow_html=True,
-                        )
-                    else:
-                        st.markdown(f"### {row['name']}")
+                    name_text = str(row.get("name", "")).strip()
+                    if name_text:
+                        title_class = "full-set-title" if full_set_mode else ""
+                        if title_class:
+                            safe_name = html.escape(name_text)
+                            st.markdown(
+                                f"<div class='{title_class}'><strong>{safe_name}</strong></div>",
+                                unsafe_allow_html=True,
+                            )
+                        else:
+                            st.markdown(f"### {name_text}")
                 for hs in highlighted_stats:
                     if hs in row:
                         val_h = row.get(hs)
@@ -2241,22 +2574,20 @@ def main():
                         st.metric(format_stat_metric_label(hs, highlighted=True), display_h)
             else:
                 if not allow_nested_columns:
-                    if "image" in df.columns and pd.notna(row.get("image")):
-                        try:
-                            st.image(row["image"], width=140)
-                        except Exception:
-                            st.write("📦")
-                    else:
-                        st.write("📦")
+                    render_image_or_grid(row, width_px=140)
 
                     if "name" in df.columns:
-                        st.markdown(f"### {row['name']}")
+                        name_text = str(row.get("name", "")).strip()
+                        if name_text:
+                            st.markdown(f"### {name_text}")
                     if "__overall_score_100" in row and pd.notna(row.get("__overall_score_100")):
                         overall_val = float(row.get("__overall_score_100", 0.0))
                         st.metric("Overall", f"{overall_val:.2f}")
 
                     if "description" in df.columns and pd.notna(row.get("description")):
-                        st.caption(row["description"])
+                        description_text = str(row.get("description", "")).strip()
+                        if description_text:
+                            st.caption(description_text)
 
                     for hs in highlighted_stats:
                         if hs in row:
@@ -2307,13 +2638,7 @@ def main():
 
                 c1, c2 = st.columns([1, 3])
                 with c1:
-                    if "image" in df.columns and pd.notna(row.get("image")):
-                        try:
-                            st.image(row["image"], width=140)
-                        except Exception:
-                            st.write("📦")
-                    else:
-                        st.write("📦")
+                    render_image_or_grid(row, width_px=140)
                     for hs in highlighted_stats:
                         if hs in row:
                             val_h = row.get(hs)
@@ -2323,17 +2648,23 @@ def main():
                     title_left, title_right = st.columns([4, 1])
                     with title_left:
                         if "name" in df.columns:
-                            st.markdown(f"### {row['name']}")
+                            name_text = str(row.get("name", "")).strip()
+                            if name_text:
+                                st.markdown(f"### {name_text}")
                     with title_right:
                         if "__overall_score_100" in row and pd.notna(row.get("__overall_score_100")):
                             overall_val = float(row.get("__overall_score_100", 0.0))
                             st.metric("Overall", f"{overall_val:.2f}")
                     if dataset == "talismans":
                         if "description" in df.columns and pd.notna(row.get("description")):
-                            st.caption(row["description"])
+                            description_text = str(row.get("description", "")).strip()
+                            if description_text:
+                                st.caption(description_text)
                     else:
                         if "description" in df.columns and pd.notna(row.get("description")):
-                            st.caption(row["description"])
+                            description_text = str(row.get("description", "")).strip()
+                            if description_text:
+                                st.caption(description_text)
 
                     stats = [c for c in numeric_cols if c not in ["id"]]
                     if dataset == "armors":
@@ -2491,9 +2822,162 @@ def main():
         st.markdown("---")
         st.subheader("Detailed view")
 
-        def render_detail_items(items: list[tuple[str, pd.DataFrame]], stack_view: str):
+        def infer_shared_set_description(item_rows: list[pd.Series]) -> str:
+            descriptions = []
+            for row in item_rows:
+                value = str(row.get("description", "") or "").strip()
+                if value:
+                    descriptions.append(value)
+            if not descriptions:
+                return ""
+
+            normalized_word_lists = []
+            for description in descriptions:
+                tokens = [
+                    token
+                    for token in re.findall(r"[A-Za-z0-9']+", description.lower())
+                    if token
+                ]
+                normalized_word_lists.append(tokens)
+
+            if not normalized_word_lists:
+                return ""
+
+            common_prefix = list(normalized_word_lists[0])
+            for tokens in normalized_word_lists[1:]:
+                max_len = min(len(common_prefix), len(tokens))
+                idx = 0
+                while idx < max_len and common_prefix[idx] == tokens[idx]:
+                    idx += 1
+                common_prefix = common_prefix[:idx]
+                if not common_prefix:
+                    break
+
+            if len(common_prefix) >= 4:
+                return " ".join(common_prefix[:18]).strip().capitalize() + "…"
+
+            stopwords = {
+                "a", "an", "and", "are", "as", "at", "be", "by", "for", "from", "in", "is",
+                "it", "its", "of", "on", "or", "that", "the", "this", "to", "was", "were", "with",
+            }
+            base_tokens = [
+                token for token in normalized_word_lists[0] if token not in stopwords
+            ]
+            shared_tokens = []
+            for token in base_tokens:
+                if all(token in tokens for tokens in normalized_word_lists[1:]):
+                    if token not in shared_tokens:
+                        shared_tokens.append(token)
+
+            if shared_tokens:
+                pretty = " ".join(shared_tokens[:10]).strip()
+                return f"Shared traits: {pretty}."
+            return ""
+
+        def build_armor_set_summary_row(item_rows: list[pd.Series], set_name: str) -> pd.Series:
+            image_grid_urls = []
+            for row in item_rows[:4]:
+                image_value = row.get("image")
+                image_token = str(image_value or "").strip()
+                if image_token and image_token.lower() != "nan":
+                    image_grid_urls.append(image_token)
+
+            summary = {
+                "name": str(set_name or "Armor Set").strip() or "Armor Set",
+                "description": infer_shared_set_description(item_rows),
+                "image": None,
+                "__image_grid_urls": image_grid_urls,
+            }
+
+            stat_candidates = [
+                c for c in numeric_cols if str(c).strip().lower() not in ["id", "dlc"]
+            ]
+            ordered_stats: list[str] = []
+            if "weight" in stat_candidates:
+                ordered_stats.append("weight")
+            ordered_stats.extend(
+                [c for c in stat_candidates if c.startswith("Dmg:") and c not in ordered_stats]
+            )
+            ordered_stats.extend(
+                [c for c in stat_candidates if c.startswith("Res:") and c not in ordered_stats]
+            )
+            ordered_stats.extend([c for c in stat_candidates if c not in ordered_stats])
+
+            for stat_name in ordered_stats:
+                total_value = 0.0
+                has_value = False
+                for row in item_rows:
+                    numeric_value = pd.to_numeric(row.get(stat_name), errors="coerce")
+                    if pd.notna(numeric_value):
+                        total_value += float(numeric_value)
+                        has_value = True
+                if has_value:
+                    summary[stat_name] = total_value
+
+            return pd.Series(summary)
+
+        def render_detail_items(
+            items: list[tuple[str, pd.DataFrame]],
+            stack_view: str,
+            include_armor_totals: bool = False,
+        ):
             if not items:
                 return
+
+            def build_armor_totals_row(item_rows: list[pd.Series]) -> pd.Series:
+                image_grid_urls = []
+                for row in item_rows[:4]:
+                    image_value = row.get("image")
+                    image_token = str(image_value or "").strip()
+                    if image_token and image_token.lower() != "nan":
+                        image_grid_urls.append(image_token)
+
+                totals = {
+                    "name": "",
+                    "description": "",
+                    "image": None,
+                    "__image_grid_urls": image_grid_urls,
+                }
+
+                if not item_rows:
+                    return pd.Series(totals)
+
+                stat_candidates = [
+                    c for c in numeric_cols if str(c).strip().lower() not in ["id", "dlc"]
+                ]
+                ordered_stats: list[str] = []
+                if "weight" in stat_candidates:
+                    ordered_stats.append("weight")
+                ordered_stats.extend(
+                    [
+                        c
+                        for c in stat_candidates
+                        if c.startswith("Dmg:") and c not in ordered_stats
+                    ]
+                )
+                ordered_stats.extend(
+                    [
+                        c
+                        for c in stat_candidates
+                        if c.startswith("Res:") and c not in ordered_stats
+                    ]
+                )
+                ordered_stats.extend(
+                    [c for c in stat_candidates if c not in ordered_stats]
+                )
+
+                for stat_name in ordered_stats:
+                    total_value = 0.0
+                    has_value = False
+                    for row in item_rows:
+                        numeric_value = pd.to_numeric(row.get(stat_name), errors="coerce")
+                        if pd.notna(numeric_value):
+                            total_value += float(numeric_value)
+                            has_value = True
+                    if has_value:
+                        totals[stat_name] = total_value
+
+                return pd.Series(totals)
 
             def resolve_detail_stat_columns() -> list[str]:
                 stats = [c for c in numeric_cols if c not in ["id"]]
@@ -2517,71 +3001,235 @@ def main():
                 return [s for s in stats if s not in highlighted_stats]
 
             if stack_view == STACK_VIEW_HORIZONTAL:
+                def render_detail_image_or_grid(row: pd.Series, width_px: int = 120):
+                    grid_urls = row.get("__image_grid_urls")
+                    if isinstance(grid_urls, (list, tuple)):
+                        cleaned_urls = [
+                            str(url).strip()
+                            for url in grid_urls
+                            if str(url).strip() and str(url).strip().lower() != "nan"
+                        ][:4]
+                        if cleaned_urls:
+                            while len(cleaned_urls) < 4:
+                                cleaned_urls.append("")
+                            tile_size = max(24, int((width_px - 6) / 2))
+                            tile_style = (
+                                f"width:{tile_size}px;height:{tile_size}px;object-fit:cover;"
+                                "border-radius:6px;background:rgba(255,255,255,0.06);"
+                            )
+                            cell_html = []
+                            for image_url in cleaned_urls:
+                                if image_url:
+                                    cell_html.append(
+                                        f"<img src='{html.escape(image_url)}' style='{tile_style}' alt='' />"
+                                    )
+                                else:
+                                    cell_html.append(
+                                        f"<div style='{tile_style};display:flex;align-items:center;justify-content:center;color:rgba(255,255,255,0.6);font-size:0.7rem;'>—</div>"
+                                    )
+                            st.markdown(
+                                (
+                                    f"<div style='width:{width_px}px;margin:0 auto;display:grid;grid-template-columns:repeat(2,1fr);"
+                                    "gap:6px;justify-items:center;'>"
+                                    + "".join(cell_html)
+                                    + "</div>"
+                                ),
+                                unsafe_allow_html=True,
+                            )
+                            return
+                    if "image" in df.columns and pd.notna(row.get("image")):
+                        try:
+                            st.image(row.get("image"), width=width_px)
+                        except Exception:
+                            st.markdown("<div class='detail-scope-name'>📦</div>", unsafe_allow_html=True)
+                    else:
+                        st.markdown("<div class='detail-scope-name'>📦</div>", unsafe_allow_html=True)
+
                 valid_items = []
                 for label, rows in items:
                     if rows is None or rows.empty:
                         continue
                     valid_items.append((label, rows.iloc[0]))
+                if include_armor_totals and dataset == "armors" and valid_items:
+                    totals_row = build_armor_totals_row([row for _, row in valid_items])
+                    valid_items.append(("Totals", totals_row))
                 if not valid_items:
                     return
+
+                st.markdown(
+                    """
+                    <style>
+                    .detail-scope-centered {
+                        width: 100%;
+                        max-width: 100%;
+                        margin: 0 auto;
+                    }
+                    .detail-scope-centered .detail-scope-title,
+                    .detail-scope-centered .detail-scope-name,
+                    .detail-scope-centered .detail-scope-desc {
+                        text-align: center;
+                    }
+                    .detail-scope-centered [data-testid="stImage"] {
+                        display: flex;
+                        justify-content: center;
+                    }
+                    .detail-scope-centered [data-testid="stMetric"] {
+                        text-align: center;
+                    }
+                    </style>
+                    <div class='detail-scope-centered'>
+                    """,
+                    unsafe_allow_html=True,
+                )
 
                 section_gap = "<div style='height:10px;'></div>"
                 detail_stat_cols = resolve_detail_stat_columns()
 
                 name_cols = st.columns(len(valid_items))
-                for col, (label, _) in zip(name_cols, valid_items):
+                for col, (label, row) in zip(name_cols, valid_items):
                     with col:
                         slot_name = str(label or "").strip()
+                        row_name = str(row.get("name", "")).strip().lower()
+                        is_totals = slot_name.lower() == "totals" or row_name == "set totals"
                         if slot_name:
-                            st.markdown(f"**{slot_icon_for_label(slot_name)} {slot_name}**")
+                            st.markdown(
+                                f"<div class='detail-scope-title'><strong>{slot_icon_for_label(slot_name)} {slot_name}</strong></div>",
+                                unsafe_allow_html=True,
+                            )
 
                 st.markdown(section_gap, unsafe_allow_html=True)
                 image_cols = st.columns(len(valid_items))
-                for col, (_, row) in zip(image_cols, valid_items):
+                for col, (label, row) in zip(image_cols, valid_items):
                     with col:
-                        if "image" in df.columns and pd.notna(row.get("image")):
-                            try:
-                                st.image(row.get("image"), width=140)
-                            except Exception:
-                                st.write("📦")
-                        else:
-                            st.write("📦")
-                        item_name = str(row.get("name", "")).strip()
-                        st.markdown(f"**{item_name or '—'}**")
+                        slot_name = str(label or "").strip()
+                        row_name = str(row.get("name", "")).strip().lower()
+                        is_totals = slot_name.lower() == "totals" or row_name == "set totals"
+                        render_detail_image_or_grid(row, width_px=120)
+                        if not is_totals:
+                            item_name = str(row.get("name", "")).strip()
+                            st.markdown(
+                                f"<div class='detail-scope-name'><strong>{item_name or '—'}</strong></div>",
+                                unsafe_allow_html=True,
+                            )
 
                     st.markdown("<div style='height:6px;'></div>", unsafe_allow_html=True)
                 desc_cols = st.columns(len(valid_items))
-                for col, (_, row) in zip(desc_cols, valid_items):
+                for col, (label, row) in zip(desc_cols, valid_items):
                     with col:
-                        description = str(row.get("description", "")).strip()
-                        st.caption(description if description else "—")
+                        slot_name = str(label or "").strip()
+                        row_name = str(row.get("name", "")).strip().lower()
+                        is_totals = slot_name.lower() == "totals" or row_name == "set totals"
+                        if is_totals:
+                            for hs in highlighted_stats:
+                                if hs in row:
+                                    display_h = format_metric_value(row.get(hs))
+                                    st.metric(format_stat_metric_label(hs, highlighted=True), display_h)
+                            for stat_name in detail_stat_cols:
+                                raw_value = row.get(stat_name, None)
+                                num_val = None
+                                try:
+                                    num_val = float(raw_value)
+                                except Exception:
+                                    num_val = None
+                                if num_val is not None and num_val == 0 and stat_name not in highlighted_stats:
+                                    st.metric(format_stat_metric_label(stat_name), "—")
+                                else:
+                                    st.metric(
+                                        format_stat_metric_label(stat_name),
+                                        format_metric_value(raw_value),
+                                    )
+                        else:
+                            description = str(row.get("description", "")).strip()
+                            st.markdown(
+                                f"<div class='detail-scope-desc'>{html.escape(description) if description else '—'}</div>",
+                                unsafe_allow_html=True,
+                            )
 
                     st.markdown("<div style='height:6px;'></div>", unsafe_allow_html=True)
                 stat_cols = st.columns(len(valid_items))
-                for col, (_, row) in zip(stat_cols, valid_items):
+                for col, (label, row) in zip(stat_cols, valid_items):
                     with col:
-                        for hs in highlighted_stats:
-                            if hs in row:
-                                display_h = format_metric_value(row.get(hs))
-                                st.metric(format_stat_metric_label(hs, highlighted=True), display_h)
-                        for stat_name in detail_stat_cols:
-                            raw_value = row.get(stat_name, None)
-                            num_val = None
-                            try:
-                                num_val = float(raw_value)
-                            except Exception:
+                        slot_name = str(label or "").strip()
+                        row_name = str(row.get("name", "")).strip().lower()
+                        is_totals = slot_name.lower() == "totals" or row_name == "set totals"
+                        if is_totals:
+                            st.markdown("&nbsp;", unsafe_allow_html=True)
+                        else:
+                            for hs in highlighted_stats:
+                                if hs in row:
+                                    display_h = format_metric_value(row.get(hs))
+                                    st.metric(format_stat_metric_label(hs, highlighted=True), display_h)
+                            for stat_name in detail_stat_cols:
+                                raw_value = row.get(stat_name, None)
                                 num_val = None
-                            if num_val is not None and num_val == 0 and stat_name not in highlighted_stats:
-                                st.metric(format_stat_metric_label(stat_name), "—")
-                            else:
-                                st.metric(format_stat_metric_label(stat_name), format_metric_value(raw_value))
+                                try:
+                                    num_val = float(raw_value)
+                                except Exception:
+                                    num_val = None
+                                if num_val is not None and num_val == 0 and stat_name not in highlighted_stats:
+                                    st.metric(format_stat_metric_label(stat_name), "—")
+                                else:
+                                    st.metric(format_stat_metric_label(stat_name), format_metric_value(raw_value))
+                st.markdown("</div>", unsafe_allow_html=True)
             else:
+                if include_armor_totals and dataset == "armors":
+                    vertical_items = []
+                    for _label, rows in items:
+                        if rows is None or rows.empty:
+                            continue
+                        vertical_items.append(rows.iloc[0])
+                    if vertical_items:
+                        totals_row = build_armor_totals_row(vertical_items)
+                        st.markdown("#### 🧮 Totals")
+                        render_card_rows(
+                            pd.DataFrame([totals_row]),
+                            compact_mode=False,
+                            full_set_mode=False,
+                        )
                 for label, rows in items:
                     label_text = str(label or "").strip()
                     st.markdown(f"#### {slot_icon_for_label(label_text)} {label_text}")
                     render_card_rows(rows, compact_mode=False, full_set_mode=False)
 
         if dataset == "armors":
+            def render_armor_set_scope_card(
+                empty_message: str,
+                title_label: str = "Armor Set",
+                title_icon: str = "🥋",
+            ):
+                selected_rows = []
+                selected_names = []
+                for piece_label in ARMOR_PIECE_ORDER:
+                    selected_name = armor_detail_set_selection.get(piece_label)
+                    if not selected_name:
+                        continue
+                    selected_name_str = str(selected_name).strip()
+                    if not selected_name_str:
+                        continue
+                    slot_rows = df[df["name"].astype(str) == selected_name_str].head(1)
+                    if slot_rows.empty:
+                        continue
+                    selected_names.append(selected_name_str)
+                    selected_rows.append(slot_rows.iloc[0])
+
+                if not selected_rows:
+                    st.info(empty_message)
+                    return
+
+                scope_set_name = infer_set_name_from_names(selected_names)
+                st.markdown(f"#### {title_icon} {title_label}")
+                set_summary_row = build_armor_set_summary_row(
+                    selected_rows,
+                    scope_set_name,
+                )
+                render_card_rows(
+                    pd.DataFrame([set_summary_row]),
+                    compact_mode=False,
+                    full_set_mode=False,
+                    image_mode="auto",
+                    allow_nested_columns=True,
+                )
+
             if armor_detailed_scope_mode == DETAILED_SCOPE_SINGLE:
                 if armor_detail_item_name:
                     slot_rows = df[df["name"].astype(str) == str(armor_detail_item_name)].head(1)
@@ -2592,46 +3240,20 @@ def main():
                             for display, raw in type_label_map.items()
                         }
                         selected_slot_label = raw_to_display.get(selected_type_raw, "Armor")
-                        st.markdown(f"#### {slot_icon_for_label(selected_slot_label)} {selected_slot_label}")
+                        st.markdown(f"#### {slot_icon_for_label('Armor Piece')} Armor Piece")
                         render_card_rows(slot_rows, compact_mode=False, full_set_mode=False)
                     else:
                         st.info("No armor item matches the current selection.")
                 else:
                     st.info("No armor item available for single item view.")
             elif armor_detailed_scope_mode == DETAILED_SCOPE_FULL:
-                custom_items = []
-                for piece_label in ARMOR_PIECE_ORDER:
-                    selected_name = armor_detail_set_selection.get(piece_label)
-                    if not selected_name:
-                        continue
-                    slot_rows = df[df["name"].astype(str) == str(selected_name)].head(1)
-                    if slot_rows.empty:
-                        continue
-                    custom_items.append((piece_label, slot_rows))
-                if custom_items:
-                    render_detail_items(
-                        custom_items,
-                        str(st.session_state.get("armor_full_stack_view", STACK_VIEW_HORIZONTAL)),
-                    )
-                else:
-                    st.info("No full armor set selection available.")
+                render_armor_set_scope_card("No full armor set selection available.")
             else:
-                custom_items = []
-                for piece_label in ARMOR_PIECE_ORDER:
-                    selected_name = armor_detail_set_selection.get(piece_label)
-                    if not selected_name:
-                        continue
-                    slot_rows = df[df["name"].astype(str) == str(selected_name)].head(1)
-                    if slot_rows.empty:
-                        continue
-                    custom_items.append((piece_label, slot_rows))
-                if custom_items:
-                    render_detail_items(
-                        custom_items,
-                        str(st.session_state.get("armor_custom_stack_view", STACK_VIEW_HORIZONTAL)),
-                    )
-                else:
-                    st.info("No complete armor set selection available.")
+                render_armor_set_scope_card(
+                    "No complete armor set selection available.",
+                    title_label="Custom Armor Set",
+                    title_icon="👘",
+                )
 
         elif dataset == "talismans":
             if talisman_detailed_scope_mode == DETAILED_SCOPE_SINGLE:

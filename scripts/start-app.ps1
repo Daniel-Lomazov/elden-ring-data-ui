@@ -19,6 +19,11 @@ function Write-Timing([string]$Label, [double]$Seconds) {
 $repoRoot = Split-Path -Parent $PSScriptRoot
 Set-Location $repoRoot
 
+if (-not $PSBoundParameters.ContainsKey("OpenBrowser")) {
+    $OpenBrowser = $true
+    Write-Step "Browser handling enabled by default."
+}
+
 $totalTimer = [System.Diagnostics.Stopwatch]::StartNew()
 
 if ($ResetFirst) {
