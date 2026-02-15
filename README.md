@@ -125,6 +125,12 @@ Fast relaunch loop (recommended while actively editing app UI):
 ./scripts/run-all.ps1 -SkipReset -QuickVerify -RunApp -OpenBrowser
 ```
 
+Ultra-fast relaunch (skip reset + env setup + verify):
+
+```powershell
+./scripts/run-all.ps1 -UltraQuick -RunApp
+```
+
 When dependencies changed and you want a full dependency refresh:
 
 ```powershell

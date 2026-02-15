@@ -4,6 +4,7 @@ param(
     [switch]$SkipReset,
     [switch]$SkipVerify,
     [switch]$QuickVerify,
+    [switch]$UltraQuick,
     [switch]$RunApp,
     [switch]$OpenBrowser,
     [switch]$AlwaysUpdateEnv,
@@ -28,6 +29,12 @@ Set-Location $repoRoot
 
 $totalTimer = [System.Diagnostics.Stopwatch]::StartNew()
 
+if ($UltraQuick) {
+    $SkipReset = $true
+    $SkipVerify = $true
+    Write-Step "UltraQuick mode enabled: skipping reset, env setup, and verification."
+}
+
 if (-not $SkipReset) {
     Write-Step "Resetting local dev session..."
     $resetTimer = [System.Diagnostics.Stopwatch]::StartNew()
@@ -36,11 +43,13 @@ if (-not $SkipReset) {
     Write-Timing "Reset phase" $resetTimer.Elapsed.TotalSeconds
 }
 
-Write-Step "Ensuring conda environment..."
-$envTimer = [System.Diagnostics.Stopwatch]::StartNew()
-& "$PSScriptRoot\ensure-conda-env.ps1" -EnvName $EnvName -AlwaysUpdate:$AlwaysUpdateEnv -AlwaysSyncPip:$AlwaysSyncPip
-$envTimer.Stop()
-Write-Timing "Environment phase" $envTimer.Elapsed.TotalSeconds
+if (-not $UltraQuick) {
+    Write-Step "Ensuring conda environment..."
+    $envTimer = [System.Diagnostics.Stopwatch]::StartNew()
+    & "$PSScriptRoot\ensure-conda-env.ps1" -EnvName $EnvName -AlwaysUpdate:$AlwaysUpdateEnv -AlwaysSyncPip:$AlwaysSyncPip
+    $envTimer.Stop()
+    Write-Timing "Environment phase" $envTimer.Elapsed.TotalSeconds
+}
 
 if (-not $SkipVerify) {
     Write-Step "Running workspace verification..."
