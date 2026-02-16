@@ -11,6 +11,7 @@ from typing import Any, Dict
 
 from .schema import (
     CANONICAL_SCHEMA_VERSION,
+    NEGATION_KEYS,
     OBJECTIVE_STAT_RANK,
     OBJECTIVE_TYPES,
     SCOPES,
@@ -82,6 +83,14 @@ def canonicalize_request(request: Dict[str, Any]) -> Dict[str, Any]:
     encounter = _ensure_dict(raw.get("encounter"), "encounter")
     incoming = _ensure_dict(encounter.get("incoming"), "encounter.incoming")
     status_threats = _ensure_dict(encounter.get("status_threats"), "encounter.status_threats")
+    damage_mix = _ensure_dict(incoming.get("damage_mix"), "encounter.incoming.damage_mix")
+
+    for key in damage_mix.keys():
+        if str(key) not in NEGATION_KEYS:
+            raise ValueError(
+                f"Unsupported encounter.incoming.damage_mix key '{key}'. "
+                f"Expected canonical negation keys: {NEGATION_KEYS}"
+            )
 
     canonical = {
         "version": CANONICAL_SCHEMA_VERSION,
@@ -100,7 +109,7 @@ def canonicalize_request(request: Dict[str, Any]) -> Dict[str, Any]:
         "encounter": {
             "name": encounter.get("name"),
             "incoming": {
-                "damage_mix": _ensure_dict(incoming.get("damage_mix"), "encounter.incoming.damage_mix")
+                "damage_mix": {str(k): float(v) for k, v in damage_mix.items()}
             },
             "status_threats": status_threats,
         },

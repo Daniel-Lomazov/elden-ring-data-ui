@@ -6,7 +6,10 @@ It does not change current ranking behavior.
 
 from __future__ import annotations
 
+import json
 from dataclasses import dataclass
+from functools import lru_cache
+from pathlib import Path
 from typing import Dict, Final, Tuple
 
 CANONICAL_SCHEMA_VERSION: Final[int] = 1
@@ -136,3 +139,31 @@ CANONICAL_STATS: Final[Dict[str, CanonicalStat]] = {
 
 def is_canonical_key(key: str) -> bool:
     return key in CANONICAL_STATS or key in STATUS_KEYS
+
+
+@lru_cache(maxsize=1)
+def load_armor_stat_schema() -> dict:
+    schema_path = (
+        Path(__file__).resolve().parent.parent
+        / "data"
+        / "armor_stat_schema.json"
+    )
+    with schema_path.open("r", encoding="utf-8") as file:
+        return json.load(file)
+
+
+@lru_cache(maxsize=1)
+def canonical_to_df_column_map() -> Dict[str, str]:
+    mapping = load_armor_stat_schema().get("mapping", [])
+    out: Dict[str, str] = {}
+    for row in mapping:
+        if isinstance(row, dict):
+            key = row.get("canonical_key")
+            col = row.get("df_column_name")
+            if isinstance(key, str) and isinstance(col, str):
+                out[key] = col
+    return out
+
+
+def resolve_df_column_for_canonical_key(canonical_key: str) -> str:
+    return canonical_to_df_column_map().get(canonical_key, canonical_key)
