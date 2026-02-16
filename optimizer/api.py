@@ -8,6 +8,7 @@ import pandas as pd
 
 from .dialect import load_request
 from .strategies.encounter_survival import optimize_encounter_survival
+from .strategies.full_set_prune import optimize_encounter_survival_full_set
 from .strategies.stat_rank import optimize_stat_rank
 
 
@@ -28,12 +29,13 @@ def optimize(df: pd.DataFrame, request: Dict[str, Any] | str) -> pd.DataFrame:
 
     if objective_type == "encounter_survival":
         scope = canonical.get("scope")
-        if scope not in {"single_piece", "per_slot"}:
-            raise ValueError(
-                "PR3 encounter_survival supports only scope='single_piece' or 'per_slot'. "
-                "Full-set support is added in PR5."
-            )
-        return optimize_encounter_survival(df, canonical)
+        if scope in {"single_piece", "per_slot"}:
+            return optimize_encounter_survival(df, canonical)
+        if scope == "full_set":
+            return optimize_encounter_survival_full_set(df, canonical)
+        raise ValueError(
+            "Encounter survival currently supports scope='single_piece', 'per_slot', or 'full_set'"
+        )
 
     raise ValueError(
         f"Unsupported objective.type '{objective_type}' in current API iteration"

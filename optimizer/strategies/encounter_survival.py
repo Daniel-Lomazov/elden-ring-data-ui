@@ -47,7 +47,8 @@ def optimize_encounter_survival(df: pd.DataFrame, request: dict) -> pd.DataFrame
         return pd.DataFrame()
 
     objective = request.get("objective") or {}
-    hp = float(objective.get("hp", 1.0))
+    hp_raw = objective.get("hp", 1.0)
+    hp = float(hp_raw) if hp_raw is not None else 1.0
     eps = float(objective.get("eps", 1e-9))
     lambda_status = float(objective.get("lambda_status", 0.0))
 
