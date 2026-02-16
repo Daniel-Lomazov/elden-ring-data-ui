@@ -146,6 +146,11 @@ The `scripts/` folder is the best path for repeatable runs.
   ```
 - Aggregated resistance names (`Immunity`, `Robustness`, `Focus`, `Vitality`) are kept internally for compatibility but hidden from user-facing card/table output.
 
+### Launch behavior (new window)
+
+- `./scripts/start-app.ps1` opens app URLs in a dedicated Edge window (`--new-window`) rather than opening a new tab.
+- If an app window for the same localhost port already exists, the script focuses and refreshes it.
+
 ### Objective direction rules
 
 - `weight` is minimized.

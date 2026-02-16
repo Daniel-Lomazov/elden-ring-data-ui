@@ -143,10 +143,10 @@ function Open-OrRefreshBrowser([string]$TargetUrl, [int]$TargetPort) {
         return $true
     }
 
-    function Open-NewEdgeTab([string]$UrlToOpen) {
+    function Open-NewEdgeWindow([string]$UrlToOpen) {
         $edgeCmd = Get-Command msedge -ErrorAction SilentlyContinue
         if ($edgeCmd) {
-            $openedProc = Start-Process -FilePath $edgeCmd.Source -ArgumentList @("--new-tab", $UrlToOpen) -PassThru
+            $openedProc = Start-Process -FilePath $edgeCmd.Source -ArgumentList @("--new-window", $UrlToOpen) -PassThru
             if ($openedProc) {
                 Set-Content -Path $browserPidStatePath -Value "$($openedProc.Id)" -Encoding utf8
             }
@@ -173,7 +173,7 @@ function Open-OrRefreshBrowser([string]$TargetUrl, [int]$TargetPort) {
             }
         }
         Start-Sleep -Milliseconds 400
-        return Open-NewEdgeTab -UrlToOpen $TargetUrl
+        return Open-NewEdgeWindow -UrlToOpen $TargetUrl
     }
 
     if ($targetWindows.Count -eq 1) {
@@ -182,7 +182,7 @@ function Open-OrRefreshBrowser([string]$TargetUrl, [int]$TargetPort) {
             Set-Content -Path $browserPidStatePath -Value "$($single.Id)" -Encoding utf8
             return "refreshed"
         }
-        return Open-NewEdgeTab -UrlToOpen $TargetUrl
+        return Open-NewEdgeWindow -UrlToOpen $TargetUrl
     }
 
     if (Test-Path $browserPidStatePath) {
@@ -214,7 +214,7 @@ function Open-OrRefreshBrowser([string]$TargetUrl, [int]$TargetPort) {
     } catch {
     }
 
-    return Open-NewEdgeTab -UrlToOpen $TargetUrl
+    return Open-NewEdgeWindow -UrlToOpen $TargetUrl
 }
 
 $listenerPid = $null
