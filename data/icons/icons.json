@@ -7,7 +7,7 @@
       "canonical_key": "weight",
       "label": "Weight",
       "local_path": "data/icons/weight.png",
-      "source_url": null,
+      "source_url": "https://eldenring.wiki.fextralife.com/Equip+Load",
       "category": "armor_stat"
     },
     {
@@ -15,7 +15,7 @@
       "canonical_key": "poise",
       "label": "Poise",
       "local_path": "data/icons/poise.png",
-      "source_url": null,
+      "source_url": "https://eldenring.wiki.fextralife.com/Poise",
       "category": "armor_stat"
     },
     {
@@ -23,7 +23,7 @@
       "canonical_key": "neg.phys",
       "label": "Physical",
       "local_path": "data/icons/neg_phys.png",
-      "source_url": null,
+      "source_url": "https://eldenring.wiki.fextralife.com/Armor",
       "category": "negation"
     },
     {
@@ -31,7 +31,7 @@
       "canonical_key": "neg.std",
       "label": "Standard",
       "local_path": "data/icons/neg_std.png",
-      "source_url": null,
+      "source_url": "https://eldenring.wiki.fextralife.com/Armor",
       "category": "negation"
     },
     {
@@ -39,7 +39,7 @@
       "canonical_key": "neg.str",
       "label": "Strike",
       "local_path": "data/icons/neg_str.png",
-      "source_url": null,
+      "source_url": "https://eldenring.wiki.fextralife.com/Armor",
       "category": "negation"
     },
     {
@@ -47,7 +47,7 @@
       "canonical_key": "neg.sla",
       "label": "Slash",
       "local_path": "data/icons/neg_sla.png",
-      "source_url": null,
+      "source_url": "https://eldenring.wiki.fextralife.com/Armor",
       "category": "negation"
     },
     {
@@ -55,7 +55,7 @@
       "canonical_key": "neg.pie",
       "label": "Pierce",
       "local_path": "data/icons/neg_pie.png",
-      "source_url": null,
+      "source_url": "https://eldenring.wiki.fextralife.com/Armor",
       "category": "negation"
     },
     {
@@ -63,7 +63,7 @@
       "canonical_key": "neg.mag",
       "label": "Magic",
       "local_path": "data/icons/neg_mag.png",
-      "source_url": null,
+      "source_url": "https://eldenring.wiki.fextralife.com/Armor",
       "category": "negation"
     },
     {
@@ -71,7 +71,7 @@
       "canonical_key": "neg.fir",
       "label": "Fire",
       "local_path": "data/icons/neg_fir.png",
-      "source_url": null,
+      "source_url": "https://eldenring.wiki.fextralife.com/Armor",
       "category": "negation"
     },
     {
@@ -79,7 +79,7 @@
       "canonical_key": "neg.lit",
       "label": "Lightning",
       "local_path": "data/icons/neg_lit.png",
-      "source_url": null,
+      "source_url": "https://eldenring.wiki.fextralife.com/Armor",
       "category": "negation"
     },
     {
@@ -87,7 +87,7 @@
       "canonical_key": "neg.hol",
       "label": "Holy",
       "local_path": "data/icons/neg_hol.png",
-      "source_url": null,
+      "source_url": "https://eldenring.wiki.fextralife.com/Armor",
       "category": "negation"
     },
     {
@@ -95,7 +95,7 @@
       "canonical_key": "res.imm",
       "label": "Immunity",
       "local_path": "data/icons/res_imm.png",
-      "source_url": null,
+      "source_url": "https://eldenring.wiki.fextralife.com/Resistance",
       "category": "resistance"
     },
     {
@@ -103,7 +103,7 @@
       "canonical_key": "res.rob",
       "label": "Robustness",
       "local_path": "data/icons/res_rob.png",
-      "source_url": null,
+      "source_url": "https://eldenring.wiki.fextralife.com/Resistance",
       "category": "resistance"
     },
     {
@@ -111,7 +111,7 @@
       "canonical_key": "res.foc",
       "label": "Focus",
       "local_path": "data/icons/res_foc.png",
-      "source_url": null,
+      "source_url": "https://eldenring.wiki.fextralife.com/Resistance",
       "category": "resistance"
     },
     {
@@ -119,7 +119,7 @@
       "canonical_key": "res.vit",
       "label": "Vitality",
       "local_path": "data/icons/res_vit.png",
-      "source_url": null,
+      "source_url": "https://eldenring.wiki.fextralife.com/Resistance",
       "category": "resistance"
     },
     {

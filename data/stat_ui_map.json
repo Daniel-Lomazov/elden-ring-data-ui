@@ -1,0 +1,90 @@
+{
+  "version": 1,
+  "description": "UI-facing naming/icon mapping for armor optimization stats.",
+  "stats": [
+    {
+      "column": "weight",
+      "display_name": "Weight",
+      "icon_id": "weight",
+      "emoji": "⚖️"
+    },
+    {
+      "column": "Dmg: Phy",
+      "display_name": "Physical Damage Negation",
+      "icon_id": "neg_phys",
+      "emoji": "🛡️"
+    },
+    {
+      "column": "Dmg: VS Str.",
+      "display_name": "Strike Damage Negation",
+      "icon_id": "neg_str",
+      "emoji": "⚒️"
+    },
+    {
+      "column": "Dmg: VS Sla.",
+      "display_name": "Slash Damage Negation",
+      "icon_id": "neg_sla",
+      "emoji": "🗡️"
+    },
+    {
+      "column": "Dmg: VS Pie.",
+      "display_name": "Pierce Damage Negation",
+      "icon_id": "neg_pie",
+      "emoji": "🏹"
+    },
+    {
+      "column": "Dmg: Mag",
+      "display_name": "Magic Damage Negation",
+      "icon_id": "neg_mag",
+      "emoji": "✨"
+    },
+    {
+      "column": "Dmg: Fir",
+      "display_name": "Fire Damage Negation",
+      "icon_id": "neg_fir",
+      "emoji": "🔥"
+    },
+    {
+      "column": "Dmg: Lit",
+      "display_name": "Lightning Damage Negation",
+      "icon_id": "neg_lit",
+      "emoji": "⚡"
+    },
+    {
+      "column": "Dmg: Hol",
+      "display_name": "Holy Damage Negation",
+      "icon_id": "neg_hol",
+      "emoji": "☀️"
+    },
+    {
+      "column": "Res: Imm.",
+      "display_name": "Immunity (Poison / Rot) Resistance",
+      "icon_id": "res_imm",
+      "emoji": "🧪"
+    },
+    {
+      "column": "Res: Rob.",
+      "display_name": "Robustness (Bleed / Frost) Resistance",
+      "icon_id": "res_rob",
+      "emoji": "🩸"
+    },
+    {
+      "column": "Res: Foc.",
+      "display_name": "Focus (Sleep / Madness) Resistance",
+      "icon_id": "res_foc",
+      "emoji": "🧠"
+    },
+    {
+      "column": "Res: Vit.",
+      "display_name": "Vitality (Death Blight) Resistance",
+      "icon_id": "res_vit",
+      "emoji": "💀"
+    },
+    {
+      "column": "Res: Poi.",
+      "display_name": "Poise",
+      "icon_id": "poise",
+      "emoji": "🧱"
+    }
+  ]
+}

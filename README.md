@@ -123,6 +123,18 @@ The `scripts/` folder is the best path for repeatable runs.
   - `Encounter profile` = one of `data/profiles/*.yaml`
   - `Status fear (λ)` as desired
 
+### Stat naming and icon conventions
+
+- UI-facing stat labels are now centralized in `data/stat_ui_map.json`.
+- The app uses permanently capitalized display names such as:
+  - `Holy Damage Negation`
+  - `Fire Damage Negation`
+  - `Strike Damage Negation`
+  - `Robustness (Bleed / Frost) Resistance`
+  - `Focus (Sleep / Madness) Resistance`
+  - `Vitality (Death Blight) Resistance`
+- Stat icon metadata/provenance is maintained in `data/icons/icons.json`.
+
 ### Objective direction rules
 
 - `weight` is minimized.

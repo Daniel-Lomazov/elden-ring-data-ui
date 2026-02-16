@@ -27,6 +27,9 @@ This reference documents the optimization subsystem used by the Elden Ring Ranki
 
 3. The canonical mapping and friendly labels live in `armor_column_map.json` which maps these `Dmg:` and `Res:` column names to human labels displayed in the UI.
 
+4. UI naming/icon mapping for first-glance readability lives in `data/stat_ui_map.json`.
+  - This is the permanent location for capitalized stat names and per-stat icon metadata used by the app controls.
+
 Why this matters: optimization code expects numeric columns with these names; `ui_components.parse_armor_stats` guarantees they exist and are numeric before ranking or optimization runs.
 
 ---

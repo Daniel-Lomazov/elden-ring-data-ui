@@ -10,6 +10,7 @@ import sys
 import html
 import copy
 import random
+from functools import lru_cache
 from datetime import datetime
 from pathlib import Path
 
@@ -241,65 +242,54 @@ def main():
         except Exception:
             return str(value)
 
+    @lru_cache(maxsize=1)
+    def load_stat_ui_map() -> dict:
+        path = ROOT / "data" / "stat_ui_map.json"
+        if not path.exists():
+            return {}
+        try:
+            with path.open("r", encoding="utf-8") as file:
+                payload = json.load(file)
+        except Exception:
+            return {}
+
+        stats = payload.get("stats", []) if isinstance(payload, dict) else []
+        out = {}
+        for row in stats:
+            if isinstance(row, dict):
+                key = str(row.get("column", "")).strip()
+                if key:
+                    out[key] = row
+        return out
+
+    def get_stat_ui_meta(stat_name: str) -> dict:
+        token = str(stat_name or "").strip()
+        if not token:
+            return {"display_name": "", "emoji": "📊"}
+
+        mapped = load_stat_ui_map().get(token)
+        if mapped:
+            return {
+                "display_name": str(mapped.get("display_name", token)).strip() or token,
+                "emoji": str(mapped.get("emoji", "📊")).strip() or "📊",
+                "icon_id": str(mapped.get("icon_id", "")).strip(),
+            }
+
+        return {"display_name": token, "emoji": "📊", "icon_id": ""}
+
+    def format_stat_option_label(stat_name: str) -> str:
+        meta = get_stat_ui_meta(stat_name)
+        display = str(meta.get("display_name", stat_name)).strip() or str(stat_name)
+        emoji = str(meta.get("emoji", "📊")).strip() or "📊"
+        return f"{emoji} {display}"
+
     def format_stat_metric_label(stat_name: str, highlighted: bool = False) -> str:
         token = str(stat_name or "").strip()
-        lowered = token.lower()
-        icon = "📊"
-
-        if lowered == "weight" or "weight" in lowered:
-            icon = "⚖️"
-        elif token.startswith("Dmg:"):
-            damage_token = lowered
-            if "phy" in damage_token:
-                icon = "🛡️"
-            elif "str" in damage_token:
-                icon = "⚒️"
-            elif "sla" in damage_token:
-                icon = "🗡️"
-            elif "pie" in damage_token:
-                icon = "🏹"
-            elif "mag" in damage_token:
-                icon = "✨"
-            elif "fir" in damage_token:
-                icon = "🔥"
-            elif "lit" in damage_token:
-                icon = "⚡"
-            elif "hol" in damage_token:
-                icon = "☀️"
-            else:
-                icon = "🛡️"
-        elif token.startswith("Res:") or "resistance" in lowered:
-            resist_token = lowered
-            if "poi" in resist_token:
-                icon = "🧱"
-            elif "imm" in resist_token or "poison" in resist_token or "rot" in resist_token:
-                icon = "🧪"
-            elif "rob" in resist_token or "bleed" in resist_token:
-                icon = "🩸"
-            elif "foc" in resist_token or "mad" in resist_token or "sleep" in resist_token:
-                icon = "🧠"
-            elif "vit" in resist_token or "death" in resist_token:
-                icon = "💀"
-            elif "fro" in resist_token:
-                icon = "❄️"
-            else:
-                icon = "🛡️"
-        elif "negation" in lowered:
-            icon = "🛡️"
-        elif any(k in lowered for k in ["bleed", "frost", "poison", "rot", "madness", "sleep"]):
-            if "bleed" in lowered:
-                icon = "🩸"
-            elif "frost" in lowered:
-                icon = "❄️"
-            elif "poison" in lowered or "rot" in lowered:
-                icon = "🧪"
-            else:
-                icon = "🧠"
-        elif "poise" in lowered:
-            icon = "🧱"
-
+        meta = get_stat_ui_meta(token)
+        icon = str(meta.get("emoji", "📊")).strip() or "📊"
+        display_name = str(meta.get("display_name", token)).strip() or token
         prefix = "⭐ " if highlighted else ""
-        return f"{prefix}{icon} {token}"
+        return f"{prefix}{icon} {display_name}"
 
     def is_truthy_flag(value) -> bool:
         if value is None:
@@ -423,6 +413,10 @@ def main():
         token = str(column or "").strip()
         if not token:
             return "Field"
+        mapped = get_stat_ui_meta(token)
+        mapped_name = str(mapped.get("display_name", "")).strip()
+        if mapped_name:
+            return mapped_name
         return token.replace("_", " ").title()
 
     def render_item_detail_inspector(source_df: pd.DataFrame, panel_key: str):
@@ -2004,6 +1998,7 @@ def main():
                 "Highlighted stats:",
                 options=options_labels,
                 key="highlighted_stats",
+                format_func=format_stat_option_label,
             )
 
             st.sidebar.button(
@@ -2055,7 +2050,10 @@ def main():
             if options_labels:
                 ensure_state_in_options("single_highlight_stat", options_labels, options_labels[0])
                 selected_label = st.sidebar.selectbox(
-                    "Highlight stat:", options=options_labels, key="single_highlight_stat"
+                    "Highlight stat:",
+                    options=options_labels,
+                    key="single_highlight_stat",
+                    format_func=format_stat_option_label,
                 )
                 highlighted_stats = [selected_label]
 
@@ -2999,7 +2997,7 @@ def main():
                             if weight_key not in st.session_state:
                                 st.session_state[weight_key] = 1.0
                             optimizer_weights[stat] = st.number_input(
-                                f"Weight: {stat}",
+                                f"Weight: {format_stat_option_label(stat)}",
                                 min_value=0.0,
                                 step=0.1,
                                 key=weight_key,
@@ -3010,6 +3008,11 @@ def main():
                         )
 
                 with controls_left:
+                    if ranking_stats:
+                        with st.expander("Stat icon legend", expanded=False):
+                            for stat in ranking_stats:
+                                st.write(f"- {format_stat_option_label(stat)}")
+
                     if (
                         optimizer_engine == OPT_ENGINE_DIALECT_V2
                         and optimizer_objective_type == OPT_OBJECTIVE_ENCOUNTER
