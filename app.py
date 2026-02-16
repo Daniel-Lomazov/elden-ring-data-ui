@@ -76,8 +76,8 @@ DETAILED_SCOPE_CUSTOM = "Custom"
 STACK_VIEW_VERTICAL = "Vertical"
 STACK_VIEW_HORIZONTAL = "Horizontal"
 
-STAT_ICON_SIZE_PX = 16
-STAT_TOP_ICON_SIZE_PX = 18
+STAT_ICON_SIZE_PX = 18
+STAT_TOP_ICON_SIZE_PX = 20
 STAT_PANEL_VALUE_DECIMALS = 2
 
 ARMOR_PIECE_ORDER = [
@@ -419,12 +419,20 @@ def main():
         )
 
     def render_armor_square_stat_panel(container, row: pd.Series):
-        top_left_stat = "status.poison"
+        top_left_stat = ""
         top_right_stats = ["weight", "Res: Poi."]
 
         physical_damage_stats = ["Dmg: Phy", "Dmg: VS Str.", "Dmg: VS Sla.", "Dmg: VS Pie."]
         elemental_damage_stats = ["Dmg: Mag", "Dmg: Fir", "Dmg: Lit", "Dmg: Hol"]
-        resistance_stats = ["status.rot", "status.bleed", "status.frost", "status.sleep", "status.madness", "status.death"]
+        resistance_stats = [
+            "status.poison",
+            "status.rot",
+            "status.bleed",
+            "status.frost",
+            "status.sleep",
+            "status.madness",
+            "status.death",
+        ]
 
         def stat_has_value(stat_name: str) -> bool:
             value = row.get(stat_name, None)
@@ -435,7 +443,7 @@ def main():
             return pd.notna(num)
 
         top_left_html = ""
-        if stat_has_value(top_left_stat):
+        if top_left_stat and stat_has_value(top_left_stat):
             top_left_html = armor_panel_item_html(top_left_stat, row.get(top_left_stat), icon_size=STAT_TOP_ICON_SIZE_PX)
 
         top_right_html_parts = []
@@ -1166,6 +1174,14 @@ def main():
     if df is None:
         st.info("No dataset loaded. Add CSV files to the `data/` folder.")
         return
+
+    raw_description_by_name: dict[str, str] = {}
+    if "name" in df.columns and "description" in df.columns:
+        for _, raw_row in df.iterrows():
+            raw_name = str(raw_row.get("name", "")).strip()
+            if not raw_name or raw_name in raw_description_by_name:
+                continue
+            raw_description_by_name[raw_name] = str(raw_row.get("description", "") or "")
 
     # parse armor-like stats when present
     df = parse_armor_stats(df)
@@ -3084,7 +3100,6 @@ def main():
 
                     stats = [c for c in numeric_cols if c not in ["id"]]
                     if dataset == "armors":
-                        render_armor_square_stat_panel(st, row)
                         display_stats = []
                     elif dataset == "talismans":
                         desired_cols = ["weight"]
@@ -3177,6 +3192,8 @@ def main():
                                     else:
                                         display_val = format_metric_value(val)
                                         render_stat_metric(p, label, display_val)
+                if dataset == "armors":
+                    render_armor_square_stat_panel(st, row)
             st.markdown("</div>", unsafe_allow_html=True)
             gap_px = FULL_SET_ROW_GAP_PX if full_set_mode and compact_mode else 8
             st.markdown(f"<div style='height:{gap_px}px'></div>", unsafe_allow_html=True)
@@ -3769,6 +3786,10 @@ def main():
                 if armor_detail_item_name:
                     slot_rows = df[df["name"].astype(str) == str(armor_detail_item_name)].head(1)
                     if not slot_rows.empty:
+                        selected_name = str(slot_rows.iloc[0].get("name", "")).strip()
+                        if selected_name and selected_name in raw_description_by_name:
+                            slot_rows = slot_rows.copy()
+                            slot_rows.loc[:, "description"] = raw_description_by_name[selected_name]
                         selected_type_raw = str(slot_rows.iloc[0].get("type", "")).strip().lower()
                         raw_to_display = {
                             str(raw).strip().lower(): display
