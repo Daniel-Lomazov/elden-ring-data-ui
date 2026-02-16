@@ -11,7 +11,8 @@ If you are onboarding to this repo, read in this order:
 3. `session/2026-02-15_startup_and_verify_deep_dive.md`
 4. `session/2026-02-15_commit_summary.md`
 5. `optimizer/README.md`
-6. `session/2026-02-16_optimizer_v2_iteration_summary.md`
+6. `developer/icon_and_stat_layout_customization.md`
+7. `session/2026-02-16_optimizer_v2_iteration_summary.md`
 
 ## Quick verification
 

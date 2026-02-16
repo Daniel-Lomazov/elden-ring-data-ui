@@ -1,153 +1,117 @@
-# Icon and Stat Layout Customization Guide
+# UI Customization Guide (Icons, Layout, Detailed Scope)
 
-This guide explains where to change icon sizes, icon naming, and armor card stat layout.
+This guide documents where to safely tune icon rendering, armor stat layout, and detailed-scope behavior.
 
-## 1) Change icon sizes
+## 1) Stat icon size and numeric formatting
 
-Main controls are in [app.py](app.py):
+Main constants are in `app.py`:
 
 - `STAT_ICON_SIZE_PX`
 - `STAT_TOP_ICON_SIZE_PX`
 - `STAT_PANEL_VALUE_DECIMALS`
 
-These constants are defined near the top of the file and are used by:
+Formatting logic:
 
+- `format_metric_value(...)` in `app.py`
+  - `status.*` and `Res:*` display as integers
+  - non-resistance metrics follow configured decimal precision
+
+## 2) Stat UI map and stat icon registry
+
+- Stat label/icon mapping: `data/stat_ui_map.json`
+- Icon file registry: `data/icons/icons.json`
+
+Helpers in `app.py`:
+
+- `load_stat_ui_map(...)`
+- `load_icon_registry(...)`
+- `icon_data_uri_for_icon_id(...)`
 - `stat_icon_html(...)`
-- `armor_panel_item_html(...)`
-- `render_armor_square_stat_panel(...)`
 
-## 2) Change icon/name mapping per stat
+## 3) Parser dialect normalization (no CSV rewrite)
 
-Use [data/stat_ui_map.json](data/stat_ui_map.json).
+Armor dictionaries are normalized in code while preserving source CSV values.
 
-Each stat entry supports:
-
-- `column` (internal stat key)
-- `display_name` (UI label)
-- `icon_id` (icon registry key)
-- `emoji` (fallback icon)
-
-Examples of stat keys used by armor cards:
-
-- Damage negation: `Dmg: Phy`, `Dmg: VS Str.`, `Dmg: VS Sla.`, `Dmg: VS Pie.`, `Dmg: Mag`, `Dmg: Fir`, `Dmg: Lit`, `Dmg: Hol`
-- Status resistances: `status.poison`, `status.rot`, `status.bleed`, `status.frost`, `status.sleep`, `status.madness`, `status.death`
-- Poise: `Res: Poi.`
-- Weight: `weight`
-
-### Data dialect normalization (parser)
-
-Armor extraction keeps source CSV dialects intact and normalizes variants in code only.
-
-Implementation in [ui_components.py](ui_components.py):
+File: `ui_components.py`
 
 - `parse_armor_stats(...)`
-- `damage_key_aliases` (for keys like `VS Str` / `VS Str.` / `Strike`)
-- `resistance_key_aliases` (for keys like `Rob.` / `Robu.` and `Vit.` / `Vita.`)
+- `damage_key_aliases`
+- `resistance_key_aliases`
 
-This prevents false zeros when dictionary keys vary between rows.
+This handles variants like:
 
-## 3) Change icon files/source links
+- `VS Str` vs `VS Str.`
+- `Rob.` vs `Robu.`
+- `Vit.` vs `Vita.`
 
-Use [data/icons/icons.json](data/icons/icons.json).
+## 4) Armor stat panel structure
 
-Each icon entry supports:
-
-- `icon_id`
-- `local_path`
-- `source_url`
-
-To refresh local icons from Fandom links in the registry:
-
-```powershell
-conda run -n elden_ring_ui python scripts/download_fandom_icons.py
-```
-
-To verify local icon files exist:
-
-```powershell
-python scripts/verify_icon_assets.py
-```
-
-## 4) Change armor stat block layout structure
-
-Layout renderer lives in [app.py](app.py):
-
-- `render_armor_square_stat_panel(...)`
+Renderer: `render_armor_square_stat_panel(...)` in `app.py`
 
 Current structure:
 
-- Top row: poison (left), weight + poise (right)
-- Grid row:
-  - `Damage Negation` (physical/strike/slash/pierce)
-  - `Elemental` (magic/fire/lightning/holy)
-  - `Resistances` (rot/bleed/frost/sleep/madness/death)
+- Top row
+  - Left: `Res: Poi.`
+  - Right: `weight`
+- Left column
+  - `Physical Damage Negation`
+  - `Elemental Damage Negation`
+- Right column
+  - `Status Effects Resistances`
+- Middle column
+  - spacer controlled by `ARMOR_PANEL_MIDDLE_SPACER_RATIO`
 
-To re-order stats or move items between columns, edit the stat lists inside `render_armor_square_stat_panel(...)`:
+Spacing controls:
 
-- `physical_damage_stats`
-- `elemental_damage_stats`
-- `resistance_stats`
-- `top_left_stat`
-- `top_right_stats`
+- `ARMOR_PANEL_DENSITY_SCALE`
+- `ARMOR_PANEL_TITLE_GAP_SCALE`
 
-## 5) CSS styling for visual tuning
+## 5) Detailed-scope helpers (moved to package)
 
-All stat panel styles are in the global CSS block in [app.py](app.py):
+Session-specific detailed-scope helpers are isolated in package `app_support`:
 
-- `.er-armor-panel`
-- `.er-armor-top`
-- `.er-armor-grid`
-- `.er-armor-section`
-- `.er-armor-item`
+- `app_support/detail_scope.py`
+  - `DETAIL_SCOPE_ANCHOR_ID`
+  - `normalize_dataset_text(...)`
+  - `focus_detail_anchor(...)`
+  - `ARMOR_FULL_SCOPE_DESCRIPTION_PLACEHOLDER`
+  - `ARMOR_CUSTOM_SCOPE_NAME_PLACEHOLDER`
+  - `ARMOR_CUSTOM_SCOPE_DESCRIPTION_PLACEHOLDER`
 
-Adjust spacing, grid columns, border radius, or typography there.
+`app.py` imports these helpers from `app_support`.
 
-## 6) Detailed single-scope viewport focus and text cleanup
-
-Detailed single-scope armor cards now auto-focus the viewport to the image/name start anchor after render.
-
-Implementation in [app.py](app.py):
-
-- `focus_detail_anchor(...)` for viewport scrolling
-- single-scope anchor id: `detail-scope-anchor`
-
-Single-scope `name` and `description` display use minimal normalization (whitespace/punctuation spacing only) without changing dataset storage:
-
-- `normalize_dataset_text(...)`
-
-## 7) Detailed armor scope placeholders (full/custom)
-
-Armor detailed scopes now use a unified card rendering shape across single/full/custom.
-
-Placeholder controls for future implementation live in [app.py](app.py):
-
-- `ARMOR_FULL_SCOPE_DESCRIPTION_PLACEHOLDER`
-- `ARMOR_CUSTOM_SCOPE_NAME_PLACEHOLDER`
-- `ARMOR_CUSTOM_SCOPE_DESCRIPTION_PLACEHOLDER`
+## 6) Full/custom scope placeholders
 
 Current behavior:
 
-- Single scope: uses dataset item name/description (minimally normalized for spacing).
-- Full scope: set name from selected full-set family label, description placeholder.
-- Custom scope: custom set name placeholder and description placeholder.
+- Single scope: name/description from dataset (minimal display normalization only)
+- Full scope:
+  - set name from selected family label
+  - description from `ARMOR_FULL_SCOPE_DESCRIPTION_PLACEHOLDER`
+- Custom scope:
+  - name from `ARMOR_CUSTOM_SCOPE_NAME_PLACEHOLDER`
+  - description from `ARMOR_CUSTOM_SCOPE_DESCRIPTION_PLACEHOLDER`
 
-## 8) Custom slot icons (separate from stat icons)
+## 7) Separate slot icon pipeline (fallback-safe)
 
-Armor/talisman slot icons can now be loaded from a separate optional registry (independent from `data/icons/icons.json`):
+Slot icons are intentionally separate from stat icons.
 
-- Optional file: [data/icons/scope_slot_icons.json](data/icons/scope_slot_icons.json)
+Optional registry file:
 
-Supported formats:
+- `data/icons/scope_slot_icons.json`
+
+Accepted formats:
 
 - Object map:
   - `{ "helm": "data/icons/slots/helm.png", "armor": "..." }`
-- List form:
+- List format:
   - `{ "icons": [ { "slot_key": "helm", "local_path": "data/icons/slots/helm.png" } ] }`
 
-If a slot icon is missing, UI falls back to existing emoji icons.
+If slot icons are missing, UI falls back to emoji slot icons.
 
-Implementation in [app.py](app.py):
+## 8) Quick validation commands
 
-- `load_scope_slot_icon_registry(...)`
-- `scope_slot_icon_data_uri(...)`
-- `slot_icon_for_label(...)`
+```powershell
+conda run -n base python -m py_compile app.py ui_components.py
+conda run -n elden_ring_ui python -c "import pandas as pd; from ui_components import parse_armor_stats; df=parse_armor_stats(pd.read_csv('data/armors.csv')); r=df.loc[df['id']==597].iloc[0]; print(r['status.bleed'], r['status.frost'], r['status.death'])"
+```

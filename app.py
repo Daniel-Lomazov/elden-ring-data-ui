@@ -1,14 +1,11 @@
 """Minimal app for ranking/sorting armors and similar datasets."""
 
 import streamlit as st
-import streamlit.components.v1 as components
 import pandas as pd
 import re
 import json
 import hashlib
 import base64
-import subprocess
-import sys
 import html
 import copy
 import random
@@ -43,6 +40,14 @@ from histogram_views import (
     get_clicked_weight,
 )
 from histogram_layout import resolve_auto_render_layer
+from app_support import (
+    DETAIL_SCOPE_ANCHOR_ID,
+    ARMOR_FULL_SCOPE_DESCRIPTION_PLACEHOLDER,
+    ARMOR_CUSTOM_SCOPE_NAME_PLACEHOLDER,
+    ARMOR_CUSTOM_SCOPE_DESCRIPTION_PLACEHOLDER,
+    normalize_dataset_text,
+    focus_detail_anchor,
+)
 
 st.set_page_config(page_title="Elden Ring - Ranking UI", page_icon="🏆", layout="wide")
 
@@ -83,9 +88,6 @@ ARMOR_PANEL_SPACER_RATIO = 0.32
 ARMOR_PANEL_MIDDLE_SPACER_RATIO = ARMOR_PANEL_SPACER_RATIO
 ARMOR_PANEL_DENSITY_SCALE = 0.82
 ARMOR_PANEL_TITLE_GAP_SCALE = ARMOR_PANEL_DENSITY_SCALE * 0.0
-ARMOR_FULL_SCOPE_DESCRIPTION_PLACEHOLDER = "Not implemented — full set description synthesis."
-ARMOR_CUSTOM_SCOPE_NAME_PLACEHOLDER = "Not implemented — custom set naming."
-ARMOR_CUSTOM_SCOPE_DESCRIPTION_PLACEHOLDER = "Not implemented — custom set description synthesis."
 
 ARMOR_PIECE_ORDER = [
     "Helm",
@@ -197,22 +199,6 @@ def main():
                 h.update(chunk)
         return h.hexdigest()
 
-    def generate_manifest():
-        # run the secure_data helper to (re)generate manifest + backup
-        try:
-            subprocess.run([sys.executable, "-m", "tools.secure_data"], check=True)
-        except Exception:
-            pass
-
-    def generate_armor_map():
-        # run the mapping helper to (re)generate armor_column_map.json
-        try:
-            subprocess.run(
-                ["python", str(ROOT / "check_armor_mappings.py")], check=True
-            )
-        except Exception:
-            pass
-
     def load_manifest():
         if not manifest_path.exists():
             return None
@@ -269,25 +255,6 @@ def main():
             return f"{num:.{STAT_PANEL_VALUE_DECIMALS}f}"
         except Exception:
             return str(value)
-
-    def normalize_dataset_text(value) -> str:
-        text = str(value or "")
-        text = re.sub(r"\s+", " ", text).strip()
-        text = re.sub(r"\s+([,;:.!?])", r"\1", text)
-        text = re.sub(r"([,;:.!?])(\S)", r"\1 \2", text)
-        return text
-
-    def focus_detail_anchor(anchor_id: str):
-        components.html(
-            (
-                "<script>"
-                f"const el = window.parent.document.getElementById('{anchor_id}');"
-                "if (el) { el.scrollIntoView({behavior: 'auto', block: 'start'}); }"
-                "</script>"
-            ),
-            height=0,
-            scrolling=False,
-        )
 
     @lru_cache(maxsize=1)
     def load_stat_ui_map() -> dict:
@@ -1309,10 +1276,7 @@ def main():
         if slot_key:
             data_uri = scope_slot_icon_data_uri(slot_key)
             if data_uri:
-                return (
-                    f"<img src='{data_uri}' alt='{html.escape(slot_key)}' "
-                    "style='width:20px;height:20px;object-fit:contain;vertical-align:middle;'/>"
-                )
+                return f"![{slot_key}]({data_uri})"
 
         if "armor set" in token or "full set" in token or token == "set":
             return "🥋"
@@ -3503,8 +3467,13 @@ def main():
                 if image_token and image_token.lower() != "nan":
                     image_grid_urls.append(image_token)
 
+            def naming_pattern(set_extracted_name: str) -> str:
+                if set_extracted_name.strip().lower().split()[0] == "of":
+                    return f"Set {set_extracted_name}"
+                return f"{set_extracted_name} Set"
+            
             summary = {
-                "name": str(set_name or "Armor Set").strip() or "Armor Set",
+                "name": naming_pattern(set_name) if set_name else "Unnamed Set",
                 "description": (
                     str(description_override).strip()
                     if description_override is not None
@@ -3863,7 +3832,7 @@ def main():
                     scope_set_name,
                     description_override=scope_description,
                 )
-                st.markdown("<div id='detail-scope-anchor'></div>", unsafe_allow_html=True)
+                st.markdown(f"<div id='{DETAIL_SCOPE_ANCHOR_ID}'></div>", unsafe_allow_html=True)
                 render_card_rows(
                     pd.DataFrame([set_summary_row]),
                     compact_mode=False,
@@ -3871,7 +3840,7 @@ def main():
                     image_mode="auto",
                     allow_nested_columns=True,
                 )
-                focus_detail_anchor("detail-scope-anchor")
+                focus_detail_anchor(DETAIL_SCOPE_ANCHOR_ID)
 
             if armor_detailed_scope_mode == DETAILED_SCOPE_SINGLE:
                 if armor_detail_item_name:
@@ -3884,9 +3853,9 @@ def main():
                         slot_rows.loc[:, "name"] = slot_rows["name"].apply(normalize_dataset_text)
                         if "description" in slot_rows.columns:
                             slot_rows.loc[:, "description"] = slot_rows["description"].apply(normalize_dataset_text)
-                        st.markdown("<div id='detail-scope-anchor'></div>", unsafe_allow_html=True)
+                        st.markdown(f"<div id='{DETAIL_SCOPE_ANCHOR_ID}'></div>", unsafe_allow_html=True)
                         render_card_rows(slot_rows, compact_mode=False, full_set_mode=False)
-                        focus_detail_anchor("detail-scope-anchor")
+                        focus_detail_anchor(DETAIL_SCOPE_ANCHOR_ID)
                     else:
                         st.info("No armor item matches the current selection.")
                 else:

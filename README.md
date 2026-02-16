@@ -13,6 +13,7 @@ A Streamlit app for exploring Elden Ring datasets, ranking candidates, and optim
 
 - `docs/README.md` — onboarding index for docs and session deep dives.
 - `docs/optimizer/README.md` — optimizer documentation hub.
+- `docs/developer/icon_and_stat_layout_customization.md` — current UI layout/icon/detailed-scope customization points.
 - Latest deep dive: `docs/session/2026-02-16_optimizer_v2_iteration_summary.md`.
 - Latest commit summary: `docs/session/2026-02-16_optimizer_v2_iteration_summary.md`.
 
@@ -21,6 +22,7 @@ A Streamlit app for exploring Elden Ring datasets, ranking candidates, and optim
 ```text
 elden_ring_data_ui/
 ├── app.py                         # Main Streamlit UI
+├── app_support/                   # Detailed-scope text/focus/placeholders helpers
 ├── data_loader.py                 # CSV loading, column profiles, cache-backed read helpers
 ├── optimizer/                     # Optimization package (legacy + dialect API + strategies)
 ├── histogram_views.py             # Histogram rendering + interaction config
