@@ -102,3 +102,19 @@ Implementation in [app.py](app.py):
 Single-scope `name` and `description` display use minimal normalization (whitespace/punctuation spacing only) without changing dataset storage:
 
 - `normalize_dataset_text(...)`
+
+## 7) Detailed armor scope placeholders (full/custom)
+
+Armor detailed scopes now use a unified card rendering shape across single/full/custom.
+
+Placeholder controls for future implementation live in [app.py](app.py):
+
+- `ARMOR_FULL_SCOPE_DESCRIPTION_PLACEHOLDER`
+- `ARMOR_CUSTOM_SCOPE_NAME_PLACEHOLDER`
+- `ARMOR_CUSTOM_SCOPE_DESCRIPTION_PLACEHOLDER`
+
+Current behavior:
+
+- Single scope: uses dataset item name/description (minimally normalized for spacing).
+- Full scope: set name from selected full-set family label, description placeholder.
+- Custom scope: custom set name placeholder and description placeholder.

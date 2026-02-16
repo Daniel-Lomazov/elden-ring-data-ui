@@ -83,6 +83,9 @@ ARMOR_PANEL_SPACER_RATIO = 0.32
 ARMOR_PANEL_MIDDLE_SPACER_RATIO = ARMOR_PANEL_SPACER_RATIO
 ARMOR_PANEL_DENSITY_SCALE = 0.82
 ARMOR_PANEL_TITLE_GAP_SCALE = ARMOR_PANEL_DENSITY_SCALE * 0.0
+ARMOR_FULL_SCOPE_DESCRIPTION_PLACEHOLDER = "Not implemented — full set description synthesis."
+ARMOR_CUSTOM_SCOPE_NAME_PLACEHOLDER = "Not implemented — custom set naming."
+ARMOR_CUSTOM_SCOPE_DESCRIPTION_PLACEHOLDER = "Not implemented — custom set description synthesis."
 
 ARMOR_PIECE_ORDER = [
     "Helm",
@@ -3406,7 +3409,11 @@ def main():
                 return f"Shared traits: {pretty}."
             return ""
 
-        def build_armor_set_summary_row(item_rows: list[pd.Series], set_name: str) -> pd.Series:
+        def build_armor_set_summary_row(
+            item_rows: list[pd.Series],
+            set_name: str,
+            description_override: str | None = None,
+        ) -> pd.Series:
             image_grid_urls = []
             for row in item_rows[:4]:
                 image_value = row.get("image")
@@ -3416,7 +3423,11 @@ def main():
 
             summary = {
                 "name": str(set_name or "Armor Set").strip() or "Armor Set",
-                "description": infer_shared_set_description(item_rows),
+                "description": (
+                    str(description_override).strip()
+                    if description_override is not None
+                    else infer_shared_set_description(item_rows)
+                ),
                 "image": None,
                 "__image_grid_urls": image_grid_urls,
             }
@@ -3728,8 +3739,7 @@ def main():
         if dataset == "armors":
             def render_armor_set_scope_card(
                 empty_message: str,
-                title_label: str = "Armor Set",
-                title_icon: str = "🥋",
+                scope_mode: str,
             ):
                 selected_rows = []
                 selected_names = []
@@ -3750,12 +3760,28 @@ def main():
                     st.info(empty_message)
                     return
 
-                scope_set_name = infer_set_name_from_names(selected_names)
-                st.markdown(f"#### {title_icon} {title_label}")
+                if scope_mode == DETAILED_SCOPE_FULL:
+                    selected_family_key = str(
+                        st.session_state.get("armor_full_scope_family_key", "")
+                    ).strip()
+                    scope_set_name = (
+                        scope_family_label_map.get(selected_family_key, "")
+                        or infer_set_name_from_names(selected_names)
+                    )
+                    scope_description = ARMOR_FULL_SCOPE_DESCRIPTION_PLACEHOLDER
+                elif scope_mode == DETAILED_SCOPE_CUSTOM:
+                    scope_set_name = ARMOR_CUSTOM_SCOPE_NAME_PLACEHOLDER
+                    scope_description = ARMOR_CUSTOM_SCOPE_DESCRIPTION_PLACEHOLDER
+                else:
+                    scope_set_name = infer_set_name_from_names(selected_names)
+                    scope_description = infer_shared_set_description(selected_rows)
+
                 set_summary_row = build_armor_set_summary_row(
                     selected_rows,
                     scope_set_name,
+                    description_override=scope_description,
                 )
+                st.markdown("<div id='detail-scope-anchor'></div>", unsafe_allow_html=True)
                 render_card_rows(
                     pd.DataFrame([set_summary_row]),
                     compact_mode=False,
@@ -3763,6 +3789,7 @@ def main():
                     image_mode="auto",
                     allow_nested_columns=True,
                 )
+                focus_detail_anchor("detail-scope-anchor")
 
             if armor_detailed_scope_mode == DETAILED_SCOPE_SINGLE:
                 if armor_detail_item_name:
@@ -3775,12 +3802,6 @@ def main():
                         slot_rows.loc[:, "name"] = slot_rows["name"].apply(normalize_dataset_text)
                         if "description" in slot_rows.columns:
                             slot_rows.loc[:, "description"] = slot_rows["description"].apply(normalize_dataset_text)
-                        selected_type_raw = str(slot_rows.iloc[0].get("type", "")).strip().lower()
-                        raw_to_display = {
-                            str(raw).strip().lower(): display
-                            for display, raw in type_label_map.items()
-                        }
-                        selected_slot_label = raw_to_display.get(selected_type_raw, "Armor")
                         st.markdown("<div id='detail-scope-anchor'></div>", unsafe_allow_html=True)
                         render_card_rows(slot_rows, compact_mode=False, full_set_mode=False)
                         focus_detail_anchor("detail-scope-anchor")
@@ -3789,12 +3810,14 @@ def main():
                 else:
                     st.info("No armor item available for single item view.")
             elif armor_detailed_scope_mode == DETAILED_SCOPE_FULL:
-                render_armor_set_scope_card("No full armor set selection available.")
+                render_armor_set_scope_card(
+                    "No full armor set selection available.",
+                    scope_mode=DETAILED_SCOPE_FULL,
+                )
             else:
                 render_armor_set_scope_card(
                     "No complete armor set selection available.",
-                    title_label="Custom Armor Set",
-                    title_icon="👘",
+                    scope_mode=DETAILED_SCOPE_CUSTOM,
                 )
 
         elif dataset == "talismans":
