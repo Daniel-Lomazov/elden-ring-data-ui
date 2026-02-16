@@ -3685,7 +3685,7 @@ def main():
                         slot_name = str(label or "").strip()
                         row_name = str(row.get("name", "")).strip().lower()
                         is_totals = slot_name.lower() == "totals" or row_name == "set totals"
-                        if is_totals:
+                        if is_totals and dataset != "armors":
                             for hs in highlighted_stats:
                                 if hs in row:
                                     render_stat_metric(st, hs, row.get(hs), highlighted=True)
@@ -3714,7 +3714,9 @@ def main():
                         slot_name = str(label or "").strip()
                         row_name = str(row.get("name", "")).strip().lower()
                         is_totals = slot_name.lower() == "totals" or row_name == "set totals"
-                        if is_totals:
+                        if dataset == "armors":
+                            render_armor_square_stat_panel(st, row)
+                        elif is_totals:
                             st.markdown("&nbsp;", unsafe_allow_html=True)
                         else:
                             for hs in highlighted_stats:
