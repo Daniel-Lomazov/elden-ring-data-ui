@@ -1,0 +1,122 @@
+{
+  "version": 1,
+  "description": "Canonical key mapping for optimizer dialect v1. Legacy dataframe columns are preserved.",
+  "mapping": [
+    {
+      "canonical_key": "weight",
+      "df_column_name": "weight",
+      "direction": "minimize",
+      "category": "armor_stat",
+      "label": "Weight"
+    },
+    {
+      "canonical_key": "poise",
+      "df_column_name": "Res: Poi.",
+      "direction": "maximize",
+      "category": "armor_stat",
+      "label": "Poise",
+      "notes": "Legacy dataset currently stores poise in Res: Poi. and should be separated in a future migration."
+    },
+    {
+      "canonical_key": "neg.phys",
+      "df_column_name": "Dmg: Phy",
+      "direction": "maximize",
+      "category": "negation",
+      "label": "Physical"
+    },
+    {
+      "canonical_key": "neg.std",
+      "df_column_name": "Dmg: Phy",
+      "direction": "maximize",
+      "category": "negation",
+      "label": "Standard",
+      "notes": "Fallback maps to Dmg: Phy until a distinct standard physical field is available."
+    },
+    {
+      "canonical_key": "neg.str",
+      "df_column_name": "Dmg: VS Str.",
+      "direction": "maximize",
+      "category": "negation",
+      "label": "Strike"
+    },
+    {
+      "canonical_key": "neg.sla",
+      "df_column_name": "Dmg: VS Sla.",
+      "direction": "maximize",
+      "category": "negation",
+      "label": "Slash"
+    },
+    {
+      "canonical_key": "neg.pie",
+      "df_column_name": "Dmg: VS Pie.",
+      "direction": "maximize",
+      "category": "negation",
+      "label": "Pierce"
+    },
+    {
+      "canonical_key": "neg.mag",
+      "df_column_name": "Dmg: Mag",
+      "direction": "maximize",
+      "category": "negation",
+      "label": "Magic"
+    },
+    {
+      "canonical_key": "neg.fir",
+      "df_column_name": "Dmg: Fir",
+      "direction": "maximize",
+      "category": "negation",
+      "label": "Fire"
+    },
+    {
+      "canonical_key": "neg.lit",
+      "df_column_name": "Dmg: Lit",
+      "direction": "maximize",
+      "category": "negation",
+      "label": "Lightning"
+    },
+    {
+      "canonical_key": "neg.hol",
+      "df_column_name": "Dmg: Hol",
+      "direction": "maximize",
+      "category": "negation",
+      "label": "Holy"
+    },
+    {
+      "canonical_key": "res.imm",
+      "df_column_name": "Res: Imm.",
+      "direction": "maximize",
+      "category": "resistance",
+      "label": "Immunity"
+    },
+    {
+      "canonical_key": "res.rob",
+      "df_column_name": "Res: Rob.",
+      "direction": "maximize",
+      "category": "resistance",
+      "label": "Robustness"
+    },
+    {
+      "canonical_key": "res.foc",
+      "df_column_name": "Res: Foc.",
+      "direction": "maximize",
+      "category": "resistance",
+      "label": "Focus"
+    },
+    {
+      "canonical_key": "res.vit",
+      "df_column_name": "Res: Vit.",
+      "direction": "maximize",
+      "category": "resistance",
+      "label": "Vitality"
+    }
+  ],
+  "status_to_resistance": {
+    "status.poison": "res.imm",
+    "status.rot": "res.imm",
+    "status.bleed": "res.rob",
+    "status.frost": "res.rob",
+    "status.sleep": "res.foc",
+    "status.madness": "res.foc",
+    "status.death": "res.vit"
+  }
+}

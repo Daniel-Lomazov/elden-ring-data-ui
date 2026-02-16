@@ -1,0 +1,182 @@
+{
+  "version": 1,
+  "description": "Optimizer Dialect icon registry. Local paths are preferred; source_url keeps provenance.",
+  "icons": [
+    {
+      "icon_id": "weight",
+      "canonical_key": "weight",
+      "label": "Weight",
+      "local_path": "data/icons/weight.png",
+      "source_url": null,
+      "category": "armor_stat"
+    },
+    {
+      "icon_id": "poise",
+      "canonical_key": "poise",
+      "label": "Poise",
+      "local_path": "data/icons/poise.png",
+      "source_url": null,
+      "category": "armor_stat"
+    },
+    {
+      "icon_id": "neg_phys",
+      "canonical_key": "neg.phys",
+      "label": "Physical",
+      "local_path": "data/icons/neg_phys.png",
+      "source_url": null,
+      "category": "negation"
+    },
+    {
+      "icon_id": "neg_std",
+      "canonical_key": "neg.std",
+      "label": "Standard",
+      "local_path": "data/icons/neg_std.png",
+      "source_url": null,
+      "category": "negation"
+    },
+    {
+      "icon_id": "neg_str",
+      "canonical_key": "neg.str",
+      "label": "Strike",
+      "local_path": "data/icons/neg_str.png",
+      "source_url": null,
+      "category": "negation"
+    },
+    {
+      "icon_id": "neg_sla",
+      "canonical_key": "neg.sla",
+      "label": "Slash",
+      "local_path": "data/icons/neg_sla.png",
+      "source_url": null,
+      "category": "negation"
+    },
+    {
+      "icon_id": "neg_pie",
+      "canonical_key": "neg.pie",
+      "label": "Pierce",
+      "local_path": "data/icons/neg_pie.png",
+      "source_url": null,
+      "category": "negation"
+    },
+    {
+      "icon_id": "neg_mag",
+      "canonical_key": "neg.mag",
+      "label": "Magic",
+      "local_path": "data/icons/neg_mag.png",
+      "source_url": null,
+      "category": "negation"
+    },
+    {
+      "icon_id": "neg_fir",
+      "canonical_key": "neg.fir",
+      "label": "Fire",
+      "local_path": "data/icons/neg_fir.png",
+      "source_url": null,
+      "category": "negation"
+    },
+    {
+      "icon_id": "neg_lit",
+      "canonical_key": "neg.lit",
+      "label": "Lightning",
+      "local_path": "data/icons/neg_lit.png",
+      "source_url": null,
+      "category": "negation"
+    },
+    {
+      "icon_id": "neg_hol",
+      "canonical_key": "neg.hol",
+      "label": "Holy",
+      "local_path": "data/icons/neg_hol.png",
+      "source_url": null,
+      "category": "negation"
+    },
+    {
+      "icon_id": "res_imm",
+      "canonical_key": "res.imm",
+      "label": "Immunity",
+      "local_path": "data/icons/res_imm.png",
+      "source_url": null,
+      "category": "resistance"
+    },
+    {
+      "icon_id": "res_rob",
+      "canonical_key": "res.rob",
+      "label": "Robustness",
+      "local_path": "data/icons/res_rob.png",
+      "source_url": null,
+      "category": "resistance"
+    },
+    {
+      "icon_id": "res_foc",
+      "canonical_key": "res.foc",
+      "label": "Focus",
+      "local_path": "data/icons/res_foc.png",
+      "source_url": null,
+      "category": "resistance"
+    },
+    {
+      "icon_id": "res_vit",
+      "canonical_key": "res.vit",
+      "label": "Vitality",
+      "local_path": "data/icons/res_vit.png",
+      "source_url": null,
+      "category": "resistance"
+    },
+    {
+      "icon_id": "status_poison",
+      "canonical_key": "status.poison",
+      "label": "Poison",
+      "local_path": "data/icons/status_poison.png",
+      "source_url": null,
+      "category": "status"
+    },
+    {
+      "icon_id": "status_rot",
+      "canonical_key": "status.rot",
+      "label": "Scarlet Rot",
+      "local_path": "data/icons/status_rot.png",
+      "source_url": null,
+      "category": "status"
+    },
+    {
+      "icon_id": "status_bleed",
+      "canonical_key": "status.bleed",
+      "label": "Bleed",
+      "local_path": "data/icons/status_bleed.png",
+      "source_url": null,
+      "category": "status"
+    },
+    {
+      "icon_id": "status_frost",
+      "canonical_key": "status.frost",
+      "label": "Frostbite",
+      "local_path": "data/icons/status_frost.png",
+      "source_url": null,
+      "category": "status"
+    },
+    {
+      "icon_id": "status_sleep",
+      "canonical_key": "status.sleep",
+      "label": "Sleep",
+      "local_path": "data/icons/status_sleep.png",
+      "source_url": null,
+      "category": "status"
+    },
+    {
+      "icon_id": "status_madness",
+      "canonical_key": "status.madness",
+      "label": "Madness",
+      "local_path": "data/icons/status_madness.png",
+      "source_url": null,
+      "category": "status"
+    },
+    {
+      "icon_id": "status_death",
+      "canonical_key": "status.death",
+      "label": "Death Blight",
+      "local_path": "data/icons/status_death.png",
+      "source_url": null,
+      "category": "status"
+    }
+  ]
+}
