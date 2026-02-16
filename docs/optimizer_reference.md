@@ -32,6 +32,7 @@ This reference documents the optimization subsystem used by the Elden Ring Ranki
 5. Canonical status split channels are materialized during parse for UI use:
   - `status.poison`, `status.rot`, `status.bleed`, `status.frost`, `status.sleep`, `status.madness`, `status.death`.
   - These are derived from `Res: Imm.`, `Res: Rob.`, `Res: Foc.`, `Res: Vit.` for backward-compatible data modeling.
+  - User-facing cards/tables display the split status channels rather than aggregated resistance labels.
 
 Why this matters: optimization code expects numeric columns with these names; `ui_components.parse_armor_stats` guarantees they exist and are numeric before ranking or optimization runs.
 

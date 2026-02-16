@@ -112,7 +112,7 @@
     },
     {
       "column": "Res: Vit.",
-      "display_name": "Vitality (Death Blight) Resistance",
+      "display_name": "Death Blight Resistance (Legacy Aggregate)",
       "icon_id": "res_vit",
       "emoji": "💀"
     },

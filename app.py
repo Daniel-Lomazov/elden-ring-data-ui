@@ -472,7 +472,15 @@ def main():
                 if "description" in source_df.columns and pd.notna(selected_row.get("description")):
                     st.caption(str(selected_row.get("description", "")))
 
-            hidden_columns = {"description", "image", "effect"}
+            hidden_columns = {
+                "description",
+                "image",
+                "effect",
+                "Res: Imm.",
+                "Res: Rob.",
+                "Res: Foc.",
+                "Res: Vit.",
+            }
             detail_rows = []
             for column in source_df.columns:
                 if column in hidden_columns:
@@ -1890,15 +1898,40 @@ def main():
 
     # determine possible highlight stats
     numeric_cols = df.select_dtypes(include=["number"]).columns.tolist()
-    # prefer weight/poise and damage/resistance columns
-    stat_options = [
-        c for c in numeric_cols if c.startswith("Dmg:") or c.startswith("Res:")
+    status_resistance_cols = [
+        "status.poison",
+        "status.rot",
+        "status.bleed",
+        "status.frost",
+        "status.sleep",
+        "status.madness",
+        "status.death",
     ]
+    armor_primary_stat_order = [
+        "weight",
+        "Dmg: Phy",
+        "Dmg: VS Str.",
+        "Dmg: VS Sla.",
+        "Dmg: VS Pie.",
+        "Dmg: Mag",
+        "Dmg: Fir",
+        "Dmg: Lit",
+        "Dmg: Hol",
+        *status_resistance_cols,
+        "Res: Poi.",
+    ]
+    # prefer weight/poise and damage/resistance columns
+    stat_options = [c for c in numeric_cols if c.startswith("Dmg:") or c.startswith("status.")]
+    if "Res: Poi." in numeric_cols and "Res: Poi." not in stat_options:
+        stat_options.append("Res: Poi.")
     for s in ["weight", "poise"]:
         if s in numeric_cols and s not in stat_options:
             stat_options.insert(0, s)
     if dataset == "armors":
         stat_options = [s for s in stat_options if str(s).strip().lower() != "weight"]
+        ordered_options = [s for s in armor_primary_stat_order if s in stat_options]
+        ordered_options.extend([s for s in stat_options if s not in ordered_options])
+        stat_options = ordered_options
     elif dataset == "talismans":
         stat_options = [
             s for s in numeric_cols if str(s).strip().lower() not in ["id", "dlc", "weight"]
@@ -2777,11 +2810,13 @@ def main():
 
                     stats = [c for c in numeric_cols if c not in ["id"]]
                     if dataset == "armors":
-                        desired_cols = ["weight", "Dmg: Phy", "bleed", "frost", "Res: Poi."]
+                        desired_cols = armor_primary_stat_order
                         found_cols = [c for c in desired_cols if c in numeric_cols]
                         for c in numeric_cols:
                             if (
-                                c.startswith("Dmg:") or c.startswith("Res:")
+                                c.startswith("Dmg:")
+                                or c.startswith("status.")
+                                or c == "Res: Poi."
                             ) and c not in found_cols:
                                 found_cols.append(c)
                         display_stats = [
@@ -3232,11 +3267,13 @@ def main():
             def resolve_detail_stat_columns() -> list[str]:
                 stats = [c for c in numeric_cols if c not in ["id"]]
                 if dataset == "armors":
-                    desired_cols = ["weight", "Dmg: Phy", "bleed", "frost", "Res: Poi."]
+                    desired_cols = armor_primary_stat_order
                     found_cols = [c for c in desired_cols if c in numeric_cols]
                     for c in numeric_cols:
                         if (
-                            c.startswith("Dmg:") or c.startswith("Res:")
+                            c.startswith("Dmg:")
+                            or c.startswith("status.")
+                            or c == "Res: Poi."
                         ) and c not in found_cols:
                             found_cols.append(c)
                     return [s for s in found_cols if s in stats and s not in highlighted_stats]

@@ -130,10 +130,15 @@ The `scripts/` folder is the best path for repeatable runs.
   - `Holy Damage Negation`
   - `Fire Damage Negation`
   - `Strike Damage Negation`
-  - `Robustness (Bleed / Frost) Resistance`
-  - `Focus (Sleep / Madness) Resistance`
-  - `Vitality (Death Blight) Resistance`
+  - `Poison Resistance`
+  - `Scarlet Rot Resistance`
+  - `Bleed Resistance`
+  - `Frost Resistance`
+  - `Sleep Resistance`
+  - `Madness Resistance`
+  - `Death Blight Resistance`
 - Stat icon metadata/provenance is maintained in `data/icons/icons.json`.
+- Aggregated resistance names (`Immunity`, `Robustness`, `Focus`, `Vitality`) are kept internally for compatibility but hidden from user-facing card/table output.
 
 ### Objective direction rules
 
