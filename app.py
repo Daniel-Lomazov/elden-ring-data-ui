@@ -1014,21 +1014,29 @@ def main():
             gap: 8px;
             margin-bottom: 8px;
         }
-        .er-armor-top-right {
-            display: grid;
-            gap: 4px;
-        }
-        .er-armor-grid {
+        .er-armor-top {
             display: grid;
             grid-template-columns: repeat(3, minmax(0, 1fr));
             gap: 8px;
+            margin-bottom: 8px;
         }
-        .er-armor-section {
+        .er-armor-top-slot {
             border: 1px solid rgba(255,255,255,0.10);
             border-radius: 8px;
             padding: 6px;
             background: rgba(0,0,0,0.10);
+            min-height: 34px;
         }
+        .er-armor-top-slot-empty {
+            background: transparent;
+            border-color: transparent;
+        .er-armor-section {
+            border: 1px solid rgba(255,255,255,0.10);
+            border-radius: 8px;
+            padding: 6px;
+            f"<div class='er-armor-top-slot er-armor-top-left'>{top_left_block}</div>"
+            "<div class='er-armor-top-slot er-armor-top-slot-empty'></div>"
+            f"<div class='er-armor-top-slot er-armor-top-right'>{top_right_block}</div>"
         .er-armor-section-title {
             font-size: 0.78rem;
             font-weight: 600;
@@ -3161,7 +3169,6 @@ def main():
 
                     stats = [c for c in numeric_cols if c not in ["id"]]
                     if dataset == "armors":
-                        render_armor_square_stat_panel(st, row)
                         display_stats = []
                     elif dataset == "talismans":
                         desired_cols = ["weight"]
