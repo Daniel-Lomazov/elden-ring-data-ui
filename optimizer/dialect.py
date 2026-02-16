@@ -15,6 +15,7 @@ from .schema import (
     OBJECTIVE_STAT_RANK,
     OBJECTIVE_TYPES,
     SCOPES,
+    STATUS_KEYS,
 )
 
 
@@ -92,6 +93,23 @@ def canonicalize_request(request: Dict[str, Any]) -> Dict[str, Any]:
                 f"Expected canonical negation keys: {NEGATION_KEYS}"
             )
 
+    canonical_status_threats: Dict[str, Dict[str, float]] = {}
+    for status_key, status_value in status_threats.items():
+        status_name = str(status_key)
+        if status_name not in STATUS_KEYS:
+            raise ValueError(
+                f"Unsupported encounter.status_threats key '{status_name}'. "
+                f"Expected canonical status keys: {STATUS_KEYS}"
+            )
+        payload = _ensure_dict(status_value, f"encounter.status_threats.{status_name}")
+        canonical_status_threats[status_name] = {
+            "buildup_per_hit": float(payload.get("buildup_per_hit", 0.0)),
+            "proc_penalty": float(payload.get("proc_penalty", 0.0)),
+            "weight": float(payload.get("weight", 1.0)),
+            "a": float(payload.get("a", 10.0)),
+            "b": float(payload.get("b", 0.0)),
+        }
+
     canonical = {
         "version": CANONICAL_SCHEMA_VERSION,
         "scope": scope,
@@ -111,7 +129,7 @@ def canonicalize_request(request: Dict[str, Any]) -> Dict[str, Any]:
             "incoming": {
                 "damage_mix": {str(k): float(v) for k, v in damage_mix.items()}
             },
-            "status_threats": status_threats,
+            "status_threats": canonical_status_threats,
         },
         "config": _ensure_dict(raw.get("config"), "config"),
     }
