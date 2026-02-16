@@ -6,7 +6,6 @@ import re
 import json
 import hashlib
 import base64
-import mimetypes
 import subprocess
 import sys
 import html
@@ -117,7 +116,14 @@ DEFAULT_ACTIVE_DATASET_KEYS = ["armors", "talismans"]
 
 # Post-parse pruning rules to reduce memory pressure without affecting visible UI.
 POST_PARSE_DROP_COLUMNS_BY_DATASET = {
-    "armors": ["damage negation", "resistance"],
+    "armors": [
+        "damage negation",
+        "resistance",
+        "Res: Imm.",
+        "Res: Rob.",
+        "Res: Foc.",
+        "Res: Vit.",
+    ],
 }
 
 
@@ -307,12 +313,19 @@ def main():
         if not img_path.exists() or not img_path.is_file():
             return ""
 
-        mime_type, _ = mimetypes.guess_type(str(img_path))
-        mime_type = mime_type or "image/png"
         try:
             raw = img_path.read_bytes()
         except Exception:
             return ""
+
+        mime_type = "image/png"
+        if raw.startswith(b"RIFF") and raw[8:12] == b"WEBP":
+            mime_type = "image/webp"
+        elif raw.startswith(b"\xff\xd8\xff"):
+            mime_type = "image/jpeg"
+        elif raw.startswith(b"\x89PNG\r\n\x1a\n"):
+            mime_type = "image/png"
+
         encoded = base64.b64encode(raw).decode("ascii")
         return f"data:{mime_type};base64,{encoded}"
 
@@ -540,9 +553,13 @@ def main():
                 "image",
                 "effect",
                 "Res: Imm.",
+                "Res: Imm",
                 "Res: Rob.",
+                "Res: Rob",
                 "Res: Foc.",
+                "Res: Foc",
                 "Res: Vit.",
+                "Res: Vit",
             }
             detail_rows = []
             for column in source_df.columns:
@@ -3307,7 +3324,10 @@ def main():
                     [
                         c
                         for c in stat_candidates
-                        if c.startswith("Res:") and c not in ordered_stats
+                        if (
+                            c.startswith("status.")
+                            or c == "Res: Poi."
+                        ) and c not in ordered_stats
                     ]
                 )
                 ordered_stats.extend(

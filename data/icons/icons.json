@@ -7,7 +7,7 @@
       "canonical_key": "weight",
       "label": "Weight",
       "local_path": "data/icons/weight.png",
-      "source_url": "https://eldenring.wiki.fextralife.com/Equip+Load",
+      "source_url": "https://eldenring.fandom.com/wiki/File:ER_Custom_Stat_Icon_Weight.png",
       "category": "armor_stat"
     },
     {
@@ -15,7 +15,7 @@
       "canonical_key": "poise",
       "label": "Poise",
       "local_path": "data/icons/poise.png",
-      "source_url": "https://eldenring.wiki.fextralife.com/Poise",
+      "source_url": "https://eldenring.fandom.com/wiki/File:ER_Custom_Stat_Icon_Poise.png",
       "category": "armor_stat"
     },
     {
@@ -23,7 +23,7 @@
       "canonical_key": "neg.phys",
       "label": "Physical",
       "local_path": "data/icons/neg_phys.png",
-      "source_url": "https://eldenring.wiki.fextralife.com/Armor",
+      "source_url": "https://eldenring.fandom.com/wiki/File:ER_Custom_Stat_Icon_Defense_Physical.png",
       "category": "negation"
     },
     {
@@ -31,7 +31,7 @@
       "canonical_key": "neg.std",
       "label": "Standard",
       "local_path": "data/icons/neg_std.png",
-      "source_url": "https://eldenring.wiki.fextralife.com/Armor",
+      "source_url": "https://eldenring.fandom.com/wiki/File:ER_Custom_Stat_Icon_Defense_Standard.png",
       "category": "negation"
     },
     {
@@ -39,7 +39,7 @@
       "canonical_key": "neg.str",
       "label": "Strike",
       "local_path": "data/icons/neg_str.png",
-      "source_url": "https://eldenring.wiki.fextralife.com/Armor",
+      "source_url": "https://eldenring.fandom.com/wiki/File:ER_Custom_Stat_Icon_Defense_Strike.png",
       "category": "negation"
     },
     {
@@ -47,7 +47,7 @@
       "canonical_key": "neg.sla",
       "label": "Slash",
       "local_path": "data/icons/neg_sla.png",
-      "source_url": "https://eldenring.wiki.fextralife.com/Armor",
+      "source_url": "https://eldenring.fandom.com/wiki/File:ER_Custom_Stat_Icon_Defense_Slash.png",
       "category": "negation"
     },
     {
@@ -55,7 +55,7 @@
       "canonical_key": "neg.pie",
       "label": "Pierce",
       "local_path": "data/icons/neg_pie.png",
-      "source_url": "https://eldenring.wiki.fextralife.com/Armor",
+      "source_url": "https://eldenring.fandom.com/wiki/File:ER_Custom_Stat_Icon_Defense_Pierce.png",
       "category": "negation"
     },
     {
@@ -63,7 +63,7 @@
       "canonical_key": "neg.mag",
       "label": "Magic",
       "local_path": "data/icons/neg_mag.png",
-      "source_url": "https://eldenring.wiki.fextralife.com/Armor",
+      "source_url": "https://eldenring.fandom.com/wiki/File:ER_Custom_Stat_Icon_Defense_Magic.png",
       "category": "negation"
     },
     {
@@ -71,7 +71,7 @@
       "canonical_key": "neg.fir",
       "label": "Fire",
       "local_path": "data/icons/neg_fir.png",
-      "source_url": "https://eldenring.wiki.fextralife.com/Armor",
+      "source_url": "https://eldenring.fandom.com/wiki/File:ER_Custom_Stat_Icon_Defense_Fire.png",
       "category": "negation"
     },
     {
@@ -79,7 +79,7 @@
       "canonical_key": "neg.lit",
       "label": "Lightning",
       "local_path": "data/icons/neg_lit.png",
-      "source_url": "https://eldenring.wiki.fextralife.com/Armor",
+      "source_url": "https://eldenring.fandom.com/wiki/File:ER_Custom_Stat_Icon_Defense_Lightning.png",
       "category": "negation"
     },
     {
@@ -87,7 +87,7 @@
       "canonical_key": "neg.hol",
       "label": "Holy",
       "local_path": "data/icons/neg_hol.png",
-      "source_url": "https://eldenring.wiki.fextralife.com/Armor",
+      "source_url": "https://eldenring.fandom.com/wiki/File:ER_Custom_Stat_Icon_Defense_Holy.png",
       "category": "negation"
     },
     {
@@ -95,7 +95,7 @@
       "canonical_key": "res.imm",
       "label": "Immunity",
       "local_path": "data/icons/res_imm.png",
-      "source_url": "https://eldenring.wiki.fextralife.com/Resistance",
+      "source_url": "https://eldenring.fandom.com/wiki/File:Poison.png",
       "category": "resistance"
     },
     {
@@ -103,7 +103,7 @@
       "canonical_key": "res.rob",
       "label": "Robustness",
       "local_path": "data/icons/res_rob.png",
-      "source_url": "https://eldenring.wiki.fextralife.com/Resistance",
+      "source_url": "https://eldenring.fandom.com/wiki/File:Blood_Loss.png",
       "category": "resistance"
     },
     {
@@ -111,7 +111,7 @@
       "canonical_key": "res.foc",
       "label": "Focus",
       "local_path": "data/icons/res_foc.png",
-      "source_url": "https://eldenring.wiki.fextralife.com/Resistance",
+      "source_url": "https://eldenring.fandom.com/wiki/File:Sleep.png",
       "category": "resistance"
     },
     {
@@ -119,7 +119,7 @@
       "canonical_key": "res.vit",
       "label": "Vitality",
       "local_path": "data/icons/res_vit.png",
-      "source_url": "https://eldenring.wiki.fextralife.com/Resistance",
+      "source_url": "https://eldenring.fandom.com/wiki/File:Death_Blight.png",
       "category": "resistance"
     },
     {
@@ -127,7 +127,7 @@
       "canonical_key": "status.poison",
       "label": "Poison",
       "local_path": "data/icons/status_poison.png",
-      "source_url": null,
+      "source_url": "https://eldenring.fandom.com/wiki/File:Poison.png",
       "category": "status"
     },
     {
@@ -135,7 +135,7 @@
       "canonical_key": "status.rot",
       "label": "Scarlet Rot",
       "local_path": "data/icons/status_rot.png",
-      "source_url": null,
+      "source_url": "https://eldenring.fandom.com/wiki/File:Scarlet_Rot.png",
       "category": "status"
     },
     {
@@ -143,7 +143,7 @@
       "canonical_key": "status.bleed",
       "label": "Bleed",
       "local_path": "data/icons/status_bleed.png",
-      "source_url": null,
+      "source_url": "https://eldenring.fandom.com/wiki/File:Blood_Loss.png",
       "category": "status"
     },
     {
@@ -151,7 +151,7 @@
       "canonical_key": "status.frost",
       "label": "Frostbite",
       "local_path": "data/icons/status_frost.png",
-      "source_url": null,
+      "source_url": "https://eldenring.fandom.com/wiki/File:Frostbite.png",
       "category": "status"
     },
     {
@@ -159,7 +159,7 @@
       "canonical_key": "status.sleep",
       "label": "Sleep",
       "local_path": "data/icons/status_sleep.png",
-      "source_url": null,
+      "source_url": "https://eldenring.fandom.com/wiki/File:Sleep.png",
       "category": "status"
     },
     {
@@ -167,7 +167,7 @@
       "canonical_key": "status.madness",
       "label": "Madness",
       "local_path": "data/icons/status_madness.png",
-      "source_url": null,
+      "source_url": "https://eldenring.fandom.com/wiki/File:Madness.png",
       "category": "status"
     },
     {
@@ -175,7 +175,7 @@
       "canonical_key": "status.death",
       "label": "Death Blight",
       "local_path": "data/icons/status_death.png",
-      "source_url": null,
+      "source_url": "https://eldenring.fandom.com/wiki/File:Death_Blight.png",
       "category": "status"
     }
   ]
