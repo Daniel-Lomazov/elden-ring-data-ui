@@ -367,6 +367,39 @@ def main():
         prefix = "⭐ " if highlighted else ""
         return f"{prefix}{icon} {display_name}"
 
+    def stat_icon_html(stat_name: str, size_px: int = 14) -> str:
+        meta = get_stat_ui_meta(stat_name)
+        icon_id = str(meta.get("icon_id", "")).strip()
+        if icon_id:
+            data_uri = icon_data_uri_for_icon_id(icon_id)
+            if data_uri:
+                return (
+                    f"<img src='{data_uri}' alt='{html.escape(icon_id)}' "
+                    f"style='width:{size_px}px;height:{size_px}px;object-fit:contain;vertical-align:middle;'/>"
+                )
+        emoji = str(meta.get("emoji", "📊")).strip() or "📊"
+        return (
+            f"<span style='font-size:{size_px}px;line-height:1;vertical-align:middle;'>"
+            f"{html.escape(emoji)}</span>"
+        )
+
+    def render_stat_metric(container, stat_name: str, value, highlighted: bool = False):
+        token = str(stat_name or "").strip()
+        meta = get_stat_ui_meta(token)
+        display_name = str(meta.get("display_name", token)).strip() or token
+        icon_html = stat_icon_html(token)
+        value_text = format_metric_value(value)
+        star = "⭐ " if highlighted else ""
+        container.markdown(
+            (
+                "<div class='er-stat-row'>"
+                f"<span class='er-stat-label'>{star}{icon_html} {html.escape(display_name)}</span>"
+                f"<span class='er-stat-value'>{html.escape(value_text)}</span>"
+                "</div>"
+            ),
+            unsafe_allow_html=True,
+        )
+
     def is_truthy_flag(value) -> bool:
         if value is None:
             return False
@@ -859,6 +892,26 @@ def main():
             font-size: 1.05rem !important;
             line-height: 1.1 !important;
             font-variant-numeric: tabular-nums;
+        }
+        .er-stat-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            padding: 2px 0;
+            font-size: 0.93rem;
+            line-height: 1.25;
+        }
+        .er-stat-label {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: rgba(255, 255, 255, 0.92);
+        }
+        .er-stat-value {
+            font-variant-numeric: tabular-nums;
+            color: rgba(255, 255, 255, 0.98);
+            white-space: nowrap;
         }
         </style>
         """,
@@ -2863,8 +2916,7 @@ def main():
                 for hs in highlighted_stats:
                     if hs in row:
                         val_h = row.get(hs)
-                        display_h = format_metric_value(val_h)
-                        st.metric(format_stat_metric_label(hs, highlighted=True), display_h)
+                        render_stat_metric(st, hs, val_h, highlighted=True)
             else:
                 if not allow_nested_columns:
                     render_image_or_grid(row, width_px=140)
@@ -2885,8 +2937,7 @@ def main():
                     for hs in highlighted_stats:
                         if hs in row:
                             val_h = row.get(hs)
-                            display_h = format_metric_value(val_h)
-                            st.metric(format_stat_metric_label(hs, highlighted=True), display_h)
+                            render_stat_metric(st, hs, val_h, highlighted=True)
 
                     stats = [c for c in numeric_cols if c not in ["id"]]
                     if dataset == "armors":
@@ -2925,7 +2976,7 @@ def main():
                         if num_val is not None and num_val == 0 and s not in highlighted_stats:
                             continue
                         display_val = format_metric_value(val)
-                        st.metric(format_stat_metric_label(s), display_val)
+                        render_stat_metric(st, s, display_val)
                     st.markdown("</div>", unsafe_allow_html=True)
                     gap_px = FULL_SET_ROW_GAP_PX if full_set_mode and compact_mode else 8
                     st.markdown(f"<div style='height:{gap_px}px'></div>", unsafe_allow_html=True)
@@ -2937,8 +2988,7 @@ def main():
                     for hs in highlighted_stats:
                         if hs in row:
                             val_h = row.get(hs)
-                            display_h = format_metric_value(val_h)
-                            st.metric(format_stat_metric_label(hs, highlighted=True), display_h)
+                            render_stat_metric(st, hs, val_h, highlighted=True)
                 with c2:
                     title_left, title_right = st.columns([4, 1])
                     with title_left:
@@ -2963,11 +3013,13 @@ def main():
 
                     stats = [c for c in numeric_cols if c not in ["id"]]
                     if dataset == "armors":
-                        desired_cols = ["weight", "Dmg: Phy", "bleed", "frost", "Res: Poi."]
+                        desired_cols = armor_primary_stat_order
                         found_cols = [c for c in desired_cols if c in numeric_cols]
                         for c in numeric_cols:
                             if (
-                                c.startswith("Dmg:") or c.startswith("Res:")
+                                c.startswith("Dmg:")
+                                or c.startswith("status.")
+                                or c == "Res: Poi."
                             ) and c not in found_cols:
                                 found_cols.append(c)
 
@@ -3006,7 +3058,7 @@ def main():
                                         p.write("")
                                     else:
                                         display_val = format_metric_value(val)
-                                        p.metric(format_stat_metric_label(label), display_val)
+                                        render_stat_metric(p, label, display_val)
             st.markdown("</div>", unsafe_allow_html=True)
             gap_px = FULL_SET_ROW_GAP_PX if full_set_mode and compact_mode else 8
             st.markdown(f"<div style='height:{gap_px}px'></div>", unsafe_allow_html=True)
@@ -3492,8 +3544,7 @@ def main():
                         if is_totals:
                             for hs in highlighted_stats:
                                 if hs in row:
-                                    display_h = format_metric_value(row.get(hs))
-                                    st.metric(format_stat_metric_label(hs, highlighted=True), display_h)
+                                    render_stat_metric(st, hs, row.get(hs), highlighted=True)
                             for stat_name in detail_stat_cols:
                                 raw_value = row.get(stat_name, None)
                                 num_val = None
@@ -3502,12 +3553,9 @@ def main():
                                 except Exception:
                                     num_val = None
                                 if num_val is not None and num_val == 0 and stat_name not in highlighted_stats:
-                                    st.metric(format_stat_metric_label(stat_name), "—")
+                                    render_stat_metric(st, stat_name, "—")
                                 else:
-                                    st.metric(
-                                        format_stat_metric_label(stat_name),
-                                        format_metric_value(raw_value),
-                                    )
+                                    render_stat_metric(st, stat_name, format_metric_value(raw_value))
                         else:
                             description = str(row.get("description", "")).strip()
                             st.markdown(
@@ -3527,8 +3575,7 @@ def main():
                         else:
                             for hs in highlighted_stats:
                                 if hs in row:
-                                    display_h = format_metric_value(row.get(hs))
-                                    st.metric(format_stat_metric_label(hs, highlighted=True), display_h)
+                                    render_stat_metric(st, hs, row.get(hs), highlighted=True)
                             for stat_name in detail_stat_cols:
                                 raw_value = row.get(stat_name, None)
                                 num_val = None
@@ -3537,9 +3584,9 @@ def main():
                                 except Exception:
                                     num_val = None
                                 if num_val is not None and num_val == 0 and stat_name not in highlighted_stats:
-                                    st.metric(format_stat_metric_label(stat_name), "—")
+                                    render_stat_metric(st, stat_name, "—")
                                 else:
-                                    st.metric(format_stat_metric_label(stat_name), format_metric_value(raw_value))
+                                    render_stat_metric(st, stat_name, format_metric_value(raw_value))
                 st.markdown("</div>", unsafe_allow_html=True)
             else:
                 if include_armor_totals and dataset == "armors":

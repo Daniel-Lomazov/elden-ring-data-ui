@@ -10,8 +10,8 @@
     },
     {
       "column": "Dmg: Phy",
-      "display_name": "Physical Damage Negation",
-      "icon_id": "neg_phys",
+      "display_name": "Standard Damage Negation",
+      "icon_id": "neg_std",
       "emoji": "🛡️"
     },
     {
