@@ -13,8 +13,8 @@ A Streamlit app for exploring Elden Ring datasets, ranking candidates, and optim
 
 - `docs/README.md` — onboarding index for docs and session deep dives.
 - `docs/optimizer/README.md` — optimizer documentation hub.
-- Latest deep dive: `docs/session/2026-02-15_startup_and_verify_deep_dive.md`.
-- Latest commit summary: `docs/session/2026-02-15_commit_summary.md`.
+- Latest deep dive: `docs/session/2026-02-16_optimizer_v2_iteration_summary.md`.
+- Latest commit summary: `docs/session/2026-02-16_optimizer_v2_iteration_summary.md`.
 
 ## Repository layout
 
