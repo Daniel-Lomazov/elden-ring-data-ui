@@ -34,6 +34,18 @@ Examples of stat keys used by armor cards:
 - Poise: `Res: Poi.`
 - Weight: `weight`
 
+### Data dialect normalization (parser)
+
+Armor extraction keeps source CSV dialects intact and normalizes variants in code only.
+
+Implementation in [ui_components.py](ui_components.py):
+
+- `parse_armor_stats(...)`
+- `damage_key_aliases` (for keys like `VS Str` / `VS Str.` / `Strike`)
+- `resistance_key_aliases` (for keys like `Rob.` / `Robu.` and `Vit.` / `Vita.`)
+
+This prevents false zeros when dictionary keys vary between rows.
+
 ## 3) Change icon files/source links
 
 Use [data/icons/icons.json](data/icons/icons.json).

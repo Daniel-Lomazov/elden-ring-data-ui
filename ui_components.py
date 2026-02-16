@@ -51,6 +51,17 @@ def parse_armor_stats(df: pd.DataFrame) -> pd.DataFrame:
             # replace non-alphanumeric with single space, lowercase, strip
             return re.sub(r"[^0-9a-zA-Z]+", " ", s).strip().lower()
 
+        def alias_keys(*aliases: str) -> list[str]:
+            return [normalize_key(alias) for alias in aliases if str(alias).strip()]
+
+        def first_value_for_aliases(normalized_dict: dict, aliases: list[str]) -> float:
+            if not isinstance(normalized_dict, dict):
+                return 0.0
+            for alias in aliases:
+                if alias in normalized_dict:
+                    return normalized_dict.get(alias, 0.0)
+            return 0.0
+
         def dict_to_normalized(d: dict) -> dict:
             out = {}
             if not isinstance(d, dict):
@@ -70,19 +81,20 @@ def parse_armor_stats(df: pd.DataFrame) -> pd.DataFrame:
             lambda x: dict_to_normalized(x) if isinstance(x, dict) else {}
         )
 
-        desired_keys = [
-            "Phy",
-            "VS Str.",
-            "VS Sla.",
-            "VS Pie.",
-            "Mag",
-            "Fir",
-            "Lit",
-            "Hol",
-        ]
-        for key in desired_keys:
-            nk = normalize_key(key)
-            df[f"Dmg: {key}"] = dmg_norm.apply(lambda nd: nd.get(nk, 0.0))
+        damage_key_aliases = {
+            "Phy": alias_keys("Phy", "Physical", "Standard"),
+            "VS Str.": alias_keys("VS Str.", "VS Str", "VS Strike", "Strike"),
+            "VS Sla.": alias_keys("VS Sla.", "VS Sla", "VS Slash", "Slash"),
+            "VS Pie.": alias_keys("VS Pie.", "VS Pie", "VS Pierce", "Pierce"),
+            "Mag": alias_keys("Mag", "Magic"),
+            "Fir": alias_keys("Fir", "Fire"),
+            "Lit": alias_keys("Lit", "Lightning"),
+            "Hol": alias_keys("Hol", "Holy"),
+        }
+        for key, aliases in damage_key_aliases.items():
+            df[f"Dmg: {key}"] = dmg_norm.apply(
+                lambda nd, alias_list=aliases: first_value_for_aliases(nd, alias_list)
+            )
 
     if "resistance" in df.columns:
 
@@ -104,10 +116,17 @@ def parse_armor_stats(df: pd.DataFrame) -> pd.DataFrame:
         res_norm = res.apply(
             lambda x: dict_to_normalized(x) if isinstance(x, dict) else {}
         )
-        desired_res = ["Imm.", "Rob.", "Foc.", "Vit.", "Poi."]
-        for key in desired_res:
-            nk = normalize_key(key)
-            df[f"Res: {key}"] = res_norm.apply(lambda nd: nd.get(nk, 0.0))
+        resistance_key_aliases = {
+            "Imm.": alias_keys("Imm.", "Imm", "Immu.", "Immu", "Immunity"),
+            "Rob.": alias_keys("Rob.", "Rob", "Robu.", "Robu", "Robust", "Robustness"),
+            "Foc.": alias_keys("Foc.", "Foc", "Focus"),
+            "Vit.": alias_keys("Vit.", "Vit", "Vita.", "Vita", "Vitality"),
+            "Poi.": alias_keys("Poi.", "Poi", "Poise"),
+        }
+        for key, aliases in resistance_key_aliases.items():
+            df[f"Res: {key}"] = res_norm.apply(
+                lambda nd, alias_list=aliases: first_value_for_aliases(nd, alias_list)
+            )
 
         status_parent_map = {
             "status.poison": "Res: Imm.",
