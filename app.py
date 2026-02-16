@@ -76,8 +76,8 @@ DETAILED_SCOPE_CUSTOM = "Custom"
 STACK_VIEW_VERTICAL = "Vertical"
 STACK_VIEW_HORIZONTAL = "Horizontal"
 
-STAT_ICON_SIZE_PX = 18
-STAT_TOP_ICON_SIZE_PX = 20
+STAT_ICON_SIZE_PX = 22
+STAT_TOP_ICON_SIZE_PX = 24
 STAT_PANEL_VALUE_DECIMALS = 2
 
 ARMOR_PIECE_ORDER = [
@@ -419,8 +419,8 @@ def main():
         )
 
     def render_armor_square_stat_panel(container, row: pd.Series):
-        top_left_stat = ""
-        top_right_stats = ["weight", "Res: Poi."]
+        top_left_stat = "Res: Poi."
+        top_right_stats = ["weight"]
 
         physical_damage_stats = ["Dmg: Phy", "Dmg: VS Str.", "Dmg: VS Sla.", "Dmg: VS Pie."]
         elemental_damage_stats = ["Dmg: Mag", "Dmg: Fir", "Dmg: Lit", "Dmg: Hol"]
@@ -472,9 +472,8 @@ def main():
         physical_html = build_section_html("Damage Negation", physical_damage_stats)
         elemental_html = build_section_html("Elemental", elemental_damage_stats)
         resistance_html = build_section_html("Resistances", resistance_stats)
-        empty_item_html = "<div class='er-armor-item er-armor-item-empty'>—</div>"
-        top_left_block = top_left_html or empty_item_html
-        top_right_block = top_right_html or empty_item_html
+        top_left_block = top_left_html
+        top_right_block = top_right_html
 
         panel_html = (
             "<div class='er-armor-panel'>"
@@ -3070,10 +3069,11 @@ def main():
                             )
                         else:
                             st.markdown(f"### {name_text}")
-                for hs in highlighted_stats:
-                    if hs in row:
-                        val_h = row.get(hs)
-                        render_stat_metric(st, hs, val_h, highlighted=True)
+                if dataset != "armors":
+                    for hs in highlighted_stats:
+                        if hs in row:
+                            val_h = row.get(hs)
+                            render_stat_metric(st, hs, val_h, highlighted=True)
                 if dataset == "armors":
                     render_armor_square_stat_panel(st, row)
             else:
@@ -3093,10 +3093,11 @@ def main():
                         if description_text:
                             st.caption(description_text)
 
-                    for hs in highlighted_stats:
-                        if hs in row:
-                            val_h = row.get(hs)
-                            render_stat_metric(st, hs, val_h, highlighted=True)
+                    if dataset != "armors":
+                        for hs in highlighted_stats:
+                            if hs in row:
+                                val_h = row.get(hs)
+                                render_stat_metric(st, hs, val_h, highlighted=True)
 
                     stats = [c for c in numeric_cols if c not in ["id"]]
                     if dataset == "armors":
@@ -3131,10 +3132,11 @@ def main():
                 c1, c2 = st.columns([1, 3])
                 with c1:
                     render_image_or_grid(row, width_px=140)
-                    for hs in highlighted_stats:
-                        if hs in row:
-                            val_h = row.get(hs)
-                            render_stat_metric(st, hs, val_h, highlighted=True)
+                    if dataset != "armors":
+                        for hs in highlighted_stats:
+                            if hs in row:
+                                val_h = row.get(hs)
+                                render_stat_metric(st, hs, val_h, highlighted=True)
                 with c2:
                     title_left, title_right = st.columns([4, 1])
                     with title_left:
