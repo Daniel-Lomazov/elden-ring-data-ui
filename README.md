@@ -9,13 +9,20 @@ A Streamlit app for exploring Elden Ring datasets, ranking candidates, and optim
 - Supports optimization modes for armor and talismans (single and set-based flows).
 - Includes script-based startup, verification, and recovery workflows for fast development loops.
 
+## Documentation
+
+- `docs/README.md` — onboarding index for docs and session deep dives.
+- `docs/optimizer/README.md` — optimizer documentation hub.
+- Latest deep dive: `docs/session/2026-02-15_startup_and_verify_deep_dive.md`.
+- Latest commit summary: `docs/session/2026-02-15_commit_summary.md`.
+
 ## Repository layout
 
 ```text
 elden_ring_data_ui/
 ├── app.py                         # Main Streamlit UI
 ├── data_loader.py                 # CSV loading, column profiles, cache-backed read helpers
-├── optimizer.py                   # Optimization strategies (maximin, weighted sum)
+├── optimizer/                     # Optimization package (legacy + dialect API + strategies)
 ├── histogram_views.py             # Histogram rendering + interaction config
 ├── histogram_layout.py            # Shared histogram sizing/layout helpers
 ├── ui_components.py               # Parsing/UI utility helpers
@@ -155,6 +162,12 @@ Use one of these reliable refresh paths:
   python -m tools.optimizer_check
   ```
 
+- Dialect + encounter smoke checks:
+
+  ```powershell
+  python -m tools.optimizer_smoke
+  ```
+
 - Consolidated verify pipeline:
 
   ```powershell
@@ -182,12 +195,24 @@ Use one of these reliable refresh paths:
 
 ## Optimization internals (where to edit)
 
-- `optimizer.py`
+- `optimizer/legacy.py`
   - Method registry and dispatch
   - Objective direction handling (`weight` minimization)
   - Scoring implementations:
     - `_score_maximin_normalized`
     - `_score_weighted_sum_normalized`
+
+- `optimizer/api.py`
+  - Dialect-first entrypoint `optimize(df, request)`
+
+- `optimizer/dialect.py`
+  - Request loading, validation, canonicalization
+
+- `optimizer/strategies/encounter_survival.py`
+  - Encounter-aware survival objective `M` and composite `J`
+
+- `optimizer/strategies/full_set_prune.py`
+  - Full-set armor pruning + enumeration
 
 - `app.py`
   - UI controls for optimization method selection

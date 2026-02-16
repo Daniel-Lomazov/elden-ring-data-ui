@@ -2327,7 +2327,25 @@ def main():
                     if optimizer_method == "weighted_sum_normalized" and local_optimizer_weights
                     else {stat: 1.0 for stat in ranking_stats}
                 )
+                dialect_request_payload = {
+                    "version": 1,
+                    "scope": "single_piece",
+                    "objective": {
+                        "type": "stat_rank",
+                        "method": optimizer_method,
+                        "weights": weight_payload,
+                    },
+                    "selected_stats": list(ranking_stats),
+                    "config": {
+                        "minimize_stats": ["weight"] if optimize_with_weight else [],
+                        "lock_stat_order": lock_stat_order,
+                    },
+                }
+                dialect_request_hash = hashlib.sha256(
+                    json.dumps(dialect_request_payload, sort_keys=True).encode("utf-8")
+                ).hexdigest()
                 rank_cache = st.session_state.setdefault("_optimizer_cache", {})
+                cache_key = (*cache_key, dialect_request_hash)
                 if cache_key in rank_cache:
                     cached_df = rank_cache[cache_key].copy()
                     if "__opt_score" in cached_df.columns and "__opt_tiebreak" in cached_df.columns:

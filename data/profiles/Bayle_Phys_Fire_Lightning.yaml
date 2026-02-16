@@ -1,0 +1,14 @@
+version: 1
+scope: single_piece
+objective:
+  type: encounter_survival
+  hp: 2000
+  eps: 0.01
+  lambda_status: 0.2
+encounter:
+  name: Bayle_Phys_Fire_Lightning
+  incoming:
+    damage_mix:
+      neg.phys: 0.45
+      neg.fir: 0.40
+      neg.lit: 0.15

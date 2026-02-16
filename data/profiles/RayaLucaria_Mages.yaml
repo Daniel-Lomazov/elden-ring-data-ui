@@ -1,0 +1,13 @@
+version: 1
+scope: single_piece
+objective:
+  type: encounter_survival
+  hp: 1600
+  eps: 0.01
+  lambda_status: 0.0
+encounter:
+  name: RayaLucaria_Mages
+  incoming:
+    damage_mix:
+      neg.mag: 0.75
+      neg.phys: 0.25

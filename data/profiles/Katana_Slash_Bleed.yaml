@@ -1,0 +1,20 @@
+version: 1
+scope: single_piece
+objective:
+  type: encounter_survival
+  hp: 1600
+  eps: 0.01
+  lambda_status: 1.0
+encounter:
+  name: Katana_Slash_Bleed
+  incoming:
+    damage_mix:
+      neg.sla: 1.0
+  status_threats:
+    status.bleed:
+      buildup_per_hit: 45
+      proc_penalty: 150
+      weight: 1.0
+constraints:
+  roll_class: medium
+  min_poise: null
