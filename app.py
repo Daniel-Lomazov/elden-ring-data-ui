@@ -488,8 +488,6 @@ def main():
             st.markdown(" ")
 
         with col_right:
-            render_row_metric(st, "weight", icon_size=STAT_TOP_ICON_SIZE_PX)
-            st.markdown(" ")
             st.markdown("**Status Effects Resistances**")
             for stat_name in resistance_stats:
                 render_row_metric(st, stat_name)
