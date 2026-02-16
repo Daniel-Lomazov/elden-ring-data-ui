@@ -1,6 +1,7 @@
 """Minimal app for ranking/sorting armors and similar datasets."""
 
 import streamlit as st
+import streamlit.components.v1 as components
 import pandas as pd
 import re
 import json
@@ -77,13 +78,11 @@ STACK_VIEW_HORIZONTAL = "Horizontal"
 
 STAT_ICON_SIZE_PX = 22
 STAT_TOP_ICON_SIZE_PX = 24
-STAT_PANEL_VALUE_DECIMALS = 2
-ARMOR_PANEL_SPACER_RATIO = 0.25
-ARMOR_PANEL_SPACER_LEFT_RATIO = ARMOR_PANEL_SPACER_RATIO
-ARMOR_PANEL_SPACER_RIGHT_RATIO = ARMOR_PANEL_SPACER_RATIO
+STAT_PANEL_VALUE_DECIMALS = 1
+ARMOR_PANEL_SPACER_RATIO = 0.32
 ARMOR_PANEL_MIDDLE_SPACER_RATIO = ARMOR_PANEL_SPACER_RATIO
 ARMOR_PANEL_DENSITY_SCALE = 0.82
-ARMOR_PANEL_TITLE_GAP_SCALE = ARMOR_PANEL_DENSITY_SCALE
+ARMOR_PANEL_TITLE_GAP_SCALE = ARMOR_PANEL_DENSITY_SCALE * 0.0
 
 ARMOR_PIECE_ORDER = [
     "Helm",
@@ -238,10 +237,13 @@ def main():
                 )
         return {"missing": missing, "mismatches": mismatches}
 
-    def format_metric_value(value):
+    def format_metric_value(value, stat_name: str | None = None):
         try:
             if value is None:
-                return "0.00"
+                token = str(stat_name or "").strip().lower()
+                if token.startswith("status.") or token.startswith("res:"):
+                    return "0"
+                return "0.0"
 
             if isinstance(value, str):
                 token = re.search(r"[-+]?\d*\.?\d+(?:[eE][-+]?\d+)?", value)
@@ -253,11 +255,36 @@ def main():
                 num = float(value)
 
             if not pd.notna(num) or num in (float("inf"), float("-inf")):
-                return "0.00"
+                token = str(stat_name or "").strip().lower()
+                if token.startswith("status.") or token.startswith("res:"):
+                    return "0"
+                return "0.0"
 
+            stat_token = str(stat_name or "").strip().lower()
+            if stat_token.startswith("status.") or stat_token.startswith("res:"):
+                return str(int(round(num)))
             return f"{num:.{STAT_PANEL_VALUE_DECIMALS}f}"
         except Exception:
             return str(value)
+
+    def normalize_dataset_text(value) -> str:
+        text = str(value or "")
+        text = re.sub(r"\s+", " ", text).strip()
+        text = re.sub(r"\s+([,;:.!?])", r"\1", text)
+        text = re.sub(r"([,;:.!?])(\S)", r"\1 \2", text)
+        return text
+
+    def focus_detail_anchor(anchor_id: str):
+        components.html(
+            (
+                "<script>"
+                f"const el = window.parent.document.getElementById('{anchor_id}');"
+                "if (el) { el.scrollIntoView({behavior: 'auto', block: 'start'}); }"
+                "</script>"
+            ),
+            height=0,
+            scrolling=False,
+        )
 
     @lru_cache(maxsize=1)
     def load_stat_ui_map() -> dict:
@@ -397,7 +424,7 @@ def main():
         meta = get_stat_ui_meta(token)
         display_name = str(meta.get("display_name", token)).strip() or token
         icon_html = stat_icon_html(token)
-        value_text = format_metric_value(value)
+        value_text = format_metric_value(value, stat_name=token)
         star = "⭐ " if highlighted else ""
         container.markdown(
             (
@@ -438,7 +465,7 @@ def main():
             label = str(meta.get("display_name", token)).strip() or token
             short_label = label.replace(" Damage Negation", "").replace(" Resistance", "")
             icon_html = stat_icon_html(token, size_px=icon_size)
-            value_text = format_metric_value(row.get(token))
+            value_text = format_metric_value(row.get(token), stat_name=token)
             row_min_height = max(20, int(30 * ARMOR_PANEL_DENSITY_SCALE))
             row_padding = max(0, int(3 * ARMOR_PANEL_DENSITY_SCALE))
             target.markdown(
@@ -615,7 +642,7 @@ def main():
             return talisman_dlc_label(value)
 
         if isinstance(value, (int, float)):
-            return format_metric_value(value)
+            return format_metric_value(value, stat_name=column)
         return str(value)
 
     def format_item_detail_label(column: str) -> str:
@@ -2946,7 +2973,7 @@ def main():
                 metrics_html = ""
                 for hs in highlighted_stats:
                     if hs in row:
-                        display_h = format_metric_value(row.get(hs))
+                        display_h = format_metric_value(row.get(hs), stat_name=hs)
                         metrics_html += (
                             "<div class='full-set-metric'>"
                             "<span class='full-set-metric-label'>"
@@ -3074,7 +3101,7 @@ def main():
                             num_val = None
                         if num_val is not None and num_val == 0 and s not in highlighted_stats:
                             continue
-                        display_val = format_metric_value(val)
+                        display_val = format_metric_value(val, stat_name=s)
                         render_stat_metric(st, s, display_val)
                     st.markdown("</div>", unsafe_allow_html=True)
                     gap_px = FULL_SET_ROW_GAP_PX if full_set_mode and compact_mode else 8
@@ -3143,7 +3170,7 @@ def main():
                                     if num_val is not None and num_val == 0 and s not in highlighted_stats:
                                         p.write("")
                                     else:
-                                        display_val = format_metric_value(val)
+                                        display_val = format_metric_value(val, stat_name=s)
                                         render_stat_metric(p, label, display_val)
                 if dataset == "armors":
                     render_armor_square_stat_panel(st, row)
@@ -3643,7 +3670,7 @@ def main():
                                 if num_val is not None and num_val == 0 and stat_name not in highlighted_stats:
                                     render_stat_metric(st, stat_name, "—")
                                 else:
-                                    render_stat_metric(st, stat_name, format_metric_value(raw_value))
+                                    render_stat_metric(st, stat_name, format_metric_value(raw_value, stat_name=stat_name))
                         else:
                             description = str(row.get("description", "")).strip()
                             st.markdown(
@@ -3676,7 +3703,7 @@ def main():
                                 if num_val is not None and num_val == 0 and stat_name not in highlighted_stats:
                                     render_stat_metric(st, stat_name, "—")
                                 else:
-                                    render_stat_metric(st, stat_name, format_metric_value(raw_value))
+                                    render_stat_metric(st, stat_name, format_metric_value(raw_value, stat_name=stat_name))
                 st.markdown("</div>", unsafe_allow_html=True)
             else:
                 if include_armor_totals and dataset == "armors":
@@ -3741,18 +3768,22 @@ def main():
                 if armor_detail_item_name:
                     slot_rows = df[df["name"].astype(str) == str(armor_detail_item_name)].head(1)
                     if not slot_rows.empty:
+                        slot_rows = slot_rows.copy()
                         selected_name = str(slot_rows.iloc[0].get("name", "")).strip()
                         if selected_name and selected_name in raw_description_by_name:
-                            slot_rows = slot_rows.copy()
                             slot_rows.loc[:, "description"] = raw_description_by_name[selected_name]
+                        slot_rows.loc[:, "name"] = slot_rows["name"].apply(normalize_dataset_text)
+                        if "description" in slot_rows.columns:
+                            slot_rows.loc[:, "description"] = slot_rows["description"].apply(normalize_dataset_text)
                         selected_type_raw = str(slot_rows.iloc[0].get("type", "")).strip().lower()
                         raw_to_display = {
                             str(raw).strip().lower(): display
                             for display, raw in type_label_map.items()
                         }
                         selected_slot_label = raw_to_display.get(selected_type_raw, "Armor")
-                        st.markdown(f"#### {slot_icon_for_label('Armor Piece')} Armor Piece")
+                        st.markdown("<div id='detail-scope-anchor'></div>", unsafe_allow_html=True)
                         render_card_rows(slot_rows, compact_mode=False, full_set_mode=False)
+                        focus_detail_anchor("detail-scope-anchor")
                     else:
                         st.info("No armor item matches the current selection.")
                 else:

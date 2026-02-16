@@ -89,3 +89,16 @@ All stat panel styles are in the global CSS block in [app.py](app.py):
 - `.er-armor-item`
 
 Adjust spacing, grid columns, border radius, or typography there.
+
+## 6) Detailed single-scope viewport focus and text cleanup
+
+Detailed single-scope armor cards now auto-focus the viewport to the image/name start anchor after render.
+
+Implementation in [app.py](app.py):
+
+- `focus_detail_anchor(...)` for viewport scrolling
+- single-scope anchor id: `detail-scope-anchor`
+
+Single-scope `name` and `description` display use minimal normalization (whitespace/punctuation spacing only) without changing dataset storage:
+
+- `normalize_dataset_text(...)`
