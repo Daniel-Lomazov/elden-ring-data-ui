@@ -20,13 +20,15 @@ If you are onboarding to this repo, read in this order:
 python -m venv .venv
 .\.venv\Scripts\activate
 pip install -r requirements.txt
-python -m streamlit run app.py
+./scripts/run_streamlit_local.ps1
 python -m tools.optimizer_smoke
+./scripts/stop_streamlit_port.ps1 -Port 8501
 ```
 
 Expected outcomes:
 
 - App starts at `http://localhost:8501`.
+- App binds to localhost by default (not `0.0.0.0`) via `.streamlit/config.toml`.
 - Smoke script prints top-5 sections and ends with `optimizer_smoke: SUCCESS`.
 
 ## Session docs (`docs/session/`)

@@ -59,6 +59,18 @@ python -m streamlit run app.py
 
 The `scripts/` folder is the best path for repeatable runs.
 
+- Foreground local-only run (recommended while developing):
+
+  ```powershell
+  ./scripts/run_streamlit_local.ps1
+  ```
+
+- Stop app by closing terminal (`Ctrl+C`) or explicitly freeing port 8501:
+
+  ```powershell
+  ./scripts/stop_streamlit_port.ps1 -Port 8501
+  ```
+
 - Full bootstrap + run app:
 
   ```powershell
@@ -88,6 +100,18 @@ The `scripts/` folder is the best path for repeatable runs.
   ```powershell
   ./scripts/recover-app.ps1
   ```
+
+## Localhost security defaults
+
+- Streamlit defaults are configured in `.streamlit/config.toml` to bind to `localhost` on port `8501`.
+- CORS and XSRF protection are enabled by default.
+- `./scripts/run_streamlit_local.ps1` runs in the current terminal so stopping is explicit (`Ctrl+C`).
+- `./scripts/start-app.ps1` intentionally launches a detached/background process for convenience, so it can continue after terminal/editor close.
+
+### Optional LAN sharing (advanced)
+
+- LAN exposure is opt-in. If you change server address to `0.0.0.0` or pass `--server.address 0.0.0.0`, devices on your network may be able to access the app.
+- Only use LAN mode on trusted networks and restore localhost defaults when finished.
 
 ## App usage (current)
 
@@ -186,7 +210,7 @@ Use one of these reliable refresh paths:
 3. **Manual restart:** stop Streamlit process, then rerun:
 
    ```powershell
-   python -m streamlit run app.py
+  ./scripts/run_streamlit_local.ps1
    ```
 
 ## Debugging and verification
@@ -224,6 +248,7 @@ Use one of these reliable refresh paths:
 
 - **Issue: app port conflict / stale Streamlit process**
   - Run `./scripts/reset-dev-session.ps1`
+  - Or run `./scripts/stop_streamlit_port.ps1 -Port 8501`
   - Then relaunch with `./scripts/start-app.ps1`
 
 - **Issue: datasets not loading as expected**
