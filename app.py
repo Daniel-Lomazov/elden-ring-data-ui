@@ -83,6 +83,7 @@ ARMOR_PANEL_SPACER_LEFT_RATIO = ARMOR_PANEL_SPACER_RATIO
 ARMOR_PANEL_SPACER_RIGHT_RATIO = ARMOR_PANEL_SPACER_RATIO
 ARMOR_PANEL_MIDDLE_SPACER_RATIO = ARMOR_PANEL_SPACER_RATIO
 ARMOR_PANEL_DENSITY_SCALE = 0.82
+ARMOR_PANEL_TITLE_GAP_SCALE = ARMOR_PANEL_DENSITY_SCALE
 
 ARMOR_PIECE_ORDER = [
     "Helm",
@@ -451,6 +452,13 @@ def main():
                 unsafe_allow_html=True,
             )
 
+        def render_section_title(target, title: str):
+            title_gap_px = max(4, int(10 * ARMOR_PANEL_TITLE_GAP_SCALE))
+            target.markdown(
+                f"<div style='font-weight:600;margin:0 0 {title_gap_px}px 0;'>{html.escape(title)}</div>",
+                unsafe_allow_html=True,
+            )
+
         try:
             panel = container.container(border=True)
         except TypeError:
@@ -475,12 +483,12 @@ def main():
             st.markdown(" ")
 
         with col_left:
-            st.markdown("**Physical Damage Negation**")
+            render_section_title(st, "Physical Damage Negation")
             for stat_name in physical_damage_stats:
                 render_row_metric(st, stat_name)
 
             st.markdown(" ")
-            st.markdown("**Elemental Damage Negation**")
+            render_section_title(st, "Elemental Damage Negation")
             for stat_name in elemental_damage_stats:
                 render_row_metric(st, stat_name)
 
@@ -488,7 +496,7 @@ def main():
             st.markdown(" ")
 
         with col_right:
-            st.markdown("**Status Effects Resistances**")
+            render_section_title(st, "Status Effects Resistances")
             for stat_name in resistance_stats:
                 render_row_metric(st, stat_name)
 
