@@ -5,7 +5,7 @@ Outputs:
 - data_checksums.json (structured manifest)
 - data_backup_YYYYmmdd_HHMMSS.zip (contains data/)
 
-Run: python secure_data.py
+Run: python -m tools.secure_data
 """
 
 import hashlib

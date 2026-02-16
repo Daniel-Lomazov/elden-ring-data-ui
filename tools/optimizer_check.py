@@ -1,7 +1,7 @@
 """Lightweight verification for two-stat optimizer behavior.
 
 Run:
-  python optimizer_check.py
+    python -m tools.optimizer_check
 """
 
 import pandas as pd
