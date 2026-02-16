@@ -17,3 +17,8 @@ This folder hosts local icon assets referenced by `data/icons/icons.json`.
 
 - PR1 adds schema + registry scaffolding only; image files are placeholders and can be filled in later without code changes.
 - Use paths relative to repo root, for example: `data/icons/neg_mag.png`.
+- Validate that all declared local icon files exist:
+
+  ```powershell
+  python scripts/verify_icon_assets.py
+  ```

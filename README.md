@@ -138,6 +138,12 @@ The `scripts/` folder is the best path for repeatable runs.
   - `Madness Resistance`
   - `Death Blight Resistance`
 - Stat icon metadata/provenance is maintained in `data/icons/icons.json`.
+- App stat labels prefer local icon assets from `data/icons/icons.json` (`local_path`) and fall back to emoji labels if files are missing.
+- Verify local icon asset availability with:
+
+  ```powershell
+  python scripts/verify_icon_assets.py
+  ```
 - Aggregated resistance names (`Immunity`, `Robustness`, `Focus`, `Vitality`) are kept internally for compatibility but hidden from user-facing card/table output.
 
 ### Objective direction rules

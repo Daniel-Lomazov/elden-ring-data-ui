@@ -29,6 +29,8 @@ This reference documents the optimization subsystem used by the Elden Ring Ranki
 
 4. UI naming/icon mapping for first-glance readability lives in `data/stat_ui_map.json`.
   - This is the permanent location for capitalized stat names and per-stat icon metadata used by the app controls.
+  - Icon assets are resolved via `data/icons/icons.json` and loaded from each entry's `local_path` when available.
+  - If a local icon file is missing, UI labels fall back to emoji-based stat labels.
 5. Canonical status split channels are materialized during parse for UI use:
   - `status.poison`, `status.rot`, `status.bleed`, `status.frost`, `status.sleep`, `status.madness`, `status.death`.
   - These are derived from `Res: Imm.`, `Res: Rob.`, `Res: Foc.`, `Res: Vit.` for backward-compatible data modeling.

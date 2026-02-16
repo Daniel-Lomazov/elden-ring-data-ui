@@ -5,6 +5,8 @@ import pandas as pd
 import re
 import json
 import hashlib
+import base64
+import mimetypes
 import subprocess
 import sys
 import html
@@ -262,6 +264,67 @@ def main():
                     out[key] = row
         return out
 
+    @lru_cache(maxsize=1)
+    def load_icon_registry() -> dict:
+        path = ROOT / "data" / "icons" / "icons.json"
+        if not path.exists():
+            return {}
+        try:
+            with path.open("r", encoding="utf-8") as file:
+                payload = json.load(file)
+        except Exception:
+            return {}
+
+        icons = payload.get("icons", []) if isinstance(payload, dict) else []
+        out = {}
+        for row in icons:
+            if not isinstance(row, dict):
+                continue
+            icon_id = str(row.get("icon_id", "")).strip()
+            if not icon_id:
+                continue
+            out[icon_id] = {
+                "local_path": str(row.get("local_path", "")).strip(),
+                "canonical_key": str(row.get("canonical_key", "")).strip(),
+                "label": str(row.get("label", "")).strip(),
+            }
+        return out
+
+    @lru_cache(maxsize=512)
+    def icon_data_uri_for_icon_id(icon_id: str) -> str:
+        token = str(icon_id or "").strip()
+        if not token:
+            return ""
+        icon_meta = load_icon_registry().get(token)
+        if not icon_meta:
+            return ""
+
+        local_path = str(icon_meta.get("local_path", "")).strip()
+        if not local_path:
+            return ""
+
+        img_path = ROOT / local_path
+        if not img_path.exists() or not img_path.is_file():
+            return ""
+
+        mime_type, _ = mimetypes.guess_type(str(img_path))
+        mime_type = mime_type or "image/png"
+        try:
+            raw = img_path.read_bytes()
+        except Exception:
+            return ""
+        encoded = base64.b64encode(raw).decode("ascii")
+        return f"data:{mime_type};base64,{encoded}"
+
+    def stat_icon_markdown(stat_name: str) -> str:
+        meta = get_stat_ui_meta(stat_name)
+        icon_id = str(meta.get("icon_id", "")).strip()
+        if icon_id:
+            data_uri = icon_data_uri_for_icon_id(icon_id)
+            if data_uri:
+                return f"![{icon_id}]({data_uri})"
+        return str(meta.get("emoji", "📊")).strip() or "📊"
+
     def get_stat_ui_meta(stat_name: str) -> dict:
         token = str(stat_name or "").strip()
         if not token:
@@ -280,13 +343,13 @@ def main():
     def format_stat_option_label(stat_name: str) -> str:
         meta = get_stat_ui_meta(stat_name)
         display = str(meta.get("display_name", stat_name)).strip() or str(stat_name)
-        emoji = str(meta.get("emoji", "📊")).strip() or "📊"
-        return f"{emoji} {display}"
+        icon = stat_icon_markdown(stat_name)
+        return f"{icon} {display}"
 
     def format_stat_metric_label(stat_name: str, highlighted: bool = False) -> str:
         token = str(stat_name or "").strip()
         meta = get_stat_ui_meta(token)
-        icon = str(meta.get("emoji", "📊")).strip() or "📊"
+        icon = stat_icon_markdown(token)
         display_name = str(meta.get("display_name", token)).strip() or token
         prefix = "⭐ " if highlighted else ""
         return f"{prefix}{icon} {display_name}"
