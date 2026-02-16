@@ -368,6 +368,64 @@ def main():
         encoded = base64.b64encode(raw).decode("ascii")
         return f"data:{mime_type};base64,{encoded}"
 
+    @lru_cache(maxsize=1)
+    def load_scope_slot_icon_registry() -> dict:
+        path = ROOT / "data" / "icons" / "scope_slot_icons.json"
+        if not path.exists():
+            return {}
+        try:
+            with path.open("r", encoding="utf-8") as file:
+                payload = json.load(file)
+        except Exception:
+            return {}
+
+        out = {}
+        if isinstance(payload, dict):
+            icons = payload.get("icons")
+            if isinstance(icons, list):
+                for row in icons:
+                    if not isinstance(row, dict):
+                        continue
+                    slot_key = str(row.get("slot_key", "")).strip().lower()
+                    local_path = str(row.get("local_path", "")).strip()
+                    if slot_key and local_path:
+                        out[slot_key] = local_path
+            else:
+                for slot_key, local_path in payload.items():
+                    key_token = str(slot_key).strip().lower()
+                    path_token = str(local_path).strip()
+                    if key_token and path_token:
+                        out[key_token] = path_token
+        return out
+
+    @lru_cache(maxsize=128)
+    def scope_slot_icon_data_uri(slot_key: str) -> str:
+        token = str(slot_key or "").strip().lower()
+        if not token:
+            return ""
+        local_path = load_scope_slot_icon_registry().get(token, "")
+        if not local_path:
+            return ""
+
+        img_path = ROOT / local_path
+        if not img_path.exists() or not img_path.is_file():
+            return ""
+        try:
+            raw = img_path.read_bytes()
+        except Exception:
+            return ""
+
+        mime_type = "image/png"
+        if raw.startswith(b"RIFF") and raw[8:12] == b"WEBP":
+            mime_type = "image/webp"
+        elif raw.startswith(b"\xff\xd8\xff"):
+            mime_type = "image/jpeg"
+        elif raw.startswith(b"\x89PNG\r\n\x1a\n"):
+            mime_type = "image/png"
+
+        encoded = base64.b64encode(raw).decode("ascii")
+        return f"data:{mime_type};base64,{encoded}"
+
     def stat_icon_markdown(stat_name: str) -> str:
         meta = get_stat_ui_meta(stat_name)
         icon_id = str(meta.get("icon_id", "")).strip()
@@ -1232,6 +1290,30 @@ def main():
 
     def slot_icon_for_label(label: str) -> str:
         token = str(label or "").strip().lower()
+        slot_key = ""
+        if "armor set" in token or "full set" in token or token == "set":
+            slot_key = "armor_set"
+        elif "armor piece" in token or "single piece" in token or token == "piece":
+            slot_key = "armor_piece"
+        elif "helm" in token or "hat" in token or "hood" in token:
+            slot_key = "helm"
+        elif "armor" in token or "chest" in token or "robe" in token or "garb" in token:
+            slot_key = "armor"
+        elif "gaunt" in token or "glove" in token or "bracer" in token:
+            slot_key = "gauntlets"
+        elif "greave" in token or "leg" in token or "boot" in token or "trouser" in token:
+            slot_key = "greaves"
+        elif token.startswith("slot"):
+            slot_key = re.sub(r"\s+", "_", token)
+
+        if slot_key:
+            data_uri = scope_slot_icon_data_uri(slot_key)
+            if data_uri:
+                return (
+                    f"<img src='{data_uri}' alt='{html.escape(slot_key)}' "
+                    "style='width:20px;height:20px;object-fit:contain;vertical-align:middle;'/>"
+                )
+
         if "armor set" in token or "full set" in token or token == "set":
             return "🥋"
         if "armor piece" in token or "single piece" in token or token == "piece":

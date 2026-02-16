@@ -118,3 +118,24 @@ Current behavior:
 - Single scope: uses dataset item name/description (minimally normalized for spacing).
 - Full scope: set name from selected full-set family label, description placeholder.
 - Custom scope: custom set name placeholder and description placeholder.
+
+## 8) Custom slot icons (separate from stat icons)
+
+Armor/talisman slot icons can now be loaded from a separate optional registry (independent from `data/icons/icons.json`):
+
+- Optional file: [data/icons/scope_slot_icons.json](data/icons/scope_slot_icons.json)
+
+Supported formats:
+
+- Object map:
+  - `{ "helm": "data/icons/slots/helm.png", "armor": "..." }`
+- List form:
+  - `{ "icons": [ { "slot_key": "helm", "local_path": "data/icons/slots/helm.png" } ] }`
+
+If a slot icon is missing, UI falls back to existing emoji icons.
+
+Implementation in [app.py](app.py):
+
+- `load_scope_slot_icon_registry(...)`
+- `scope_slot_icon_data_uri(...)`
+- `slot_icon_for_label(...)`
