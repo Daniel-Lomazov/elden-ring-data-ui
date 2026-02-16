@@ -63,10 +63,34 @@
       "emoji": "🧪"
     },
     {
+      "column": "status.poison",
+      "display_name": "Poison Resistance",
+      "icon_id": "status_poison",
+      "emoji": "🧪"
+    },
+    {
+      "column": "status.rot",
+      "display_name": "Scarlet Rot Resistance",
+      "icon_id": "status_rot",
+      "emoji": "🧪"
+    },
+    {
       "column": "Res: Rob.",
       "display_name": "Robustness (Bleed / Frost) Resistance",
       "icon_id": "res_rob",
       "emoji": "🩸"
+    },
+    {
+      "column": "status.bleed",
+      "display_name": "Bleed Resistance",
+      "icon_id": "status_bleed",
+      "emoji": "🩸"
+    },
+    {
+      "column": "status.frost",
+      "display_name": "Frost Resistance",
+      "icon_id": "status_frost",
+      "emoji": "❄️"
     },
     {
       "column": "Res: Foc.",
@@ -75,9 +99,27 @@
       "emoji": "🧠"
     },
     {
+      "column": "status.sleep",
+      "display_name": "Sleep Resistance",
+      "icon_id": "status_sleep",
+      "emoji": "🧠"
+    },
+    {
+      "column": "status.madness",
+      "display_name": "Madness Resistance",
+      "icon_id": "status_madness",
+      "emoji": "🧠"
+    },
+    {
       "column": "Res: Vit.",
       "display_name": "Vitality (Death Blight) Resistance",
       "icon_id": "res_vit",
+      "emoji": "💀"
+    },
+    {
+      "column": "status.death",
+      "display_name": "Death Blight Resistance",
+      "icon_id": "status_death",
       "emoji": "💀"
     },
     {

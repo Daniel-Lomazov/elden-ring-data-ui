@@ -109,6 +109,21 @@ def parse_armor_stats(df: pd.DataFrame) -> pd.DataFrame:
             nk = normalize_key(key)
             df[f"Res: {key}"] = res_norm.apply(lambda nd: nd.get(nk, 0.0))
 
+        status_parent_map = {
+            "status.poison": "Res: Imm.",
+            "status.rot": "Res: Imm.",
+            "status.bleed": "Res: Rob.",
+            "status.frost": "Res: Rob.",
+            "status.sleep": "Res: Foc.",
+            "status.madness": "Res: Foc.",
+            "status.death": "Res: Vit.",
+        }
+        for status_key, parent_col in status_parent_map.items():
+            if parent_col in df.columns:
+                df[status_key] = pd.to_numeric(df[parent_col], errors="coerce").fillna(0.0)
+            else:
+                df[status_key] = 0.0
+
     return df
 
 

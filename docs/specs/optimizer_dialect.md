@@ -45,3 +45,19 @@ encounter:
   - HP channel: `M = Σ w_t * (1 - N_t)`
   - Status channel: `StatusPenalty = Σ weight_s * (proc_penalty / ceil((a*res+b)/buildup))`
   - Composite: `J = M + lambda_status * StatusPenalty`
+
+## UI resistance split contract (v1)
+
+- User-facing armor resistance display in cards uses canonical status keys:
+  - `status.poison`
+  - `status.rot`
+  - `status.bleed`
+  - `status.frost`
+  - `status.sleep`
+  - `status.madness`
+  - `status.death`
+- Mapping source remains aggregated columns for compatibility:
+  - `status.poison`, `status.rot` ← `Res: Imm.`
+  - `status.bleed`, `status.frost` ← `Res: Rob.`
+  - `status.sleep`, `status.madness` ← `Res: Foc.`
+  - `status.death` ← `Res: Vit.`
