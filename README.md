@@ -104,11 +104,24 @@ The `scripts/` folder is the best path for repeatable runs.
 - Current optimization methods:
   - `maximin_normalized` (default)
   - `weighted_sum_normalized`
+- Optimization engines in UI (Optimization view):
+  - `Legacy` (existing stat ranking flow)
+  - `Optimization 2.0` (dialect API flow with optional `encounter_survival` objective)
 - Optimization metadata columns include:
   - `__opt_score`
   - `__opt_tiebreak`
   - `__opt_method`
   - `__opt_rank`
+
+### Where to access Optimization 2.0 in the app
+
+- Dataset: `armors` (recommended)
+- View mode: `Optimization view` (do not use `Detailed view` for this flow)
+- In the right control column set:
+  - `Optimization engine` = `Optimization 2.0`
+  - `Objective` = `encounter_survival` (or keep `stat_rank`)
+  - `Encounter profile` = one of `data/profiles/*.yaml`
+  - `Status fear (λ)` as desired
 
 ### Objective direction rules
 

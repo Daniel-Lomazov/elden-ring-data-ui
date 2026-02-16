@@ -106,9 +106,13 @@ ranked = optimize_single_piece(
 ## 5) How the app exposes and uses optimization (user & developer view)
 
 User-facing:
-- In the main app UI, the ranking/optimization controls allow selecting multiple highlighted stats, choosing method (`maximin_normalized` or `weighted_sum_normalized`), toggling `Optimize with weight`, and setting weights when using the weighted method.
-- When users pick 2+ stats and press the ranking button (or the UI auto-ranks), the app calls `optimize_single_piece` and displays the `__opt_score` ranking and normalized columns in the ranking panel.
-- See the exact UI invocation in `app.py` where the optimizer is called and cached in session state: [app.py](app.py#L2320-L2359).
+- In `Optimization view`, controls now include:
+  - `Optimization engine`: `Legacy` or `Optimization 2.0`
+  - `Objective`: `stat_rank` or `encounter_survival` (armors)
+  - `Encounter profile` + `Status fear (λ)` when `encounter_survival` is selected
+- Legacy engine keeps existing `optimize_single_piece` behavior for stat ranking.
+- Optimization 2.0 routes through dialect API `optimize(df, request)` and supports full-set encounter ranking in armor full-set preview.
+- See UI invocation and caching path in [app.py](app.py#L2290-L2520).
 
 Developer-facing (where to intervene):
 - Data parsing: Modify or extend parsing behavior in `ui_components.parse_armor_stats` if the CSV format changes or if you want to extract additional stat columns.
@@ -120,8 +124,8 @@ Developer-facing (where to intervene):
   - Modify default minimize stats by changing `_resolve_minimize_stats` or passing `config` at call sites.
   - File: [optimizer/legacy.py](optimizer/legacy.py)
 - UI integration:
-  - `app.py` constructs `ranking_stats`, `optimizer_method`, and `config` and calls `optimize_single_piece`. Modify how `ranking_stats` are selected or preprocessed here to change which columns are available to the optimizer.
-  - File: [app.py](app.py#L2320-L2359)
+  - `app.py` now constructs either legacy optimizer arguments or a dialect request payload based on `Optimization engine` and `Objective`.
+  - File: [app.py](app.py#L2290-L2520)
 
 ---
 
@@ -177,7 +181,7 @@ See the smoke test that asserts this: [tools/optimizer_check.py](tools/optimizer
 - Optimizer package: [optimizer/__init__.py](optimizer/__init__.py)
 - Legacy methods: [optimizer/legacy.py](optimizer/legacy.py)
 - Dialect API: [optimizer/api.py](optimizer/api.py)
-- App usage: [app.py](app.py#L2320-L2359)
+- App usage: [app.py](app.py#L2290-L2520)
 - Smoke test: [tools/optimizer_check.py](tools/optimizer_check.py#L1-L80)
 
 ---

@@ -26,6 +26,8 @@ except Exception:
 from data_loader import DataLoader
 from ui_components import parse_armor_stats
 from optimizer import (
+    optimize as optimize_dialect,
+    load_request,
     optimize_single_piece,
     DEFAULT_OPTIMIZATION_METHOD,
     OPTIMIZER_METHODS,
@@ -62,6 +64,10 @@ TALISMAN_SLOT_LABELS = ["Slot 1", "Slot 2", "Slot 3", "Slot 4"]
 
 VIEW_MODE_OPTIMIZATION = "Optimization view"
 VIEW_MODE_DETAILED = "Detailed view"
+OPT_ENGINE_LEGACY = "Legacy"
+OPT_ENGINE_DIALECT_V2 = "Optimization 2.0"
+OPT_OBJECTIVE_STAT_RANK = "stat_rank"
+OPT_OBJECTIVE_ENCOUNTER = "encounter_survival"
 DETAILED_SCOPE_SINGLE = "Single"
 DETAILED_SCOPE_FULL = "Full"
 DETAILED_SCOPE_CUSTOM = "Custom"
@@ -585,6 +591,10 @@ def main():
             "rows_to_show",
             "show_raw_dev",
             "optimizer_method",
+            "optimizer_engine",
+            "optimizer_objective_type",
+            "optimizer_encounter_profile",
+            "optimizer_lambda_status",
             "use_max_weight",
             "hist_view_mode",
             "hist_view_mode_widget",
@@ -640,6 +650,17 @@ def main():
         st.session_state["optimizer_method"] = qp_get(
             "method", DEFAULT_OPTIMIZATION_METHOD
         )
+        st.session_state["optimizer_engine"] = qp_get("opt_engine", OPT_ENGINE_LEGACY)
+        st.session_state["optimizer_objective_type"] = qp_get(
+            "objective", OPT_OBJECTIVE_STAT_RANK
+        )
+        st.session_state["optimizer_encounter_profile"] = qp_get("profile", "")
+        try:
+            st.session_state["optimizer_lambda_status"] = float(
+                qp_get("lambda_status", "1.0")
+            )
+        except Exception:
+            st.session_state["optimizer_lambda_status"] = 1.0
         st.session_state["optimize_with_weight"] = qp_get_bool("opt_with_weight", False)
         st.session_state["use_max_weight"] = qp_get_bool("use_max_weight", False)
         st.session_state["hist_view_mode"] = normalize_hist_view_mode(
@@ -674,6 +695,16 @@ def main():
             frame[target_cols].fillna(""), index=False
         ).values
         return hashlib.sha256(hashed.tobytes()).hexdigest()
+
+    def list_encounter_profiles() -> list[str]:
+        profile_dir = ROOT / "data" / "profiles"
+        if not profile_dir.exists():
+            return []
+        names = []
+        for path in sorted(profile_dir.iterdir()):
+            if path.is_file() and path.suffix.lower() in {".yaml", ".yml", ".json"}:
+                names.append(path.name)
+        return names
 
     def ensure_state_in_options(key: str, options: list, fallback):
         current = st.session_state.get(key, fallback)
@@ -1923,6 +1954,10 @@ def main():
     primary_highlight = None
     lock_stat_order = True
     optimizer_method = DEFAULT_OPTIMIZATION_METHOD
+    optimizer_engine = OPT_ENGINE_LEGACY
+    optimizer_objective_type = OPT_OBJECTIVE_STAT_RANK
+    optimizer_encounter_profile = ""
+    optimizer_lambda_status = 1.0
     optimizer_weights = None
     optimizer_weight_signature = None
     optimize_with_weight = False
@@ -2043,6 +2078,37 @@ def main():
         ranking_stats = [*ranking_stats, "weight"]
 
     if advanced_mode and not detailed_view_active:
+        engine_options = [OPT_ENGINE_LEGACY, OPT_ENGINE_DIALECT_V2]
+        ensure_state_in_options("optimizer_engine", engine_options, OPT_ENGINE_LEGACY)
+        optimizer_engine = str(st.session_state.get("optimizer_engine", OPT_ENGINE_LEGACY))
+
+        objective_options = [OPT_OBJECTIVE_STAT_RANK]
+        if dataset == "armors":
+            objective_options.append(OPT_OBJECTIVE_ENCOUNTER)
+        ensure_state_in_options(
+            "optimizer_objective_type",
+            objective_options,
+            OPT_OBJECTIVE_STAT_RANK,
+        )
+        optimizer_objective_type = str(
+            st.session_state.get("optimizer_objective_type", OPT_OBJECTIVE_STAT_RANK)
+        )
+
+        profile_options = list_encounter_profiles()
+        if profile_options:
+            ensure_state_in_options(
+                "optimizer_encounter_profile",
+                profile_options,
+                profile_options[0],
+            )
+            optimizer_encounter_profile = str(
+                st.session_state.get("optimizer_encounter_profile", profile_options[0])
+            )
+
+        if "optimizer_lambda_status" not in st.session_state:
+            st.session_state["optimizer_lambda_status"] = 1.0
+        optimizer_lambda_status = float(st.session_state.get("optimizer_lambda_status", 1.0))
+
         method_options = list(OPTIMIZER_METHODS.keys())
         ensure_state_in_options("optimizer_method", method_options, DEFAULT_OPTIMIZATION_METHOD)
         optimizer_method = str(
@@ -2276,6 +2342,10 @@ def main():
             "opt_with_weight": str(optimize_with_weight).lower(),
             "single_stat": highlighted_stats[0] if highlighted_stats else "",
             "method": optimizer_method,
+            "opt_engine": optimizer_engine,
+            "objective": optimizer_objective_type,
+            "profile": optimizer_encounter_profile,
+            "lambda_status": str(optimizer_lambda_status),
             "use_max_weight": str(use_max_weight).lower(),
             "hist_view": hist_view_mode,
             "max_weight": str(max_weight_limit) if max_weight_limit is not None else "",
@@ -2294,11 +2364,23 @@ def main():
             st.info("Sampled ranking mode active for performance (showing first 1200 candidates).")
 
         ascending = sort_choice == "Lowest First"
-        if dataset in ["armors", "talismans"] and len(ranking_stats) >= 2:
+        use_dialect_optimizer = optimizer_engine == OPT_ENGINE_DIALECT_V2
+        use_encounter_objective = (
+            use_dialect_optimizer
+            and optimizer_objective_type == OPT_OBJECTIVE_ENCOUNTER
+            and dataset == "armors"
+        )
+        can_optimize = len(ranking_stats) >= 2 or use_encounter_objective
+
+        if dataset in ["armors", "talismans"] and can_optimize:
             try:
                 local_optimizer_weights = None
                 local_weight_signature = None
-                if optimizer_method == "weighted_sum_normalized" and ranking_stats:
+                if (
+                    optimizer_method == "weighted_sum_normalized"
+                    and ranking_stats
+                    and optimizer_objective_type == OPT_OBJECTIVE_STAT_RANK
+                ):
                     local_optimizer_weights = {}
                     for stat in ranking_stats:
                         weight_key = f"opt_weight_{safe_stat_key(stat)}"
@@ -2327,20 +2409,90 @@ def main():
                     if optimizer_method == "weighted_sum_normalized" and local_optimizer_weights
                     else {stat: 1.0 for stat in ranking_stats}
                 )
-                dialect_request_payload = {
-                    "version": 1,
-                    "scope": "single_piece",
-                    "objective": {
-                        "type": "stat_rank",
-                        "method": optimizer_method,
-                        "weights": weight_payload,
-                    },
-                    "selected_stats": list(ranking_stats),
-                    "config": {
-                        "minimize_stats": ["weight"] if optimize_with_weight else [],
-                        "lock_stat_order": lock_stat_order,
-                    },
-                }
+
+                encounter_scope = "single_piece"
+                if dataset == "armors" and armor_full_set:
+                    encounter_scope = "full_set"
+
+                dialect_request_payload = {}
+                if use_encounter_objective:
+                    profile_request = None
+                    if optimizer_encounter_profile:
+                        profile_path = ROOT / "data" / "profiles" / optimizer_encounter_profile
+                        if profile_path.exists():
+                            try:
+                                profile_request = load_request(profile_path)
+                            except Exception:
+                                profile_request = None
+
+                    if profile_request is None:
+                        fallback_mix = {"neg.phys": 1.0}
+                        primary_to_neg = {
+                            "Dmg: Phy": "neg.phys",
+                            "Dmg: VS Str.": "neg.str",
+                            "Dmg: VS Sla.": "neg.sla",
+                            "Dmg: VS Pie.": "neg.pie",
+                            "Dmg: Mag": "neg.mag",
+                            "Dmg: Fir": "neg.fir",
+                            "Dmg: Lit": "neg.lit",
+                            "Dmg: Hol": "neg.hol",
+                        }
+                        if primary_highlight in primary_to_neg:
+                            fallback_mix = {primary_to_neg[str(primary_highlight)]: 1.0}
+
+                        dialect_request_payload = {
+                            "version": 1,
+                            "scope": encounter_scope,
+                            "objective": {
+                                "type": OPT_OBJECTIVE_ENCOUNTER,
+                                "hp": 1600,
+                                "eps": 0.01,
+                                "lambda_status": float(optimizer_lambda_status),
+                            },
+                            "constraints": {
+                                "max_weight": float(max_weight_limit)
+                                if use_max_weight and max_weight_limit is not None
+                                else None,
+                            },
+                            "encounter": {
+                                "name": "UI_Fallback_Profile",
+                                "incoming": {"damage_mix": fallback_mix},
+                                "status_threats": {},
+                            },
+                        }
+                    else:
+                        dialect_request_payload = dict(profile_request)
+                        dialect_request_payload["scope"] = encounter_scope
+                        dialect_request_payload["objective"] = dict(
+                            dialect_request_payload.get("objective") or {}
+                        )
+                        dialect_request_payload["objective"]["type"] = OPT_OBJECTIVE_ENCOUNTER
+                        dialect_request_payload["objective"]["lambda_status"] = float(
+                            optimizer_lambda_status
+                        )
+                        dialect_request_payload["constraints"] = dict(
+                            dialect_request_payload.get("constraints") or {}
+                        )
+                        if use_max_weight and max_weight_limit is not None:
+                            dialect_request_payload["constraints"]["max_weight"] = float(
+                                max_weight_limit
+                            )
+                else:
+                    dialect_request_payload = {
+                        "version": 1,
+                        "scope": "single_piece",
+                        "objective": {
+                            "type": OPT_OBJECTIVE_STAT_RANK,
+                            "method": optimizer_method,
+                            "weights": weight_payload,
+                        },
+                        "selected_stats": list(ranking_stats),
+                        "config": {
+                            "minimize_stats": ["weight"] if optimize_with_weight else [],
+                            "lock_stat_order": lock_stat_order,
+                        },
+                    }
+
                 dialect_request_hash = hashlib.sha256(
                     json.dumps(dialect_request_payload, sort_keys=True).encode("utf-8")
                 ).hexdigest()
@@ -2350,6 +2502,24 @@ def main():
                     cached_df = rank_cache[cache_key].copy()
                     if "__opt_score" in cached_df.columns and "__opt_tiebreak" in cached_df.columns:
                         working_df = cached_df
+                    else:
+                        if use_dialect_optimizer:
+                            working_df = optimize_dialect(working_df, dialect_request_payload)
+                        else:
+                            working_df = optimize_single_piece(
+                                working_df,
+                                selected_stats=ranking_stats,
+                                method=optimizer_method,
+                                config={
+                                    "weights": weight_payload,
+                                    "minimize_stats": ["weight"] if optimize_with_weight else [],
+                                    "lock_stat_order": lock_stat_order,
+                                },
+                            )
+                        rank_cache[cache_key] = working_df.copy()
+                else:
+                    if use_dialect_optimizer:
+                        working_df = optimize_dialect(working_df, dialect_request_payload)
                     else:
                         working_df = optimize_single_piece(
                             working_df,
@@ -2361,25 +2531,19 @@ def main():
                                 "lock_stat_order": lock_stat_order,
                             },
                         )
-                        rank_cache[cache_key] = working_df.copy()
-                else:
-                    working_df = optimize_single_piece(
-                        working_df,
-                        selected_stats=ranking_stats,
-                        method=optimizer_method,
-                        config={
-                            "weights": weight_payload,
-                            "minimize_stats": ["weight"] if optimize_with_weight else [],
-                            "lock_stat_order": lock_stat_order,
-                        },
-                    )
                     rank_cache[cache_key] = working_df.copy()
 
                 if "__opt_score" in working_df.columns and "__opt_tiebreak" in working_df.columns:
-                    working_df = working_df.sort_values(
-                        by=["__opt_score", "__opt_tiebreak"],
-                        ascending=[ascending, ascending],
-                    )
+                    if use_encounter_objective:
+                        working_df = working_df.sort_values(
+                            by=["__opt_score", "__opt_tiebreak"],
+                            ascending=[True, False],
+                        )
+                    else:
+                        working_df = working_df.sort_values(
+                            by=["__opt_score", "__opt_tiebreak"],
+                            ascending=[ascending, ascending],
+                        )
                 elif primary_highlight and primary_highlight in working_df.columns:
                     working_df = working_df.sort_values(by=primary_highlight, ascending=ascending)
             except ValueError:
@@ -2755,22 +2919,79 @@ def main():
             if advanced_mode:
                 controls_left, controls_right = st.columns([1, 1], gap="medium")
                 with controls_right:
+                    engine_options = [OPT_ENGINE_LEGACY, OPT_ENGINE_DIALECT_V2]
+                    ensure_state_in_options(
+                        "optimizer_engine",
+                        engine_options,
+                        OPT_ENGINE_LEGACY,
+                    )
+                    st.markdown("<div style='height: 0.32rem;'></div>", unsafe_allow_html=True)
+                    optimizer_engine = st.selectbox(
+                        "Optimization engine",
+                        options=engine_options,
+                        key="optimizer_engine",
+                    )
+
+                    objective_options = [OPT_OBJECTIVE_STAT_RANK]
+                    if dataset == "armors":
+                        objective_options.append(OPT_OBJECTIVE_ENCOUNTER)
+                    ensure_state_in_options(
+                        "optimizer_objective_type",
+                        objective_options,
+                        OPT_OBJECTIVE_STAT_RANK,
+                    )
+                    optimizer_objective_type = st.selectbox(
+                        "Objective",
+                        options=objective_options,
+                        key="optimizer_objective_type",
+                    )
+
+                    if optimizer_engine == OPT_ENGINE_DIALECT_V2 and optimizer_objective_type == OPT_OBJECTIVE_ENCOUNTER:
+                        profile_options = list_encounter_profiles()
+                        if profile_options:
+                            ensure_state_in_options(
+                                "optimizer_encounter_profile",
+                                profile_options,
+                                profile_options[0],
+                            )
+                            optimizer_encounter_profile = st.selectbox(
+                                "Encounter profile",
+                                options=profile_options,
+                                key="optimizer_encounter_profile",
+                            )
+                        optimizer_lambda_status = st.number_input(
+                            "Status fear (λ)",
+                            min_value=0.0,
+                            step=0.1,
+                            key="optimizer_lambda_status",
+                        )
+
                     method_options = list(OPTIMIZER_METHODS.keys())
                     ensure_state_in_options(
                         "optimizer_method",
                         method_options,
                         DEFAULT_OPTIMIZATION_METHOD,
                     )
-                    st.markdown("<div style='height: 0.32rem;'></div>", unsafe_allow_html=True)
                     optimizer_method = st.selectbox(
                         "Optimization method",
                         options=method_options,
                         key="optimizer_method",
+                        disabled=(
+                            optimizer_engine == OPT_ENGINE_DIALECT_V2
+                            and optimizer_objective_type == OPT_OBJECTIVE_ENCOUNTER
+                        ),
                     )
 
                     optimizer_weights = None
                     optimizer_weight_signature = None
-                    if optimizer_method == "weighted_sum_normalized" and ranking_stats:
+                    if (
+                        optimizer_method == "weighted_sum_normalized"
+                        and ranking_stats
+                        and not (
+                            optimizer_engine == OPT_ENGINE_DIALECT_V2
+                            and optimizer_objective_type == OPT_OBJECTIVE_ENCOUNTER
+                        )
+                    ):
                         st.markdown("<div style='height: 0.25rem;'></div>", unsafe_allow_html=True)
                         optimizer_weights = {}
                         for stat in ranking_stats:
@@ -2789,6 +3010,14 @@ def main():
                         )
 
                 with controls_left:
+                    if (
+                        optimizer_engine == OPT_ENGINE_DIALECT_V2
+                        and optimizer_objective_type == OPT_OBJECTIVE_ENCOUNTER
+                    ):
+                        st.info(
+                            "Optimization 2.0 active: score minimizes encounter survival cost "
+                            "(J = M + λ·StatusPenalty)."
+                        )
                     if show_weight_note and "weight" in ranking_stats:
                         st.info("Optimization note: `weight` is minimized; all other selected stats are maximized.")
 
@@ -3328,6 +3557,49 @@ def main():
     if (dataset == "armors" and armor_full_set) or (dataset == "talismans" and talisman_full_set):
         st.markdown("---")
         st.subheader("Full armor set preview" if dataset == "armors" else "Full talisman set preview")
+
+        if (
+            dataset == "armors"
+            and optimizer_engine == OPT_ENGINE_DIALECT_V2
+            and optimizer_objective_type == OPT_OBJECTIVE_ENCOUNTER
+        ):
+            ranked_sets_df, _ = rank_display_df(display_df, None)
+            if ranked_sets_df.empty:
+                st.info("No full-set candidates matched the current Optimization 2.0 constraints.")
+                return
+
+            st.caption(
+                "Optimization 2.0 full-set ranking is active. "
+                "Lower `final_score_J` is better for encounter survival."
+            )
+            shown_cols = [
+                "Helm",
+                "Armor",
+                "Gauntlets",
+                "Greaves",
+                "total_weight",
+                "expected_taken_M",
+                "status_penalty",
+                "final_score_J",
+                "effective_hp",
+                "__opt_rank",
+            ]
+            shown_cols = [col for col in shown_cols if col in ranked_sets_df.columns]
+            display_rows = ranked_sets_df.head(per_page)
+            render_download_button_for_rows(display_rows, "Full set (Optimization 2.0)", "full_set_opt2")
+            st.dataframe(display_rows[shown_cols], use_container_width=True)
+
+            selected_names = set()
+            for _, row in display_rows.iterrows():
+                for piece_col in ["Helm", "Armor", "Gauntlets", "Greaves"]:
+                    val = str(row.get(piece_col, "")).strip()
+                    if val:
+                        selected_names.add(val)
+            if selected_names and "name" in df.columns:
+                detail_df = df[df["name"].astype(str).isin(selected_names)]
+                render_item_detail_inspector(detail_df, panel_key=f"{dataset}_full_set_opt2")
+            return
+
         st.markdown(
             f"""
             <style>
