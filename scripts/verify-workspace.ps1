@@ -25,8 +25,8 @@ $requiredPaths = @(
     "environment.yml",
     "requirements.txt",
     "data/armors.csv",
-    "final_check.py",
-    "optimizer_check.py",
+    "tools/final_check.py",
+    "tools/optimizer_check.py",
     "tools/workspace_verify.py"
 )
 

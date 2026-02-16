@@ -36,7 +36,7 @@ Based on session docs and current code, the project has gone through:
 ### Data integrity and safety posture
 
 - App verifies checksum manifest against `data_checksums.json` at runtime.
-- `secure_data.py` is available to regenerate manifest and backup archive.
+- `python -m tools.secure_data` is available to regenerate manifest and backup archive.
 - Data files were audited read-only in this deep dive.
 
 ### Structure tightening completed in this pass
@@ -47,7 +47,7 @@ Based on session docs and current code, the project has gone through:
   - `optimizer_check`
   - `secure_data`
   into `tools/`.
-- Kept original root entrypoints as compatibility wrappers, so existing commands and scripts remain valid.
+- Standardized commands on module entrypoints (`python -m tools.final_check`, `python -m tools.optimizer_check`, `python -m tools.secure_data`).
 - Hardened app subprocess behavior to use `sys.executable` for helper invocation in the active runtime.
 
 ## Documentation Quality Assessment
@@ -61,7 +61,7 @@ Based on session docs and current code, the project has gone through:
 ### Tightened
 
 - Added this deep-dive status document for consolidated “past/present/future” visibility.
-- Updated README structure to reflect `tools/` organization and wrapper entrypoints.
+- Updated README structure to reflect `tools/` organization and module entrypoints.
 
 ## Data Snapshot (Read-Only)
 

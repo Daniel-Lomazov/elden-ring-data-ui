@@ -174,7 +174,7 @@ def main():
     def generate_manifest():
         # run the secure_data helper to (re)generate manifest + backup
         try:
-            subprocess.run([sys.executable, str(ROOT / "secure_data.py")], check=True)
+            subprocess.run([sys.executable, "-m", "tools.secure_data"], check=True)
         except Exception:
             pass
 

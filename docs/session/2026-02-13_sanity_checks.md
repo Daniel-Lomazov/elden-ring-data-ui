@@ -4,9 +4,9 @@ This file summarizes the current sanity-check coverage and the debug/alignment p
 
 ## Existing Sanity Checks
 
-- `final_check.py`
+- `python -m tools.final_check`
   - Import integrity and dataset access validation.
-- `optimizer_check.py`
+- `python -m tools.optimizer_check`
   - Optimizer behavior smoke checks.
 - Script-level readiness checks in `start-app.ps1`
   - TCP listener detection

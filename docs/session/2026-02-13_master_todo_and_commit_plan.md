@@ -60,8 +60,8 @@ This is the consolidated, actionable list of all major issues encountered from s
 
 ### 5) Validation and Traceability
 
-- [x] Keep `final_check.py` passing.
-- [x] Add and run `optimizer_check.py`.
+- [x] Keep `python -m tools.final_check` passing.
+- [x] Add and run `python -m tools.optimizer_check`.
 - [x] Verify app readiness by both listener and HTTP checks.
 - [x] Document request catalog, timeline, nuanced review, sanity checks.
 - [x] Keep session docs updated after next histogram-alignment pass.
@@ -80,7 +80,7 @@ This is the consolidated, actionable list of all major issues encountered from s
 3. **Automation scripts**
    - `scripts/*.ps1` (except logs/artifacts)
 4. **Verification/check scripts**
-   - `final_check.py`, `optimizer_check.py`, `secure_data.py`
+   - `tools/final_check.py`, `tools/optimizer_check.py`, `tools/secure_data.py`
 5. **Documentation**
    - `README.md`, `ui_smoke_checklist.md`, `docs/session/*.md`
 6. **Data assets**
@@ -104,7 +104,7 @@ This is the consolidated, actionable list of all major issues encountered from s
 - [x] Classify commit vs local-only files.
 - [ ] Ensure `.gitignore` reflects this policy (especially stop ignoring core tracked files).
 - [ ] Stage commit-worthy files only.
-- [ ] Run verification checks (`final_check.py`, `optimizer_check.py`).
+- [ ] Run verification checks (`python -m tools.final_check`, `python -m tools.optimizer_check`).
 - [ ] Commit with one comprehensive message.
 - [ ] Push to `origin/main`.
 
