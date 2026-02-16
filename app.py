@@ -47,21 +47,20 @@ st.set_page_config(page_title="Elden Ring - Ranking UI", page_icon="🏆", layou
 
 MULTI_STAT_METHOD = DEFAULT_OPTIMIZATION_METHOD
 
+def labeler(_name: str) -> str:
+    name_parts = _name.split("_")
+    return " ".join(part.capitalize() for part in name_parts)
+
 ARMOR_MODE_SINGLE_PIECE = "single_piece"
 ARMOR_MODE_FULL_ARMOR_SET = "full_armor_set"
 ARMOR_MODE_COMPLETE_ARMOR_SET = "complete_armor_set"
-ARMOR_MODE_LABELS = {
-    ARMOR_MODE_SINGLE_PIECE: "Single piece",
-    ARMOR_MODE_FULL_ARMOR_SET: "Full armor set",
-    ARMOR_MODE_COMPLETE_ARMOR_SET: "Complete armor set",
-}
+ARMOR_MODES = [ARMOR_MODE_SINGLE_PIECE, ARMOR_MODE_FULL_ARMOR_SET, ARMOR_MODE_COMPLETE_ARMOR_SET]
+ARMOR_MODE_LABELS = {armor_mode: labeler(armor_mode) for armor_mode in ARMOR_MODES}
 
 TALISMAN_MODE_SINGLE = "single"
 TALISMAN_MODE_FULL_SET = "full_set"
-TALISMAN_MODE_LABELS = {
-    TALISMAN_MODE_SINGLE: "Single",
-    TALISMAN_MODE_FULL_SET: "Full set",
-}
+TALISMAN_MODES = [TALISMAN_MODE_SINGLE, TALISMAN_MODE_FULL_SET]
+TALISMAN_MODE_LABELS = {talisman_mode: labeler(talisman_mode) for talisman_mode in TALISMAN_MODES}
 TALISMAN_SLOT_LABELS = ["Slot 1", "Slot 2", "Slot 3", "Slot 4"]
 
 VIEW_MODE_OPTIMIZATION = "Optimization view"
@@ -79,6 +78,11 @@ STACK_VIEW_HORIZONTAL = "Horizontal"
 STAT_ICON_SIZE_PX = 22
 STAT_TOP_ICON_SIZE_PX = 24
 STAT_PANEL_VALUE_DECIMALS = 2
+ARMOR_PANEL_SPACER_RATIO = 0.25
+ARMOR_PANEL_SPACER_LEFT_RATIO = ARMOR_PANEL_SPACER_RATIO
+ARMOR_PANEL_SPACER_RIGHT_RATIO = ARMOR_PANEL_SPACER_RATIO
+ARMOR_PANEL_MIDDLE_SPACER_RATIO = ARMOR_PANEL_SPACER_RATIO
+ARMOR_PANEL_DENSITY_SCALE = 0.82
 
 ARMOR_PIECE_ORDER = [
     "Helm",
@@ -404,24 +408,7 @@ def main():
             unsafe_allow_html=True,
         )
 
-    def armor_panel_item_html(stat_name: str, value, icon_size: int = STAT_ICON_SIZE_PX) -> str:
-        token = str(stat_name or "").strip()
-        meta = get_stat_ui_meta(token)
-        label = str(meta.get("display_name", token)).strip() or token
-        short_label = label.replace(" Damage Negation", "").replace(" Resistance", "")
-        icon_html = stat_icon_html(token, size_px=icon_size)
-        value_text = format_metric_value(value)
-        return (
-            "<div class='er-armor-item'>"
-            f"<span class='er-armor-item-left'>{icon_html} <span>{html.escape(short_label)}</span></span>"
-            f"<span class='er-armor-item-value'>{html.escape(value_text)}</span>"
-            "</div>"
-        )
-
     def render_armor_square_stat_panel(container, row: pd.Series):
-        top_left_stat = "Res: Poi."
-        top_right_stats = ["weight"]
-
         physical_damage_stats = ["Dmg: Phy", "Dmg: VS Str.", "Dmg: VS Sla.", "Dmg: VS Pie."]
         elemental_damage_stats = ["Dmg: Mag", "Dmg: Fir", "Dmg: Lit", "Dmg: Hol"]
         resistance_stats = [
@@ -442,51 +429,70 @@ def main():
                 return False
             return pd.notna(num)
 
-        top_left_html = ""
-        if top_left_stat and stat_has_value(top_left_stat):
-            top_left_html = armor_panel_item_html(top_left_stat, row.get(top_left_stat), icon_size=STAT_TOP_ICON_SIZE_PX)
-
-        top_right_html_parts = []
-        for stat_name in top_right_stats:
-            if stat_has_value(stat_name):
-                top_right_html_parts.append(
-                    armor_panel_item_html(stat_name, row.get(stat_name), icon_size=STAT_TOP_ICON_SIZE_PX)
-                )
-        top_right_html = "".join(top_right_html_parts)
-
-        def build_section_html(title: str, stats: list[str]) -> str:
-            entries = []
-            for stat_name in stats:
-                if not stat_has_value(stat_name):
-                    continue
-                entries.append(armor_panel_item_html(stat_name, row.get(stat_name)))
-            if not entries:
-                entries.append("<div class='er-armor-item er-armor-item-empty'>—</div>")
-            return (
-                "<div class='er-armor-section'>"
-                f"<div class='er-armor-section-title'>{html.escape(title)}</div>"
-                + "".join(entries)
-                + "</div>"
+        def render_row_metric(target, stat_name: str, icon_size: int = STAT_ICON_SIZE_PX):
+            token = str(stat_name or "").strip()
+            if not token or not stat_has_value(token):
+                return
+            meta = get_stat_ui_meta(token)
+            label = str(meta.get("display_name", token)).strip() or token
+            short_label = label.replace(" Damage Negation", "").replace(" Resistance", "")
+            icon_html = stat_icon_html(token, size_px=icon_size)
+            value_text = format_metric_value(row.get(token))
+            row_min_height = max(20, int(30 * ARMOR_PANEL_DENSITY_SCALE))
+            row_padding = max(0, int(3 * ARMOR_PANEL_DENSITY_SCALE))
+            target.markdown(
+                (
+                    f"<div style='display:flex;align-items:center;justify-content:space-between;"
+                    f"min-height:{row_min_height}px;padding:{row_padding}px 0;gap:8px;'>"
+                    f"<span style='display:inline-flex;align-items:center;gap:8px'>{icon_html}<span>{html.escape(short_label)}</span></span>"
+                    f"<span style='text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap'>{html.escape(value_text)}</span>"
+                    "</div>"
+                ),
+                unsafe_allow_html=True,
             )
 
-        physical_html = build_section_html("Damage Negation", physical_damage_stats)
-        elemental_html = build_section_html("Elemental", elemental_damage_stats)
-        resistance_html = build_section_html("Resistances", resistance_stats)
-        top_left_block = top_left_html
-        top_right_block = top_right_html
+        try:
+            panel = container.container(border=True)
+        except TypeError:
+            panel = container.container()
 
-        panel_html = (
-            "<div class='er-armor-panel'>"
-            "<div class='er-armor-top'>"
-            f"<div class='er-armor-top-left'>{top_left_block}</div>"
-            f"<div class='er-armor-top-right'>{top_right_block}</div>"
-            "</div>"
-            "<div class='er-armor-grid'>"
-            f"{physical_html}{elemental_html}{resistance_html}"
-            "</div>"
-            "</div>"
-        )
-        container.markdown(panel_html, unsafe_allow_html=True)
+        col_left, col_middle, col_right = panel.columns([1.0, ARMOR_PANEL_MIDDLE_SPACER_RATIO, 1.0])
+
+        with col_left:
+            render_row_metric(st, "Res: Poi.", icon_size=STAT_TOP_ICON_SIZE_PX)
+        with col_middle:
+            st.markdown(" ")
+        with col_right:
+            render_row_metric(st, "weight", icon_size=STAT_TOP_ICON_SIZE_PX)
+
+        with col_left:
+            st.markdown(" ")
+
+        with col_middle:
+            st.markdown(" ")
+
+        with col_right:
+            st.markdown(" ")
+
+        with col_left:
+            st.markdown("**Physical Damage Negation**")
+            for stat_name in physical_damage_stats:
+                render_row_metric(st, stat_name)
+
+            st.markdown(" ")
+            st.markdown("**Elemental Damage Negation**")
+            for stat_name in elemental_damage_stats:
+                render_row_metric(st, stat_name)
+
+        with col_middle:
+            st.markdown(" ")
+
+        with col_right:
+            render_row_metric(st, "weight", icon_size=STAT_TOP_ICON_SIZE_PX)
+            st.markdown(" ")
+            st.markdown("**Status Effects Resistances**")
+            for stat_name in resistance_stats:
+                render_row_metric(st, stat_name)
 
     def is_truthy_flag(value) -> bool:
         if value is None:
@@ -1000,74 +1006,6 @@ def main():
             font-variant-numeric: tabular-nums;
             color: rgba(255, 255, 255, 0.98);
             white-space: nowrap;
-        }
-        .er-armor-panel {
-            margin-top: 6px;
-            border: 1px solid rgba(255,255,255,0.12);
-            border-radius: 10px;
-            padding: 8px;
-            background: rgba(255,255,255,0.03);
-        }
-        .er-armor-top {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-            margin-bottom: 8px;
-        }
-        .er-armor-top {
-            display: grid;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
-            gap: 8px;
-            margin-bottom: 8px;
-        }
-        .er-armor-top-slot {
-            border: 1px solid rgba(255,255,255,0.10);
-            border-radius: 8px;
-            padding: 6px;
-            background: rgba(0,0,0,0.10);
-            min-height: 34px;
-        }
-        .er-armor-top-slot-empty {
-            background: transparent;
-            border-color: transparent;
-        .er-armor-section {
-            border: 1px solid rgba(255,255,255,0.10);
-            border-radius: 8px;
-            padding: 6px;
-            f"<div class='er-armor-top-slot er-armor-top-left'>{top_left_block}</div>"
-            "<div class='er-armor-top-slot er-armor-top-slot-empty'></div>"
-            f"<div class='er-armor-top-slot er-armor-top-right'>{top_right_block}</div>"
-        .er-armor-section-title {
-            font-size: 0.78rem;
-            font-weight: 600;
-            opacity: 0.9;
-            margin-bottom: 4px;
-            text-transform: uppercase;
-            letter-spacing: 0.02em;
-        }
-        .er-armor-item {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 6px;
-            padding: 2px 0;
-            font-size: 0.84rem;
-            line-height: 1.2;
-        }
-        .er-armor-item-left {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            min-width: 0;
-        }
-        .er-armor-item-value {
-            font-variant-numeric: tabular-nums;
-            white-space: nowrap;
-            opacity: 0.98;
-        }
-        .er-armor-item-empty {
-            opacity: 0.65;
-            justify-content: center;
         }
         </style>
         """,
