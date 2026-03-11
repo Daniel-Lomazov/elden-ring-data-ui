@@ -420,13 +420,14 @@ def main():
     def format_stat_option_label(stat_name: str) -> str:
         meta = get_stat_ui_meta(stat_name)
         display = str(meta.get("display_name", stat_name)).strip() or str(stat_name)
-        icon = stat_icon_markdown(stat_name)
+        # Streamlit select/multiselect labels are plain text; markdown image URIs leak into the UI.
+        icon = str(meta.get("emoji", "📊")).strip() or "📊"
         return f"{icon} {display}"
 
     def format_stat_metric_label(stat_name: str, highlighted: bool = False) -> str:
         token = str(stat_name or "").strip()
         meta = get_stat_ui_meta(token)
-        icon = stat_icon_markdown(token)
+        icon = str(meta.get("emoji", "📊")).strip() or "📊"
         display_name = str(meta.get("display_name", token)).strip() or token
         prefix = "⭐ " if highlighted else ""
         return f"{prefix}{icon} {display_name}"
