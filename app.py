@@ -2763,6 +2763,10 @@ def main():
                 if dataset == "armors" and armor_full_set:
                     encounter_scope = "full_set"
 
+                stat_rank_scope = "single_piece"
+                if dataset == "armors" and armor_full_set:
+                    stat_rank_scope = "full_set"
+
                 dialect_request_payload = {}
                 if use_encounter_objective:
                     profile_request = None
@@ -2829,11 +2833,16 @@ def main():
                 else:
                     dialect_request_payload = {
                         "version": 1,
-                        "scope": "single_piece",
+                        "scope": stat_rank_scope,
                         "objective": {
                             "type": OPT_OBJECTIVE_STAT_RANK,
                             "method": optimizer_method,
                             "weights": weight_payload,
+                        },
+                        "constraints": {
+                            "max_weight": float(max_weight_limit)
+                            if use_max_weight and max_weight_limit is not None
+                            else None,
                         },
                         "selected_stats": list(ranking_stats),
                         "config": {
@@ -2916,6 +2925,10 @@ def main():
         return working_df, sampled_mode
 
     def build_ranking_caption() -> str | None:
+        if dataset == "armors" and armor_full_set:
+            return "Ranking full armor sets"
+        if dataset == "talismans" and talisman_full_set:
+            return "Ranking full talisman sets"
         if dataset in ["armors", "talismans"] and len(ranking_stats) >= 2:
             return "Ranking single piece stats"
         if primary_highlight:
@@ -3928,32 +3941,54 @@ def main():
         st.markdown("---")
         st.subheader("Full armor set preview" if dataset == "armors" else "Full talisman set preview")
 
-        if (
-            dataset == "armors"
-            and optimizer_engine == OPT_ENGINE_DIALECT_V2
-            and optimizer_objective_type == OPT_OBJECTIVE_ENCOUNTER
-        ):
+        if dataset == "armors" and optimizer_engine == OPT_ENGINE_DIALECT_V2:
             ranked_sets_df, _ = rank_display_df(display_df, None)
             if ranked_sets_df.empty:
                 st.info("No full-set candidates matched the current Optimization 2.0 constraints.")
                 return
 
-            st.caption(
-                "Optimization 2.0 full-set ranking is active. "
-                "Lower `final_score_J` is better for encounter survival."
-            )
-            shown_cols = [
-                "Helm",
-                "Armor",
-                "Gauntlets",
-                "Greaves",
-                "total_weight",
-                "expected_taken_M",
-                "status_penalty",
-                "final_score_J",
-                "effective_hp",
-                "__opt_rank",
-            ]
+            required_cols = {"Helm", "Armor", "Gauntlets", "Greaves"}
+            if not required_cols.issubset(set(ranked_sets_df.columns)):
+                st.info("Select at least two stats to enable full-set optimization in Optimization 2.0.")
+                return
+
+            if optimizer_objective_type == OPT_OBJECTIVE_ENCOUNTER:
+                st.caption(
+                    "Optimization 2.0 full-set ranking is active. "
+                    "Lower `final_score_J` is better for encounter survival."
+                )
+                shown_cols = [
+                    "Helm",
+                    "Armor",
+                    "Gauntlets",
+                    "Greaves",
+                    "total_weight",
+                    "expected_taken_M",
+                    "status_penalty",
+                    "final_score_J",
+                    "effective_hp",
+                    "__opt_rank",
+                ]
+            else:
+                st.caption(
+                    "Optimization 2.0 full-set stat ranking is active. "
+                    "Higher `__opt_score` is better for maximin/weighted stat-rank methods."
+                )
+                shown_cols = [
+                    "Helm",
+                    "Armor",
+                    "Gauntlets",
+                    "Greaves",
+                    "total_weight",
+                ]
+                shown_cols.extend([stat for stat in ranking_stats if stat in ranked_sets_df.columns])
+                shown_cols.extend([
+                    "__opt_score",
+                    "__opt_tiebreak",
+                    "__opt_method",
+                    "__opt_rank",
+                ])
+
             shown_cols = [col for col in shown_cols if col in ranked_sets_df.columns]
             display_rows = ranked_sets_df.head(per_page)
             render_download_button_for_rows(display_rows, "Full set (Optimization 2.0)", "full_set_opt2")
@@ -3969,6 +4004,12 @@ def main():
                 detail_df = df[df["name"].astype(str).isin(selected_names)]
                 render_item_detail_inspector(detail_df, panel_key=f"{dataset}_full_set_opt2")
             return
+
+        if dataset == "armors" and armor_full_set and optimizer_engine != OPT_ENGINE_DIALECT_V2:
+            st.info(
+                "Legacy full-scope preview composes per-slot rankings. "
+                "Switch engine to Optimization 2.0 for true full-set optimization."
+            )
 
         st.markdown(
             f"""

@@ -133,6 +133,10 @@ The `scripts/` folder is the best path for repeatable runs.
 - Optimization engines in UI (Optimization view):
   - `Legacy` (existing stat ranking flow)
   - `Optimization 2.0` (dialect API flow with optional `encounter_survival` objective)
+- Armor full-scope behavior:
+  - `Optimization 2.0` + `stat_rank` now performs true full-set ranking using prune-first combination search.
+  - `Optimization 2.0` + `encounter_survival` performs full-set encounter ranking.
+  - `Legacy` full-scope preview remains a per-slot composed view (not full-set combinatorial optimization).
 - Optimization metadata columns include:
   - `__opt_score`
   - `__opt_tiebreak`
@@ -281,6 +285,9 @@ Use one of these reliable refresh paths:
 
 - `optimizer/strategies/full_set_prune.py`
   - Full-set armor pruning + enumeration
+
+- `optimizer/strategies/full_set_stat_rank.py`
+  - Full-set stat-rank pruning + enumeration
 
 - `app.py`
   - UI controls for optimization method selection
