@@ -136,6 +136,7 @@ The `scripts/` folder is the best path for repeatable runs.
 - Armor full-scope behavior:
   - `Optimization 2.0` + `stat_rank` now performs true full-set ranking using prune-first combination search.
   - `Optimization 2.0` + `encounter_survival` performs full-set encounter ranking.
+  - `Optimization 2.0` + `Custom` scope supports slot-lock constraints (`include_names`) while optimizing the remaining slots.
   - `Legacy` full-scope preview remains a per-slot composed view (not full-set combinatorial optimization).
 - Optimization metadata columns include:
   - `__opt_score`
@@ -150,6 +151,7 @@ The `scripts/` folder is the best path for repeatable runs.
 - In the right control column set:
   - `Optimization engine` = `Optimization 2.0`
   - `Objective` = `encounter_survival` (or keep `stat_rank`)
+  - `Choose Scope` = `Custom` to lock specific armor slots and optimize around them
   - `Encounter profile` = one of `data/profiles/*.yaml`
   - `Status fear (λ)` as desired
 

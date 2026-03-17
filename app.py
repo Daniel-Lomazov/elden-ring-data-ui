@@ -882,6 +882,11 @@ def main():
         ]
         for key in dynamic_weight_keys:
             del st.session_state[key]
+        dynamic_custom_scope_keys = [
+            key for key in list(st.session_state.keys()) if key.startswith("armor_opt_custom_set_")
+        ]
+        for key in dynamic_custom_scope_keys:
+            del st.session_state[key]
         qp_clear()
         if current_armor_mode:
             st.session_state["armor_mode"] = current_armor_mode
@@ -1337,10 +1342,10 @@ def main():
     # Additional armor-specific UI: single-piece vs set and piece-type filter
     armor_single_piece = False
     armor_full_set = False
+    armor_custom_set = False
     talisman_single_piece = False
     talisman_full_set = False
     armor_piece_type = None
-    armor_placeholder_mode = False
     type_label_map = {}
     armor_piece_labels = []
     detailed_view_active = False
@@ -1641,10 +1646,64 @@ def main():
                 type_label_map, armor_piece_labels = resolve_armor_piece_types(df)
             elif armor_optimization_scope_mode == DETAILED_SCOPE_CUSTOM:
                 st.session_state["armor_mode"] = ARMOR_MODE_COMPLETE_ARMOR_SET
-                armor_placeholder_mode = True
+                armor_custom_set = True
+                type_label_map, armor_piece_labels = resolve_armor_piece_types(df)
+
+                custom_any_value = "Any"
+                custom_piece_names_by_label = {}
+                for piece_label in ARMOR_PIECE_ORDER:
+                    raw_type = type_label_map.get(piece_label, piece_label)
+                    piece_names = sorted(
+                        {
+                            str(name).strip()
+                            for name in df.loc[
+                                df["type"].astype(str) == str(raw_type),
+                                "name",
+                            ].dropna().tolist()
+                            if str(name).strip()
+                        }
+                    )
+                    custom_piece_names_by_label[piece_label] = piece_names
+
+                custom_btn_left, custom_btn_mid, custom_btn_right = st.sidebar.columns([1, 3, 1])
+                with custom_btn_mid:
+                    if st.button(
+                        "Lock Random Custom Armor Set",
+                        key="armor_opt_custom_scope_random_set",
+                        use_container_width=True,
+                    ):
+                        st.session_state["armor_opt_custom_scope_random_requested"] = True
+
+                if st.session_state.pop("armor_opt_custom_scope_random_requested", False):
+                    for piece_label in ARMOR_PIECE_ORDER:
+                        piece_names = custom_piece_names_by_label.get(piece_label, [])
+                        if not piece_names:
+                            continue
+                        target_key = f"armor_opt_custom_set_{safe_stat_key(piece_label)}"
+                        st.session_state[target_key] = random.choice(piece_names)
+
+                for piece_idx, piece_label in enumerate(ARMOR_PIECE_ORDER):
+                    piece_names = custom_piece_names_by_label.get(piece_label, [])
+                    options = [custom_any_value, *piece_names]
+                    target_key = f"armor_opt_custom_set_{safe_stat_key(piece_label)}"
+                    ensure_state_in_options(target_key, options, custom_any_value)
+                    selected_value = st.sidebar.selectbox(
+                        "Lock Slots:" if piece_idx == 0 else f"{piece_label}:",
+                        options=options,
+                        key=target_key,
+                        label_visibility="visible" if piece_idx == 0 else "collapsed",
+                    )
+                    if selected_value != custom_any_value:
+                        armor_detail_set_selection[piece_label] = selected_value
+
+                if armor_detail_set_selection:
+                    locked_count = len(armor_detail_set_selection)
+                    st.sidebar.caption(f"Locked slots: {locked_count}/4")
+                else:
+                    st.sidebar.caption("No locked slots selected. Custom scope behaves like full-set search.")
+
                 st.sidebar.info(
-                    "Custom scope in optimization is planned as a meticulous full-set optimizer. "
-                    "It is not implemented yet, so no results are shown in this mode."
+                    "Custom scope uses Optimization 2.0 full-set search with optional slot locks."
                 )
         else:
             detailed_view_active = True
@@ -2272,25 +2331,6 @@ def main():
         )
         return
 
-    if dataset == "armors" and armor_placeholder_mode:
-        st.markdown("---")
-        selected_mode_key = st.session_state.get("armor_mode", ARMOR_MODE_SINGLE_PIECE)
-        selected_mode_label = ARMOR_MODE_LABELS.get(selected_mode_key, "Armor mode")
-        st.info(
-            f"{selected_mode_label} is currently a placeholder mode. "
-            "This view is intentionally empty until implementation is added."
-        )
-        qp_update(
-            {
-                "dataset": selected_dataset_label,
-                "armor_mode": str(selected_mode_key),
-                "piece_type": "",
-                "stats": "",
-                "single_stat": "",
-            }
-        )
-        return
-
     # Controls (sidebar)
     # Use raw CSV column names for stat options and display labels (no friendly renaming)
     options_labels = list(stat_options)
@@ -2324,7 +2364,7 @@ def main():
 
     # In single-piece armor/talisman optimization mode, allow selecting many highlighted stats.
     advanced_mode = (
-        (dataset == "armors" and (armor_single_piece or armor_full_set))
+        (dataset == "armors" and (armor_single_piece or armor_full_set or armor_custom_set))
         or (dataset == "talismans" and (talisman_single_piece or talisman_full_set))
     )
 
@@ -2425,6 +2465,13 @@ def main():
     ranking_stats = list(highlighted_stats)
     if optimize_with_weight and "weight" in numeric_cols and "weight" not in ranking_stats:
         ranking_stats = [*ranking_stats, "weight"]
+
+    armor_custom_include_names = []
+    if dataset == "armors" and armor_custom_set:
+        for piece_label in ARMOR_PIECE_ORDER:
+            selected_name = str(armor_detail_set_selection.get(piece_label, "")).strip()
+            if selected_name:
+                armor_custom_include_names.append(selected_name)
 
     if advanced_mode and not detailed_view_active:
         engine_options = [OPT_ENGINE_LEGACY, OPT_ENGINE_DIALECT_V2]
@@ -2747,6 +2794,7 @@ def main():
                     tuple(ranking_stats),
                     optimizer_method,
                     local_weight_signature,
+                    tuple(armor_custom_include_names),
                     ascending,
                     sampled_mode,
                     use_max_weight,
@@ -2760,11 +2808,11 @@ def main():
                 )
 
                 encounter_scope = "single_piece"
-                if dataset == "armors" and armor_full_set:
+                if dataset == "armors" and (armor_full_set or armor_custom_set):
                     encounter_scope = "full_set"
 
                 stat_rank_scope = "single_piece"
-                if dataset == "armors" and armor_full_set:
+                if dataset == "armors" and (armor_full_set or armor_custom_set):
                     stat_rank_scope = "full_set"
 
                 dialect_request_payload = {}
@@ -2806,6 +2854,9 @@ def main():
                                 "max_weight": float(max_weight_limit)
                                 if use_max_weight and max_weight_limit is not None
                                 else None,
+                                "include_names": list(armor_custom_include_names)
+                                if armor_custom_set and armor_custom_include_names
+                                else None,
                             },
                             "encounter": {
                                 "name": "UI_Fallback_Profile",
@@ -2830,6 +2881,10 @@ def main():
                             dialect_request_payload["constraints"]["max_weight"] = float(
                                 max_weight_limit
                             )
+                        if armor_custom_set and armor_custom_include_names:
+                            dialect_request_payload["constraints"]["include_names"] = list(
+                                armor_custom_include_names
+                            )
                 else:
                     dialect_request_payload = {
                         "version": 1,
@@ -2842,6 +2897,9 @@ def main():
                         "constraints": {
                             "max_weight": float(max_weight_limit)
                             if use_max_weight and max_weight_limit is not None
+                            else None,
+                            "include_names": list(armor_custom_include_names)
+                            if armor_custom_set and armor_custom_include_names
                             else None,
                         },
                         "selected_stats": list(ranking_stats),
@@ -2927,6 +2985,8 @@ def main():
     def build_ranking_caption() -> str | None:
         if dataset == "armors" and armor_full_set:
             return "Ranking full armor sets"
+        if dataset == "armors" and armor_custom_set:
+            return "Ranking custom armor-set constraints"
         if dataset == "talismans" and talisman_full_set:
             return "Ranking full talisman sets"
         if dataset in ["armors", "talismans"] and len(ranking_stats) >= 2:
@@ -3937,9 +3997,12 @@ def main():
                 st.info("No complete set selection available for detailed view.")
         return
 
-    if (dataset == "armors" and armor_full_set) or (dataset == "talismans" and talisman_full_set):
+    if (dataset == "armors" and (armor_full_set or armor_custom_set)) or (dataset == "talismans" and talisman_full_set):
         st.markdown("---")
-        st.subheader("Full armor set preview" if dataset == "armors" else "Full talisman set preview")
+        if dataset == "armors" and armor_custom_set:
+            st.subheader("Custom armor set optimization preview")
+        else:
+            st.subheader("Full armor set preview" if dataset == "armors" else "Full talisman set preview")
 
         if dataset == "armors" and optimizer_engine == OPT_ENGINE_DIALECT_V2:
             ranked_sets_df, _ = rank_display_df(display_df, None)
@@ -4003,6 +4066,13 @@ def main():
             if selected_names and "name" in df.columns:
                 detail_df = df[df["name"].astype(str).isin(selected_names)]
                 render_item_detail_inspector(detail_df, panel_key=f"{dataset}_full_set_opt2")
+            return
+
+        if dataset == "armors" and armor_custom_set and optimizer_engine != OPT_ENGINE_DIALECT_V2:
+            st.info(
+                "Custom scope optimization requires Optimization 2.0. "
+                "Switch engine to Optimization 2.0 to apply slot-lock constraints."
+            )
             return
 
         if dataset == "armors" and armor_full_set and optimizer_engine != OPT_ENGINE_DIALECT_V2:
