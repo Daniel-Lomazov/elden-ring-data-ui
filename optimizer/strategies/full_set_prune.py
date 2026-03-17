@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import itertools
-from typing import Dict, List
+from typing import Dict, List, Set
 
 import pandas as pd
 
@@ -54,7 +54,28 @@ def _aggregate_combo_rows(rows: List[pd.Series], canonical_request: dict) -> dic
     return row
 
 
-def _prune_slot(slot_df: pd.DataFrame, request: dict, top_k: int) -> pd.DataFrame:
+def _merge_locked_rows(
+    pruned_df: pd.DataFrame,
+    slot_df: pd.DataFrame,
+    locked_names: Set[str],
+) -> pd.DataFrame:
+    if not locked_names or "name" not in slot_df.columns:
+        return pruned_df.reset_index(drop=True)
+
+    locked_rows = slot_df[slot_df["name"].astype(str).isin(locked_names)]
+    if locked_rows.empty:
+        return pruned_df.reset_index(drop=True)
+
+    merged = pd.concat([pruned_df, locked_rows], ignore_index=True)
+    return merged.drop_duplicates(subset=["name"], keep="first").reset_index(drop=True)
+
+
+def _prune_slot(
+    slot_df: pd.DataFrame,
+    request: dict,
+    top_k: int,
+    locked_names: Set[str],
+) -> pd.DataFrame:
     if slot_df.empty:
         return slot_df
 
@@ -65,7 +86,7 @@ def _prune_slot(slot_df: pd.DataFrame, request: dict, top_k: int) -> pd.DataFram
     req["objective"] = req_obj
 
     scored = optimize_encounter_survival(slot_df, req)
-    return scored.head(top_k).copy()
+    return _merge_locked_rows(scored.head(top_k).copy(), slot_df, locked_names)
 
 
 def optimize_encounter_survival_full_set(df: pd.DataFrame, request: dict) -> pd.DataFrame:
@@ -73,6 +94,11 @@ def optimize_encounter_survival_full_set(df: pd.DataFrame, request: dict) -> pd.
         return pd.DataFrame()
 
     constraints = request.get("constraints") or {}
+    locked_names = {
+        str(name).strip()
+        for name in (constraints.get("include_names") or [])
+        if str(name).strip()
+    }
     top_k = int(constraints.get("top_k_per_slot", 25))
     top_n = int(constraints.get("top_n", 50))
 
@@ -81,7 +107,7 @@ def optimize_encounter_survival_full_set(df: pd.DataFrame, request: dict) -> pd.
         return pd.DataFrame()
 
     pruned: Dict[str, pd.DataFrame] = {
-        slot: _prune_slot(slot_map[slot], request, top_k) for slot in SLOT_ORDER
+        slot: _prune_slot(slot_map[slot], request, top_k, locked_names) for slot in SLOT_ORDER
     }
 
     combos = itertools.product(

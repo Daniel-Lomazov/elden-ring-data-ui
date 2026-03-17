@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import itertools
-from typing import List
+from typing import List, Set
 
 import pandas as pd
 
@@ -47,7 +47,29 @@ def _aggregate_combo_rows(rows: List[pd.Series], selected_stats: List[str]) -> d
     return row
 
 
-def _prune_slot(slot_df: pd.DataFrame, request: dict, selected_stats: List[str], top_k: int) -> pd.DataFrame:
+def _merge_locked_rows(
+    pruned_df: pd.DataFrame,
+    slot_df: pd.DataFrame,
+    locked_names: Set[str],
+) -> pd.DataFrame:
+    if not locked_names or "name" not in slot_df.columns:
+        return pruned_df.reset_index(drop=True)
+
+    locked_rows = slot_df[slot_df["name"].astype(str).isin(locked_names)]
+    if locked_rows.empty:
+        return pruned_df.reset_index(drop=True)
+
+    merged = pd.concat([pruned_df, locked_rows], ignore_index=True)
+    return merged.drop_duplicates(subset=["name"], keep="first").reset_index(drop=True)
+
+
+def _prune_slot(
+    slot_df: pd.DataFrame,
+    request: dict,
+    selected_stats: List[str],
+    top_k: int,
+    locked_names: Set[str],
+) -> pd.DataFrame:
     if slot_df.empty:
         return slot_df
 
@@ -59,7 +81,7 @@ def _prune_slot(slot_df: pd.DataFrame, request: dict, selected_stats: List[str],
 
     slot_stats = [stat for stat in selected_stats if stat in slot_df.columns]
     if len(slot_stats) < 2:
-        return slot_df.head(top_k).copy()
+        return _merge_locked_rows(slot_df.head(top_k).copy(), slot_df, locked_names)
 
     ranked = optimize_single_piece(
         slot_df,
@@ -67,7 +89,7 @@ def _prune_slot(slot_df: pd.DataFrame, request: dict, selected_stats: List[str],
         method=method,
         config=config,
     )
-    return ranked.head(top_k).copy()
+    return _merge_locked_rows(ranked.head(top_k).copy(), slot_df, locked_names)
 
 
 def optimize_stat_rank_full_set(df: pd.DataFrame, request: dict) -> pd.DataFrame:
@@ -80,6 +102,11 @@ def optimize_stat_rank_full_set(df: pd.DataFrame, request: dict) -> pd.DataFrame
         raise ValueError("Full-set stat_rank requires at least 2 selected_stats")
 
     constraints = request.get("constraints") or {}
+    locked_names = {
+        str(name).strip()
+        for name in (constraints.get("include_names") or [])
+        if str(name).strip()
+    }
     top_k = int(constraints.get("top_k_per_slot", 25))
     top_n = int(constraints.get("top_n", 50))
 
@@ -88,7 +115,7 @@ def optimize_stat_rank_full_set(df: pd.DataFrame, request: dict) -> pd.DataFrame
         return pd.DataFrame()
 
     pruned = {
-        slot: _prune_slot(slot_map[slot], request, stats, top_k)
+        slot: _prune_slot(slot_map[slot], request, stats, top_k, locked_names)
         for slot in SLOT_ORDER
     }
 
