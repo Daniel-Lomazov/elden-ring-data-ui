@@ -9,6 +9,7 @@ import pandas as pd
 from .dialect import load_request
 from .strategies.encounter_survival import optimize_encounter_survival
 from .strategies.full_set_prune import optimize_encounter_survival_full_set
+from .strategies.full_set_stat_rank import optimize_stat_rank_full_set
 from .strategies.stat_rank import optimize_stat_rank
 
 
@@ -25,6 +26,8 @@ def optimize(df: pd.DataFrame, request: Dict[str, Any] | str) -> pd.DataFrame:
     objective_type = objective["type"]
 
     if objective_type == "stat_rank":
+        if canonical.get("scope") == "full_set":
+            return optimize_stat_rank_full_set(df, canonical)
         return optimize_stat_rank(df, canonical)
 
     if objective_type == "encounter_survival":
