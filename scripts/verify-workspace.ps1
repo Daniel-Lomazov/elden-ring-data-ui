@@ -7,6 +7,8 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+. "$PSScriptRoot\conda-utils.ps1"
+
 function Write-Step([string]$Message) {
     Write-Host "[verify] $Message" -ForegroundColor Cyan
 }
@@ -48,7 +50,12 @@ if ($Quick) {
 }
 
 $verifyTimer = [System.Diagnostics.Stopwatch]::StartNew()
-$envJson = conda env list --json | Out-String | ConvertFrom-Json
+$condaExe = Resolve-CondaExecutable
+if (-not $condaExe) {
+    throw "Conda is required but was not found. Install conda or initialize your shell."
+}
+
+$envJson = & $condaExe env list --json | Out-String | ConvertFrom-Json
 $envPath = $null
 foreach ($path in $envJson.envs) {
     if ((Split-Path $path -Leaf) -ieq $EnvName) {

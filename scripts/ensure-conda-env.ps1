@@ -8,6 +8,8 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+. "$PSScriptRoot\conda-utils.ps1"
+
 function Write-Step([string]$Message) {
     Write-Host "[env] $Message" -ForegroundColor Cyan
 }
@@ -24,15 +26,16 @@ Set-Location $repoRoot
 
 Write-Step "Workspace: $repoRoot"
 
-if (-not (Get-Command conda -ErrorAction SilentlyContinue)) {
-    throw "Conda is not installed or not on PATH."
+$condaExe = Resolve-CondaExecutable
+if (-not $condaExe) {
+    throw "Conda is not installed or not discoverable. Ensure conda is installed or initialize your shell."
 }
 
 if (-not (Test-Path $EnvFile)) {
     throw "Environment file not found: $EnvFile"
 }
 
-$envJson = conda env list --json | Out-String | ConvertFrom-Json
+$envJson = & $condaExe env list --json | Out-String | ConvertFrom-Json
 $envExists = $false
 foreach ($path in $envJson.envs) {
     if ((Split-Path $path -Leaf) -ieq $EnvName) {
@@ -43,10 +46,10 @@ foreach ($path in $envJson.envs) {
 
 if (-not $envExists) {
     Write-Step "Creating conda environment '$EnvName' from $EnvFile..."
-    conda env create -n $EnvName -f $EnvFile
+    & $condaExe env create -n $EnvName -f $EnvFile
 } elseif ($AlwaysUpdate) {
     Write-Step "Updating conda environment '$EnvName' from $EnvFile..."
-    conda env update -n $EnvName -f $EnvFile
+    & $condaExe env update -n $EnvName -f $EnvFile
 } else {
     Write-Step "Conda environment '$EnvName' already exists."
 }
@@ -63,8 +66,8 @@ if (Test-Path $RequirementsFile) {
     $needsPipSync = $AlwaysSyncPip -or $AlwaysUpdate -or (-not $envExists) -or ($currentHash -ne $previousHash)
     if ($needsPipSync) {
         Write-Step "Installing/updating pip requirements from $RequirementsFile..."
-        conda run -n $EnvName python -m pip install --upgrade pip
-        conda run -n $EnvName python -m pip install -r $RequirementsFile
+        & $condaExe run -n $EnvName python -m pip install --upgrade pip
+        & $condaExe run -n $EnvName python -m pip install -r $RequirementsFile
         if (-not (Test-Path $cacheDir)) {
             New-Item -ItemType Directory -Path $cacheDir | Out-Null
         }

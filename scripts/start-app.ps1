@@ -8,6 +8,8 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+. "$PSScriptRoot\conda-utils.ps1"
+
 function Write-Step([string]$Message) {
     Write-Host "[start-app] $Message" -ForegroundColor Green
 }
@@ -30,11 +32,12 @@ if ($ResetFirst) {
     & "$PSScriptRoot\reset-dev-session.ps1" -Port $Port
 }
 
-if (-not (Get-Command conda -ErrorAction SilentlyContinue)) {
-    throw "Conda is required but was not found on PATH."
+$condaExe = Resolve-CondaExecutable
+if (-not $condaExe) {
+    throw "Conda is required but was not found. Install conda or initialize your shell."
 }
 
-$envJson = conda env list --json | Out-String | ConvertFrom-Json
+$envJson = & $condaExe env list --json | Out-String | ConvertFrom-Json
 $envPath = $null
 foreach ($path in $envJson.envs) {
     if ((Split-Path $path -Leaf) -ieq $EnvName) {
