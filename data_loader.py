@@ -49,8 +49,17 @@ class DataLoader:
         ]
 
     @staticmethod
+    def _file_signature(filepath: str) -> Optional[tuple[int, int]]:
+        """Return a lightweight cache token that changes when file contents change."""
+        try:
+            stat_result = Path(filepath).stat()
+        except OSError:
+            return None
+        return (int(stat_result.st_mtime_ns), int(stat_result.st_size))
+
+    @staticmethod
     @st.cache_data
-    def load_column_instructions(filepath: str) -> dict:
+    def _load_column_instructions_cached(filepath: str, cache_token: object) -> dict:
         """Load JSON instructions describing dataset column-load profiles."""
         try:
             with open(filepath, "r", encoding="utf-8") as handle:
@@ -58,6 +67,12 @@ class DataLoader:
                 return data if isinstance(data, dict) else {}
         except Exception:
             return {}
+
+    @staticmethod
+    def load_column_instructions(filepath: str) -> dict:
+        return DataLoader._load_column_instructions_cached(
+            filepath, DataLoader._file_signature(filepath)
+        )
 
     def resolve_dataset_path(self, dataset_key: str) -> Path:
         """Map a dataset key (e.g., armors or items/ammos) to CSV path."""
@@ -120,13 +135,19 @@ class DataLoader:
 
     @staticmethod
     @st.cache_data
-    def get_file_columns(filepath: str) -> list[str]:
+    def _get_file_columns_cached(filepath: str, cache_token: object) -> list[str]:
         """Read only the CSV header and return available columns."""
         try:
             header_df = pd.read_csv(filepath, nrows=0)
             return [str(c) for c in header_df.columns]
         except Exception:
             return []
+
+    @staticmethod
+    def get_file_columns(filepath: str) -> list[str]:
+        return DataLoader._get_file_columns_cached(
+            filepath, DataLoader._file_signature(filepath)
+        )
 
     @staticmethod
     def _sanitize_column_sequence(columns: Optional[Sequence[str]]) -> Optional[list[str]]:
@@ -162,8 +183,9 @@ class DataLoader:
 
     @staticmethod
     @st.cache_data
-    def load_file(
+    def _load_file_cached(
         filepath: str,
+        cache_token: object,
         include_columns: Optional[tuple[str, ...]] = None,
         exclude_columns: Optional[tuple[str, ...]] = None,
         dtype_overrides: Optional[dict] = None,
@@ -207,6 +229,21 @@ class DataLoader:
         except Exception as e:
             st.error(f"Error loading {filepath}: {e}")
             return None
+
+    @staticmethod
+    def load_file(
+        filepath: str,
+        include_columns: Optional[tuple[str, ...]] = None,
+        exclude_columns: Optional[tuple[str, ...]] = None,
+        dtype_overrides: Optional[dict] = None,
+    ) -> Optional[pd.DataFrame]:
+        return DataLoader._load_file_cached(
+            filepath,
+            DataLoader._file_signature(filepath),
+            include_columns=include_columns,
+            exclude_columns=exclude_columns,
+            dtype_overrides=dtype_overrides,
+        )
 
     @staticmethod
     def drop_columns(df: pd.DataFrame, columns: Sequence[str]) -> pd.DataFrame:
