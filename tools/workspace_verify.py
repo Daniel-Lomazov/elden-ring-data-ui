@@ -5,6 +5,7 @@ from pathlib import Path
 
 from tools.final_check import run_checks as run_final_checks
 from tools.optimizer_check import run_checks as run_optimizer_checks
+from tools.optimizer_smoke import main as run_optimizer_smoke
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -40,12 +41,14 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Run workspace verification checks")
     parser.add_argument("--skip-final", action="store_true", help="Skip final_check")
     parser.add_argument("--skip-optimizer", action="store_true", help="Skip optimizer_check")
+    parser.add_argument("--skip-smoke", action="store_true", help="Skip optimizer_smoke")
     parser.add_argument("--skip-tests", action="store_true", help="Skip unittest discovery")
     parser.add_argument("--quick", action="store_true", help="Run faster verification path")
     args = parser.parse_args()
 
     steps: list[tuple[str, object]] = []
     skip_tests = args.skip_tests or args.quick
+    skip_smoke = args.skip_smoke or args.quick
 
     def run_final_entry() -> None:
         exit_code = int(
@@ -62,6 +65,8 @@ def main() -> int:
         steps.append(("final_check", run_final_entry))
     if not args.skip_optimizer:
         steps.append(("optimizer_check", run_optimizer_checks))
+    if not skip_smoke:
+        steps.append(("optimizer_smoke", run_optimizer_smoke))
     if not skip_tests:
         steps.append(("tests", run_unittest_checks))
 

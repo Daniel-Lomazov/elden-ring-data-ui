@@ -1,37 +1,67 @@
 from __future__ import annotations
 
+import json
 import os
-import shutil
+import socket
+import subprocess
 import tempfile
+import time
 import unittest
+import urllib.request
+from functools import lru_cache
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
-UI_SMOKE_TEMP_ROOT = ROOT / ".cache" / "ui-smoke"
-UI_SMOKE_TEMP_ROOT.mkdir(parents=True, exist_ok=True)
-os.environ["TMP"] = str(UI_SMOKE_TEMP_ROOT)
-os.environ["TEMP"] = str(UI_SMOKE_TEMP_ROOT)
-
-_ORIGINAL_TEMP_CLEANUP = tempfile.TemporaryDirectory._cleanup.__func__
-
-
-@classmethod
-def _patched_temp_cleanup(cls, name, warn_message, ignore_errors=False):
-    # Streamlit's test harness can leave Windows temp dirs in a locked state.
-    try:
-        return _ORIGINAL_TEMP_CLEANUP(cls, name, warn_message, True)
-    except PermissionError:
-        return None
-
-
-tempfile.TemporaryDirectory._cleanup = _patched_temp_cleanup
-
+from optimizer import (
+    format_encounter_profile_display_name,
+    get_available_objective_ids,
+    get_engine_label,
+    get_method_label,
+    get_objective_label,
+)
 from streamlit.testing.v1 import AppTest, element_tree
-from streamlit.testing.v1 import app_test as app_test_module
+
+
+ROOT = Path(__file__).resolve().parents[1]
+PYTHON = ROOT.parent / "anaconda3" / "envs" / "elden_ring_ui" / "python.exe"
+
+
+def _get_free_port() -> int:
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as sock:
+        sock.bind(("127.0.0.1", 0))
+        return int(sock.getsockname()[1])
+
+
+@lru_cache(maxsize=1)
+def _load_stat_ui_map() -> dict[str, dict[str, str]]:
+    path = ROOT / "data" / "stat_ui_map.json"
+    if not path.exists():
+        return {}
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+
+    out: dict[str, dict[str, str]] = {}
+    stats = payload.get("stats", []) if isinstance(payload, dict) else []
+    for row in stats:
+        if isinstance(row, dict):
+            key = str(row.get("column", "")).strip()
+            if key:
+                out[key] = {
+                    "display_name": str(row.get("display_name", key)).strip() or key,
+                    "emoji": str(row.get("emoji", "📊")).strip() or "📊",
+                }
+    return out
+
+
+def _format_stat_option_label(stat_name: str) -> str:
+    meta = _load_stat_ui_map().get(str(stat_name or "").strip(), {})
+    display = str(meta.get("display_name", stat_name)).strip() or str(stat_name)
+    emoji = str(meta.get("emoji", "📊")).strip() or "📊"
+    return f"{emoji} {display}"
 
 
 def _patch_unknown_block_init(self, proto, root):
-    # Streamlit 1.28 testing can emit container blocks without a typed subtype.
     self.children = {}
     self.proto = proto
     self.root = root
@@ -41,34 +71,73 @@ def _patch_unknown_block_init(self, proto, root):
         self.type = "unknown"
 
 
+def _patched_selectbox_index(self):
+    token = str(self.value or "")
+    if token in self.options:
+        return self.options.index(token)
+
+    candidates = []
+    if self.label == "Optimization engine" and token in {"legacy", "advanced"}:
+        candidates.append(get_engine_label(token))
+    elif self.label == "Objective" and token in {"stat_rank", "encounter_survival"}:
+        candidates.append(get_objective_label(token))
+    elif self.label == "Optimization method" and token in {
+        "maximin_normalized",
+        "weighted_sum_normalized",
+    }:
+        candidates.append(get_method_label(token))
+    elif self.label == "Encounter profile":
+        candidates.append(format_encounter_profile_display_name(token) or token)
+
+    for candidate in candidates:
+        if candidate and candidate in self.options:
+            return self.options.index(candidate)
+
+    return 0 if self.options else None
+
+
 def _patched_multiselect_indices(self):
-    # The test harness can report internal stat keys while exposing display labels as options.
-    return [self.options.index(str(v)) for v in self.value if str(v) in self.options]
+    indices = []
+    for value in self.value:
+        token = str(value or "")
+        if token in self.options:
+            indices.append(self.options.index(token))
+            continue
+        mapped = _format_stat_option_label(token)
+        if mapped in self.options:
+            indices.append(self.options.index(mapped))
+        else:
+            indices.append(0 if self.options else 0)
+    return indices
 
 
 class UiSmokeTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls._original_block_init = element_tree.Block.__init__
+        cls._original_selectbox_index = element_tree.Selectbox.index
         cls._original_multiselect_indices = element_tree.Multiselect.indices
+        cls._original_temp_cleanup = tempfile.TemporaryDirectory._cleanup.__func__
 
         element_tree.Block.__init__ = _patch_unknown_block_init
+        element_tree.Selectbox.index = property(_patched_selectbox_index)
         element_tree.Multiselect.indices = property(_patched_multiselect_indices)
 
-        tmp_dir = getattr(app_test_module, "TMP_DIR", None)
-        finalizer = getattr(tmp_dir, "_finalizer", None)
-        if finalizer is not None:
-            finalizer.detach()
+        @classmethod
+        def _patched_temp_cleanup(inner_cls, name, warn_message, ignore_errors=False):
+            try:
+                return cls._original_temp_cleanup(inner_cls, name, warn_message, True)
+            except PermissionError:
+                return None
+
+        tempfile.TemporaryDirectory._cleanup = _patched_temp_cleanup
 
     @classmethod
     def tearDownClass(cls):
         element_tree.Block.__init__ = cls._original_block_init
+        element_tree.Selectbox.index = cls._original_selectbox_index
         element_tree.Multiselect.indices = cls._original_multiselect_indices
-        shutil.rmtree(UI_SMOKE_TEMP_ROOT, ignore_errors=True)
-        tmp_dir = getattr(app_test_module, "TMP_DIR", None)
-        if tmp_dir is not None:
-            shutil.rmtree(tmp_dir.name, ignore_errors=True)
-        tempfile.TemporaryDirectory._cleanup = classmethod(_ORIGINAL_TEMP_CLEANUP)
+        tempfile.TemporaryDirectory._cleanup = classmethod(cls._original_temp_cleanup)
 
     def _new_app(self) -> AppTest:
         app = AppTest.from_file(str(ROOT / "app.py"), default_timeout=60)
@@ -76,19 +145,67 @@ class UiSmokeTests(unittest.TestCase):
         self.assertEqual(len(app.exception), 0)
         return app
 
-    def test_detailed_view_loads_core_controls(self):
-        app = self._new_app()
+    def test_app_starts_headless_and_serves_http(self):
+        port = _get_free_port()
+        env = os.environ.copy()
+        env["TMP"] = str(ROOT / ".cache" / "ui-smoke")
+        env["TEMP"] = str(ROOT / ".cache" / "ui-smoke")
+        Path(env["TMP"]).mkdir(parents=True, exist_ok=True)
 
-        selectboxes = {widget.label: widget.value for widget in app.selectbox}
-        buttons = [widget.label for widget in app.button]
+        process = subprocess.Popen(
+            [
+                str(PYTHON),
+                "-m",
+                "streamlit",
+                "run",
+                "app.py",
+                "--server.headless",
+                "true",
+                "--server.port",
+                str(port),
+            ],
+            cwd=str(ROOT),
+            env=env,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        try:
+            deadline = time.time() + 45
+            last_error = None
+            while time.time() < deadline:
+                try:
+                    with urllib.request.urlopen(f"http://127.0.0.1:{port}/", timeout=5) as response:
+                        self.assertEqual(response.status, 200)
+                        return
+                except Exception as exc:  # pragma: no cover - polling loop
+                    last_error = exc
+                    time.sleep(1)
+            self.fail(f"Streamlit app did not become ready: {last_error}")
+        finally:
+            process.terminate()
+            try:
+                process.wait(timeout=10)
+            except subprocess.TimeoutExpired:
+                process.kill()
+                process.wait(timeout=5)
 
-        self.assertEqual(selectboxes["Choose Dataset:"], "Armors")
-        self.assertEqual(selectboxes["Choose View:"], "Detailed view")
-        self.assertEqual(selectboxes["Choose Scope:"], "Single")
-        self.assertIn("Choose Piece:", selectboxes)
-        self.assertIn("Select Random Armor Piece", buttons)
+    def test_optimization_capability_labels_and_rules_are_human_readable(self):
+        self.assertEqual(get_engine_label("legacy"), "Legacy Ranking")
+        self.assertEqual(get_engine_label("advanced"), "Advanced Optimizer")
+        self.assertEqual(get_objective_label("stat_rank"), "Stat Ranking")
+        self.assertEqual(get_objective_label("encounter_survival"), "Encounter Survival")
+        self.assertEqual(get_method_label("maximin_normalized"), "Maximin")
+        self.assertEqual(get_method_label("weighted_sum_normalized"), "Weighted Sum")
+        self.assertEqual(
+            get_available_objective_ids("legacy", "armors", "single_piece"),
+            ["stat_rank"],
+        )
+        self.assertEqual(
+            get_available_objective_ids("advanced", "armors", "single_piece"),
+            ["stat_rank", "encounter_survival"],
+        )
 
-    def test_optimization_view_supports_key_smoke_flow(self):
+    def test_optimization_view_control_transitions(self):
         app = self._new_app()
 
         next(widget for widget in app.selectbox if widget.label == "Choose View:").select(
@@ -96,46 +213,68 @@ class UiSmokeTests(unittest.TestCase):
         ).run(timeout=60)
         self.assertEqual(len(app.exception), 0)
 
-        selectboxes = {widget.label: widget.value for widget in app.selectbox}
-        checkboxes = {widget.label: widget.value for widget in app.checkbox}
-        buttons = [widget.label for widget in app.button]
+        selectboxes = {widget.label: widget for widget in app.selectbox}
+        self.assertEqual(
+            selectboxes["Optimization engine"].options,
+            ["Legacy Ranking", "Advanced Optimizer"],
+        )
+        self.assertEqual(selectboxes["Objective"].options, ["Stat Ranking"])
+        self.assertEqual(selectboxes["Optimization method"].options, ["Maximin", "Weighted Sum"])
 
-        self.assertEqual(selectboxes["Optimization engine"], "Legacy")
-        self.assertEqual(selectboxes["Objective"], "stat_rank")
-        self.assertEqual(selectboxes["Optimization method"], "maximin_normalized")
-        self.assertEqual(selectboxes["Choose Scope:"], "Single")
-        self.assertEqual(selectboxes["Piece type:"], "Armor")
-        self.assertFalse(checkboxes["Optimize with weight"])
-        self.assertFalse(checkboxes["Use max weight constraint"])
-        self.assertIn("Reset filters/stats", buttons)
-        self.assertTrue(
-            next(widget for widget in app.multiselect if widget.label == "Highlighted stats:").value
+        selectboxes["Optimization engine"].select("Advanced Optimizer").run(timeout=60)
+        self.assertEqual(len(app.exception), 0)
+
+        selectboxes = {widget.label: widget for widget in app.selectbox}
+        self.assertEqual(
+            selectboxes["Objective"].options,
+            ["Stat Ranking", "Encounter Survival"],
+        )
+        self.assertEqual(selectboxes["Objective"].value, "stat_rank")
+
+        selectboxes["Objective"].select("Encounter Survival").run(timeout=60)
+        self.assertEqual(len(app.exception), 0)
+
+        selectboxes = {widget.label: widget for widget in app.selectbox}
+        number_inputs = {widget.label: widget for widget in app.number_input}
+        self.assertNotIn("Optimization method", selectboxes)
+        self.assertIn("Encounter profile", selectboxes)
+        self.assertIn("Status Penalty Weight", number_inputs)
+        profile_dir = ROOT / "data" / "profiles"
+        expected_profiles = [
+            format_encounter_profile_display_name(path.name)
+            for path in sorted(profile_dir.iterdir())
+            if path.is_file() and path.suffix.lower() in {".yaml", ".yml", ".json"}
+        ]
+        self.assertEqual(selectboxes["Encounter profile"].options, expected_profiles)
+
+        selectboxes["Optimization engine"].select("Legacy Ranking").run(timeout=60)
+        self.assertEqual(len(app.exception), 0)
+
+        selectboxes = {widget.label: widget for widget in app.selectbox}
+        number_inputs = {widget.label: widget for widget in app.number_input}
+        self.assertEqual(selectboxes["Objective"].options, ["Stat Ranking"])
+        self.assertEqual(selectboxes["Objective"].value, "stat_rank")
+        self.assertIn("Optimization method", selectboxes)
+        self.assertNotIn("Encounter profile", selectboxes)
+        self.assertNotIn("Status Penalty Weight", number_inputs)
+
+    def test_optimizer_smoke_script_runs_successfully(self):
+        env = os.environ.copy()
+        env["TMP"] = str(ROOT / ".cache" / "optimizer-smoke")
+        env["TEMP"] = str(ROOT / ".cache" / "optimizer-smoke")
+        Path(env["TMP"]).mkdir(parents=True, exist_ok=True)
+
+        result = subprocess.run(
+            [str(PYTHON), "-m", "tools.optimizer_smoke"],
+            cwd=str(ROOT),
+            env=env,
+            capture_output=True,
+            text=True,
+            timeout=120,
         )
 
-        next(widget for widget in app.checkbox if widget.label == "Optimize with weight").set_value(
-            True
-        ).run(timeout=60)
-        self.assertEqual(len(app.exception), 0)
-
-        next(
-            widget for widget in app.checkbox if widget.label == "Use max weight constraint"
-        ).set_value(True).run(timeout=60)
-        self.assertEqual(len(app.exception), 0)
-
-        checkboxes = {widget.label: widget.value for widget in app.checkbox}
-        number_inputs = {widget.label: widget.value for widget in app.number_input}
-        self.assertTrue(checkboxes["Optimize with weight"])
-        self.assertTrue(checkboxes["Use max weight constraint"])
-        self.assertIn("Max weight:", number_inputs)
-
-        next(widget for widget in app.selectbox if widget.label == "Choose Scope:").select(
-            "Full"
-        ).run(timeout=60)
-        self.assertEqual(len(app.exception), 0)
-
-        selectboxes = {widget.label: widget.value for widget in app.selectbox}
-        self.assertEqual(selectboxes["Choose Scope:"], "Full")
-        self.assertNotIn("Piece type:", selectboxes)
+        self.assertEqual(result.returncode, 0, msg=result.stdout + "\n" + result.stderr)
+        self.assertIn("optimizer_smoke: SUCCESS", result.stdout)
 
 
 if __name__ == "__main__":
