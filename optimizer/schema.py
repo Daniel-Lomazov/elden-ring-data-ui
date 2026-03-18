@@ -27,17 +27,13 @@ SCOPES: Final[Tuple[str, ...]] = (
     SCOPE_COMPLETE_LOADOUT,
 )
 
-# Objective types
+# Objective types currently implemented in the optimizer API
 OBJECTIVE_STAT_RANK: Final[str] = "stat_rank"
 OBJECTIVE_ENCOUNTER_SURVIVAL: Final[str] = "encounter_survival"
-OBJECTIVE_PARETO: Final[str] = "pareto"
-OBJECTIVE_UTILITY: Final[str] = "utility"
 
 OBJECTIVE_TYPES: Final[Tuple[str, ...]] = (
     OBJECTIVE_STAT_RANK,
     OBJECTIVE_ENCOUNTER_SURVIVAL,
-    OBJECTIVE_PARETO,
-    OBJECTIVE_UTILITY,
 )
 
 # Armor-facing core stats

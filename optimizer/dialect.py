@@ -9,9 +9,21 @@ import json
 from pathlib import Path
 from typing import Any, Dict
 
+from .catalog import (
+    ENGINE_ADVANCED,
+    ENGINE_LEGACY,
+    normalize_engine_id,
+    normalize_method_id,
+    normalize_objective_id,
+    normalize_scope_id,
+    objective_supports_methods,
+    resolve_strategy,
+    validate_objective_method,
+)
 from .schema import (
     CANONICAL_SCHEMA_VERSION,
     NEGATION_KEYS,
+    OBJECTIVE_ENCOUNTER_SURVIVAL,
     OBJECTIVE_STAT_RANK,
     OBJECTIVE_TYPES,
     SCOPES,
@@ -56,6 +68,7 @@ def _ensure_dict(value: Any, field_name: str) -> Dict[str, Any]:
 
 def canonicalize_request(request: Dict[str, Any]) -> Dict[str, Any]:
     raw = dict(request)
+    dataset = str(raw.get("dataset", "") or "").strip().lower() or None
 
     version = int(raw.get("version", CANONICAL_SCHEMA_VERSION))
     if version != CANONICAL_SCHEMA_VERSION:
@@ -63,16 +76,30 @@ def canonicalize_request(request: Dict[str, Any]) -> Dict[str, Any]:
             f"Unsupported request version {version}; expected {CANONICAL_SCHEMA_VERSION}"
         )
 
-    scope = str(raw.get("scope", "single_piece"))
+    scope = normalize_scope_id(str(raw.get("scope", "single_piece")))
     if scope not in SCOPES:
         raise ValueError(f"Unsupported scope '{scope}'. Expected one of: {SCOPES}")
 
     objective = _ensure_dict(raw.get("objective"), "objective")
-    objective_type = str(objective.get("type", OBJECTIVE_STAT_RANK))
+    objective_type = normalize_objective_id(str(objective.get("type", OBJECTIVE_STAT_RANK)))
     if objective_type not in OBJECTIVE_TYPES:
         raise ValueError(
             f"Unsupported objective.type '{objective_type}'. Expected one of: {OBJECTIVE_TYPES}"
         )
+    engine = normalize_engine_id(
+        raw.get("engine")
+        or objective.get("engine")
+        or (ENGINE_ADVANCED if objective_type == OBJECTIVE_ENCOUNTER_SURVIVAL else ENGINE_LEGACY)
+    )
+
+    objective_method = objective.get("method")
+    normalized_method = None
+    if objective_supports_methods(objective_type):
+        normalized_method = normalize_method_id(objective_method)
+    elif objective_method is not None:
+        normalized_method = normalize_method_id(objective_method)
+    validate_objective_method(objective_type, normalized_method)
+    _ = resolve_strategy(engine, objective_type, scope, dataset=dataset)
 
     selected_stats = raw.get("selected_stats", objective.get("selected_stats", []))
     if selected_stats is None:
@@ -112,11 +139,13 @@ def canonicalize_request(request: Dict[str, Any]) -> Dict[str, Any]:
 
     canonical = {
         "version": CANONICAL_SCHEMA_VERSION,
+        "dataset": dataset,
+        "engine": engine,
         "scope": scope,
         "slot": raw.get("slot"),
         "objective": {
             "type": objective_type,
-            "method": objective.get("method"),
+            "method": normalized_method if objective_supports_methods(objective_type) else None,
             "hp": float(objective.get("hp", 1.0)) if objective.get("hp") is not None else None,
             "eps": float(objective.get("eps", 1e-9)),
             "lambda_status": float(objective.get("lambda_status", 0.0)),

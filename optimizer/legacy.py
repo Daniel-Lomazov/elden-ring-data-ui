@@ -96,15 +96,20 @@ def _score_weighted_sum_normalized(
     else:
         weights = [1.0 for _ in stats]
 
-    total = sum(weights) if sum(weights) > 0 else 1.0
-    weighted = sum(normalized[s] * w for s, w in zip(stats, weights)) / total
-    tiebreak = normalized.min(axis=1)
+    active_stats = [s for s, w in zip(stats, weights) if float(w) > 0]
+    active_weights = [float(w) for w in weights if float(w) > 0]
+    if not active_stats:
+        raise ValueError("Weighted Sum requires at least one stat with a weight greater than zero.")
+
+    total = sum(active_weights)
+    weighted = sum(normalized[s] * w for s, w in zip(active_stats, active_weights)) / total
+    tiebreak = normalized[active_stats].min(axis=1)
 
     out = df.copy()
     out["__opt_score"] = weighted
     out["__opt_tiebreak"] = tiebreak
     out["__opt_method"] = "weighted_sum_normalized"
-    out["__opt_length"] = len(stats)
+    out["__opt_length"] = len(active_stats)
     for stat in stats:
         out[f"Norm: {stat}"] = normalized[stat]
     out = out.sort_values(

@@ -5,6 +5,28 @@ while new dialect-first API is exposed via `optimize`.
 """
 
 from .api import optimize
+from .catalog import (
+    ENGINE_ADVANCED,
+    ENGINE_LEGACY,
+    METHOD_MAXIMIN_NORMALIZED,
+    METHOD_WEIGHTED_SUM_NORMALIZED,
+    format_encounter_profile_display_name,
+    get_available_engine_ids,
+    get_available_method_ids,
+    get_available_objective_ids,
+    get_default_objective_id,
+    get_engine_description,
+    get_engine_label,
+    get_method_label,
+    get_objective_label,
+    normalize_engine_id,
+    normalize_method_id,
+    normalize_objective_id,
+    normalize_scope_id,
+    objective_requires_encounter_profile,
+    objective_requires_status_penalty_weight,
+    objective_supports_methods,
+)
 from .dialect import canonicalize_request, load_request
 from .legacy import (
     DEFAULT_OPTIMIZATION_METHOD,
@@ -25,6 +47,10 @@ from .legacy import (
 __all__ = [
     "DEFAULT_OPTIMIZATION_METHOD",
     "DEFAULT_OPTIMIZATION_SCOPE",
+    "ENGINE_ADVANCED",
+    "ENGINE_LEGACY",
+    "METHOD_MAXIMIN_NORMALIZED",
+    "METHOD_WEIGHTED_SUM_NORMALIZED",
     "OPTIMIZER_METHODS",
     "OPTIMIZER_METHODS_BY_SCOPE",
     "OPT_SCOPE_SINGLE_PIECE",
@@ -39,4 +65,20 @@ __all__ = [
     "canonicalize_request",
     "load_request",
     "optimize",
+    "normalize_engine_id",
+    "normalize_objective_id",
+    "normalize_method_id",
+    "normalize_scope_id",
+    "get_engine_label",
+    "get_engine_description",
+    "get_objective_label",
+    "get_method_label",
+    "get_available_engine_ids",
+    "get_available_objective_ids",
+    "get_default_objective_id",
+    "get_available_method_ids",
+    "format_encounter_profile_display_name",
+    "objective_supports_methods",
+    "objective_requires_encounter_profile",
+    "objective_requires_status_penalty_weight",
 ]
