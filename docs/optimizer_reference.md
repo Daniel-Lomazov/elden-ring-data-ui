@@ -116,11 +116,13 @@ ranked = optimize_single_piece(
 
 User-facing:
 - In `Optimization view`, controls now include:
-  - `Optimization engine`: `Legacy` or `Optimization 2.0`
-  - `Objective`: `stat_rank` or `encounter_survival` (armors)
-  - `Encounter profile` + `Status fear (λ)` when `encounter_survival` is selected
-- Legacy engine keeps existing `optimize_single_piece` behavior for stat ranking.
-- Optimization 2.0 routes through dialect API `optimize(df, request)` and supports full-set encounter ranking in armor full-set preview.
+  - `Optimization engine`: `Legacy Ranking` (`legacy`) or `Advanced Optimizer` (`advanced`)
+  - `Objective`: `Stat Ranking` (`stat_rank`) or `Encounter Survival` (`encounter_survival`, armors only)
+  - `Encounter profile` + `Status Penalty Weight` when `Encounter Survival` is selected
+  - `Optimization method` only appears for `Stat Ranking`
+- Legacy Ranking keeps existing `optimize_single_piece` behavior for stat ranking.
+- Advanced Optimizer routes through dialect API `optimize(df, request)` and supports full-set encounter ranking in armor full-set preview.
+- Weighted Sum now ignores stats whose configured weight is `0`; if only one active stat remains, the app falls back to single-stat sorting.
 - See UI invocation and caching path in [app.py](app.py#L2290-L2520).
 
 Developer-facing (where to intervene):

@@ -129,32 +129,35 @@ The `scripts/` folder is the best path for repeatable runs.
 - Single-stat selection uses direct sort behavior.
 - Multi-stat selection (2+ valid stats) uses optimizer ranking.
 - Current optimization methods:
-  - `maximin_normalized` (default)
-  - `weighted_sum_normalized`
+  - `Maximin` (`maximin_normalized`, default)
+  - `Weighted Sum` (`weighted_sum_normalized`)
 - Optimization engines in UI (Optimization view):
-  - `Legacy` (existing stat ranking flow)
-  - `Optimization 2.0` (dialect API flow with optional `encounter_survival` objective)
+  - `Legacy Ranking` (`legacy`)
+  - `Advanced Optimizer` (`advanced`)
 - Armor full-scope behavior:
-  - `Optimization 2.0` + `stat_rank` now performs true full-set ranking using prune-first combination search.
-  - `Optimization 2.0` + `encounter_survival` performs full-set encounter ranking.
-  - `Optimization 2.0` + `Custom` scope supports slot-lock constraints (`include_names`) while optimizing the remaining slots.
-  - `Legacy` full-scope preview remains a per-slot composed view (not full-set combinatorial optimization).
+  - `Advanced Optimizer` + `Stat Ranking` performs true full-set ranking using prune-first combination search.
+  - `Advanced Optimizer` + `Encounter Survival` performs full-set encounter ranking.
+  - `Advanced Optimizer` + `Custom` scope supports slot-lock constraints (`include_names`) while optimizing the remaining slots.
+  - `Legacy Ranking` full-scope preview remains a per-slot composed view (not full-set combinatorial optimization).
+- Weighted Sum now only uses stats whose weight is greater than zero.
+  - If exactly one weighted stat remains active, ranking falls back to that stat's single-stat sort behavior.
+  - If all weights are zero, optimization is blocked with a validation error.
 - Optimization metadata columns include:
   - `__opt_score`
   - `__opt_tiebreak`
   - `__opt_method`
   - `__opt_rank`
 
-### Where to access Optimization 2.0 in the app
+### Where to access Advanced Optimizer in the app
 
 - Dataset: `armors` (recommended)
 - View mode: `Optimization view` (do not use `Detailed view` for this flow)
 - In the right control column set:
-  - `Optimization engine` = `Optimization 2.0`
-  - `Objective` = `encounter_survival` (or keep `stat_rank`)
+  - `Optimization engine` = `Advanced Optimizer`
+  - `Objective` = `Encounter Survival` (or keep `Stat Ranking`)
   - `Choose Scope` = `Custom` to lock specific armor slots and optimize around them
   - `Encounter profile` = one of `data/profiles/*.yaml`
-  - `Status fear (λ)` as desired
+  - `Status Penalty Weight` as desired
 
 ### Stat naming and icon conventions
 
