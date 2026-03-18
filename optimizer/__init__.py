@@ -43,6 +43,12 @@ from .legacy import (
     optimize_single_piece,
     register_optimizer_method,
 )
+from .presets import (
+    WeightedStatPreset,
+    list_weighted_stat_presets,
+    load_weighted_stat_preset,
+    save_weighted_stat_preset,
+)
 
 __all__ = [
     "DEFAULT_OPTIMIZATION_METHOD",
@@ -81,4 +87,8 @@ __all__ = [
     "objective_supports_methods",
     "objective_requires_encounter_profile",
     "objective_requires_status_penalty_weight",
+    "WeightedStatPreset",
+    "list_weighted_stat_presets",
+    "load_weighted_stat_preset",
+    "save_weighted_stat_preset",
 ]

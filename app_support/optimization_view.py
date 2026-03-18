@@ -14,13 +14,16 @@ from optimizer import (
     get_available_method_ids,
     get_available_objective_ids,
     get_default_objective_id,
+    list_weighted_stat_presets,
     load_request,
+    load_weighted_stat_preset,
     normalize_engine_id,
     normalize_method_id,
     normalize_objective_id,
     objective_requires_encounter_profile,
     objective_requires_status_penalty_weight,
     objective_supports_methods,
+    save_weighted_stat_preset,
 )
 
 
@@ -41,6 +44,12 @@ class OptimizationViewState:
     show_weight_controls: bool
 
 
+@dataclass(frozen=True)
+class WeightedPresetOption:
+    preset_id: str
+    label: str
+
+
 def list_encounter_profiles(root: Path) -> list[str]:
     profile_dir = root / "data" / "profiles"
     if not profile_dir.exists():
@@ -50,6 +59,41 @@ def list_encounter_profiles(root: Path) -> list[str]:
         if path.is_file() and path.suffix.lower() in {".yaml", ".yml", ".json"}:
             names.append(path.name)
     return names
+
+
+def list_weighted_preset_options(root: Path, dataset: str) -> list[WeightedPresetOption]:
+    return [
+        WeightedPresetOption(preset_id=preset.preset_id, label=preset.label)
+        for preset in list_weighted_stat_presets(root, dataset=dataset)
+    ]
+
+
+def save_weighted_preset(
+    root: Path,
+    *,
+    label: str,
+    dataset: str,
+    selected_stats: list[str],
+    weights: dict[str, float],
+    optimize_with_weight: bool,
+    preferred_engine: str,
+) -> tuple[WeightedPresetOption | None, str | None]:
+    preset, error = save_weighted_stat_preset(
+        root,
+        label=label,
+        dataset=dataset,
+        selected_stats=selected_stats,
+        weights=weights,
+        optimize_with_weight=optimize_with_weight,
+        preferred_engine=preferred_engine,
+    )
+    if error or preset is None:
+        return None, error
+    return WeightedPresetOption(preset_id=preset.preset_id, label=preset.label), None
+
+
+def load_weighted_preset_option(root: Path, preset_id: str):
+    return load_weighted_stat_preset(root, preset_id)
 
 
 def resolve_optimization_view_state(

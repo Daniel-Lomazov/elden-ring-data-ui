@@ -11,8 +11,11 @@ from .detail_scope import (
 from .optimization_view import (
     OptimizationViewState,
     list_encounter_profiles,
+    list_weighted_preset_options,
     load_encounter_profile_request,
+    load_weighted_preset_option,
     resolve_optimization_view_state,
+    save_weighted_preset,
 )
 
 __all__ = [
@@ -24,6 +27,9 @@ __all__ = [
     "focus_detail_anchor",
     "OptimizationViewState",
     "list_encounter_profiles",
+    "list_weighted_preset_options",
     "load_encounter_profile_request",
+    "load_weighted_preset_option",
     "resolve_optimization_view_state",
+    "save_weighted_preset",
 ]

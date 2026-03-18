@@ -53,10 +53,13 @@ from app_support import (
     ARMOR_FULL_SCOPE_DESCRIPTION_PLACEHOLDER,
     ARMOR_CUSTOM_SCOPE_NAME_PLACEHOLDER,
     ARMOR_CUSTOM_SCOPE_DESCRIPTION_PLACEHOLDER,
+    list_weighted_preset_options,
     normalize_dataset_text,
     focus_detail_anchor,
     resolve_optimization_view_state,
     load_encounter_profile_request,
+    load_weighted_preset_option,
+    save_weighted_preset,
 )
 
 st.set_page_config(page_title="Elden Ring - Ranking UI", page_icon="🏆", layout="wide")
@@ -214,6 +217,42 @@ def get_effective_weighted_stats(
     if not weights:
         return list(stats)
     return [stat for stat in stats if float(weights.get(stat, 1.0)) > 0]
+
+
+def build_weight_percentage_map(weights: dict[str, float] | None) -> dict[str, float]:
+    if not weights:
+        return {}
+    positive_total = sum(max(float(value), 0.0) for value in weights.values())
+    if positive_total <= 0:
+        return {key: 0.0 for key in weights}
+    return {
+        key: (max(float(value), 0.0) / positive_total) * 100.0
+        for key, value in weights.items()
+    }
+
+
+def apply_weighted_preset_to_session(preset, session_state) -> None:
+    preferred_engine = str(getattr(preset, "preferred_engine", ENGINE_LEGACY) or ENGINE_LEGACY)
+    compatible_engines = tuple(getattr(preset, "engines", ()) or (ENGINE_LEGACY, ENGINE_ADVANCED))
+    current_engine = normalize_engine_id(session_state.get("optimizer_engine", preferred_engine))
+    session_state["optimizer_engine"] = (
+        current_engine if current_engine in compatible_engines else preferred_engine
+    )
+    session_state["optimizer_objective_type"] = OPT_OBJECTIVE_STAT_RANK
+    session_state["optimizer_method"] = "weighted_sum_normalized"
+    selected_stats = list(getattr(preset, "selected_stats", ()) or [])
+    optimize_with_weight = bool(getattr(preset, "optimize_with_weight", False))
+    visible_stats = [stat for stat in selected_stats if str(stat).strip().lower() != "weight"]
+    session_state["highlighted_stats"] = visible_stats
+    session_state["optimize_with_weight"] = optimize_with_weight
+
+    raw_weights = dict(getattr(preset, "weights", {}) or {})
+    for key in list(session_state.keys()):
+        if key.startswith("opt_weight_"):
+            del session_state[key]
+    for stat, value in raw_weights.items():
+        session_state[f"opt_weight_{safe_stat_key(stat)}"] = float(value)
+    session_state["_opt_weight_stats_signature"] = "|".join(selected_stats)
 
 
 def sort_rows_by_effective_single_stat(
@@ -2383,6 +2422,8 @@ def main():
     optimizer_objective_type = OPT_OBJECTIVE_STAT_RANK
     optimizer_encounter_profile = ""
     optimizer_lambda_status = 1.0
+    optimizer_preset_choice = ""
+    preset_options = []
     optimizer_weights = None
     optimizer_weight_signature = None
     optimization_view = None
@@ -2533,6 +2574,10 @@ def main():
         optimizer_encounter_profile = optimization_view.optimizer_encounter_profile
         optimizer_lambda_status = optimization_view.optimizer_lambda_status
         optimizer_method = optimization_view.optimizer_method
+        preset_options = list_weighted_preset_options(ROOT, dataset)
+        preset_ids = ["", *[option.preset_id for option in preset_options]]
+        ensure_state_in_options("optimizer_preset_choice", preset_ids, "")
+        optimizer_preset_choice = str(st.session_state.get("optimizer_preset_choice", ""))
 
     # perform sorting and show rows using internal rendering
     # Inline minimal renderer to avoid external dependencies
@@ -3333,9 +3378,51 @@ def main():
                     st.session_state,
                     ranking_stat_count=len(ranking_stats),
                 )
-                controls_left, controls_right = st.columns([1, 1], gap="medium")
+                left_panel_has_content = bool(ranking_stats) or view_state.show_status_penalty_weight
+                if show_weight_note and "weight" in ranking_stats:
+                    left_panel_has_content = True
+                if build_ranking_caption():
+                    left_panel_has_content = True
+
+                if left_panel_has_content:
+                    controls_left, controls_right = st.columns([1, 1], gap="medium")
+                else:
+                    controls_left = None
+                    controls_right = st.container()
+
                 with controls_right:
                     st.markdown("<div style='height: 0.32rem;'></div>", unsafe_allow_html=True)
+                    saved_preset_label = str(
+                        st.session_state.pop("_weighted_preset_saved_label", "")
+                    ).strip()
+                    if saved_preset_label:
+                        st.success(f"Saved preset '{saved_preset_label}'.")
+                    if preset_options:
+                        preset_label_map = {option.preset_id: option.label for option in preset_options}
+                        optimizer_preset_choice = st.selectbox(
+                            "Optimization preset",
+                            options=["", *[option.preset_id for option in preset_options]],
+                            key="optimizer_preset_choice",
+                            format_func=lambda preset_id: preset_label_map.get(preset_id, "Custom / none"),
+                        )
+                        preset_action_cols = st.columns([1, 1], gap="small")
+                        with preset_action_cols[0]:
+                            if st.button(
+                                "Load preset",
+                                key="load_optimizer_preset",
+                                disabled=not optimizer_preset_choice,
+                                use_container_width=True,
+                            ):
+                                loaded_preset, preset_error = load_weighted_preset_option(
+                                    ROOT,
+                                    optimizer_preset_choice,
+                                )
+                                if preset_error:
+                                    st.error(preset_error)
+                                elif loaded_preset is not None:
+                                    apply_weighted_preset_to_session(loaded_preset, st.session_state)
+                                    st.rerun()
+
                     optimizer_engine = st.selectbox(
                         "Optimization engine",
                         options=view_state.engine_options,
@@ -3384,44 +3471,103 @@ def main():
 
                     optimizer_weights = None
                     optimizer_weight_signature = None
+                    if (
+                        view_state.show_optimization_method
+                        and optimizer_method == "weighted_sum_normalized"
+                        and len(ranking_stats) < 2
+                    ):
+                        st.info(
+                            "Choose at least two highlighted stats to use Weighted Sum. "
+                            "With one stat, ranking falls back to direct sorting."
+                        )
+
                     if view_state.show_weight_controls and ranking_stats:
                         st.markdown("<div style='height: 0.25rem;'></div>", unsafe_allow_html=True)
+                        current_weight_values = {}
+                        for stat in ranking_stats:
+                            weight_key = f"opt_weight_{safe_stat_key(stat)}"
+                            current_weight_values[stat] = float(st.session_state.get(weight_key, 1.0))
+                        weight_percentages = build_weight_percentage_map(current_weight_values)
                         optimizer_weights = {}
                         for stat in ranking_stats:
                             weight_key = f"opt_weight_{safe_stat_key(stat)}"
                             if weight_key not in st.session_state:
                                 st.session_state[weight_key] = 1.0
-                            optimizer_weights[stat] = st.number_input(
-                                f"Weight: {format_stat_option_label(stat)}",
-                                min_value=0.0,
-                                step=0.1,
-                                key=weight_key,
-                            )
+                            weight_label_col, weight_value_col = st.columns([4, 1], gap="small")
+                            with weight_label_col:
+                                optimizer_weights[stat] = st.number_input(
+                                    f"Weight: {format_stat_option_label(stat)}",
+                                    min_value=0.0,
+                                    step=0.1,
+                                    key=weight_key,
+                                )
+                            with weight_value_col:
+                                st.caption(f"{weight_percentages.get(stat, 0.0):.0f}%")
                         optimizer_weight_signature = tuple(
                             float(optimizer_weights.get(stat, 1.0))
                             for stat in ranking_stats
                         )
 
-                with controls_left:
-                    if ranking_stats:
-                        with st.expander("Stat icon legend", expanded=False):
-                            for stat in ranking_stats:
-                                st.write(f"- {format_stat_option_label(stat)}")
-
-                    if view_state.show_status_penalty_weight:
-                        st.info(
-                            "Advanced Optimizer encounter ranking is active. "
-                            "Lower encounter score is better, and Status Penalty Weight controls "
-                            "how strongly status threats affect that score."
+                    save_weighted_profile_allowed = (
+                        optimizer_engine == OPT_ENGINE_LEGACY
+                        and optimizer_objective_type == OPT_OBJECTIVE_STAT_RANK
+                        and optimizer_method == "weighted_sum_normalized"
+                        and len(ranking_stats) >= 2
+                    )
+                    if save_weighted_profile_allowed:
+                        preset_name = st.text_input(
+                            "Save weighted preset as",
+                            key="weighted_preset_name",
+                            placeholder="e.g. Fire Defense Weighted",
                         )
-                    if show_weight_note and "weight" in ranking_stats:
-                        st.info("Optimization note: `weight` is minimized; all other selected stats are maximized.")
+                        if st.button(
+                            "Save preset",
+                            key="save_weighted_preset_button",
+                            use_container_width=True,
+                        ):
+                            preset_to_save = optimizer_weights or {
+                                stat: float(st.session_state.get(f"opt_weight_{safe_stat_key(stat)}", 1.0))
+                                for stat in ranking_stats
+                            }
+                            saved_option, save_error = save_weighted_preset(
+                                ROOT,
+                                label=preset_name,
+                                dataset=dataset,
+                                selected_stats=list(ranking_stats),
+                                weights=preset_to_save,
+                                optimize_with_weight=optimize_with_weight,
+                                preferred_engine=optimizer_engine,
+                            )
+                            if save_error:
+                                st.error(save_error)
+                            elif saved_option is not None:
+                                st.session_state["optimizer_preset_choice"] = saved_option.preset_id
+                                st.session_state["_weighted_preset_saved_label"] = saved_option.label
+                                st.rerun()
 
-                    caption = build_ranking_caption()
-                    if caption:
-                        st.markdown(caption)
+                if controls_left is not None:
+                    with controls_left:
+                        if ranking_stats:
+                            with st.expander("Stat icon legend", expanded=False):
+                                for stat in ranking_stats:
+                                    st.write(f"- {format_stat_option_label(stat)}")
 
-                    st.markdown("<div style='height: 0.10rem;'></div>", unsafe_allow_html=True)
+                        if view_state.show_status_penalty_weight:
+                            st.info(
+                                "Advanced Optimizer encounter ranking is active. "
+                                "Lower encounter score is better, and Status Penalty Weight controls "
+                                "how strongly status threats affect that score."
+                            )
+                        if show_weight_note and "weight" in ranking_stats:
+                            st.info("Optimization note: `weight` is minimized; all other selected stats are maximized.")
+
+                        caption = build_ranking_caption()
+                        if caption:
+                            st.markdown(caption)
+
+                        st.markdown("<div style='height: 0.10rem;'></div>", unsafe_allow_html=True)
+                        render_download_button_for_rows(display_rows, section_label, "main")
+                else:
                     render_download_button_for_rows(display_rows, section_label, "main")
             else:
                 if show_weight_note and "weight" in ranking_stats:
@@ -4056,18 +4202,12 @@ def main():
                 render_item_detail_inspector(detail_df, panel_key=f"{dataset}_full_set_opt2")
             return
 
-        if dataset == "armors" and armor_custom_set and optimizer_engine != OPT_ENGINE_DIALECT_V2:
+        if dataset == "armors" and optimizer_engine != OPT_ENGINE_DIALECT_V2:
             st.info(
-                "Custom scope optimization requires Advanced Optimizer. "
-                "Switch engine to Advanced Optimizer to apply slot-lock constraints."
+                "Full and Custom optimization previews use Advanced Optimizer only. "
+                "Switch engine to Advanced Optimizer to generate set-level results."
             )
             return
-
-        if dataset == "armors" and armor_full_set and optimizer_engine != OPT_ENGINE_DIALECT_V2:
-            st.info(
-                "Legacy full-scope preview composes per-slot rankings. "
-                "Switch engine to Advanced Optimizer for true full-set optimization."
-            )
 
         st.markdown(
             f"""
