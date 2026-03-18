@@ -8,6 +8,12 @@ from .detail_scope import (
     normalize_dataset_text,
     focus_detail_anchor,
 )
+from .optimization_view import (
+    OptimizationViewState,
+    list_encounter_profiles,
+    load_encounter_profile_request,
+    resolve_optimization_view_state,
+)
 
 __all__ = [
     "DETAIL_SCOPE_ANCHOR_ID",
@@ -16,4 +22,8 @@ __all__ = [
     "ARMOR_CUSTOM_SCOPE_DESCRIPTION_PLACEHOLDER",
     "normalize_dataset_text",
     "focus_detail_anchor",
+    "OptimizationViewState",
+    "list_encounter_profiles",
+    "load_encounter_profile_request",
+    "resolve_optimization_view_state",
 ]

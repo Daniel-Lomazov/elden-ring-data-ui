@@ -26,11 +26,19 @@ except Exception:
 from data_loader import DataLoader
 from ui_components import parse_armor_stats
 from optimizer import (
+    ENGINE_ADVANCED,
+    ENGINE_LEGACY,
     optimize as optimize_dialect,
-    load_request,
     optimize_single_piece,
     DEFAULT_OPTIMIZATION_METHOD,
-    OPTIMIZER_METHODS,
+    format_encounter_profile_display_name,
+    get_engine_description,
+    get_engine_label,
+    get_method_label,
+    get_objective_label,
+    normalize_engine_id,
+    normalize_method_id,
+    normalize_objective_id,
 )
 from histogram_views import (
     HISTOGRAM_CONFIG,
@@ -47,6 +55,8 @@ from app_support import (
     ARMOR_CUSTOM_SCOPE_DESCRIPTION_PLACEHOLDER,
     normalize_dataset_text,
     focus_detail_anchor,
+    resolve_optimization_view_state,
+    load_encounter_profile_request,
 )
 
 st.set_page_config(page_title="Elden Ring - Ranking UI", page_icon="🏆", layout="wide")
@@ -71,8 +81,8 @@ TALISMAN_SLOT_LABELS = ["Slot 1", "Slot 2", "Slot 3", "Slot 4"]
 
 VIEW_MODE_OPTIMIZATION = "Optimization view"
 VIEW_MODE_DETAILED = "Detailed view"
-OPT_ENGINE_LEGACY = "Legacy"
-OPT_ENGINE_DIALECT_V2 = "Optimization 2.0"
+OPT_ENGINE_LEGACY = ENGINE_LEGACY
+OPT_ENGINE_DIALECT_V2 = ENGINE_ADVANCED
 OPT_OBJECTIVE_STAT_RANK = "stat_rank"
 OPT_OBJECTIVE_ENCOUNTER = "encounter_survival"
 DETAILED_SCOPE_SINGLE = "Single"
@@ -179,6 +189,44 @@ def apply_post_parse_column_pruning(dataset_key: str, frame: pd.DataFrame) -> pd
     if not drop_columns:
         return frame
     return DataLoader.drop_columns(frame, drop_columns)
+
+
+def format_engine_option_label(engine_id: str) -> str:
+    return get_engine_label(engine_id)
+
+
+def format_objective_option_label(objective_id: str) -> str:
+    return get_objective_label(objective_id)
+
+
+def format_method_option_label(method_id: str) -> str:
+    return get_method_label(method_id)
+
+
+def format_encounter_profile_option_label(profile_name: str) -> str:
+    return format_encounter_profile_display_name(profile_name) or str(profile_name)
+
+
+def get_effective_weighted_stats(
+    stats: list[str],
+    weights: dict[str, float] | None,
+) -> list[str]:
+    if not weights:
+        return list(stats)
+    return [stat for stat in stats if float(weights.get(stat, 1.0)) > 0]
+
+
+def sort_rows_by_effective_single_stat(
+    frame: pd.DataFrame,
+    stat: str,
+    ascending: bool,
+    optimize_with_weight: bool,
+) -> pd.DataFrame:
+    if stat not in frame.columns:
+        return frame
+    stat_is_minimized = optimize_with_weight and str(stat).strip().lower() == "weight"
+    effective_ascending = ascending if not stat_is_minimized else not ascending
+    return frame.sort_values(by=stat, ascending=effective_ascending)
 
 
 @st.cache_resource
@@ -923,12 +971,14 @@ def main():
         st.session_state["sort_order"] = qp_get("sort", "Highest First")
         st.session_state["rows_to_show"] = qp_get_int("rows", 5)
         st.session_state["show_raw_dev"] = False
-        st.session_state["optimizer_method"] = qp_get(
-            "method", DEFAULT_OPTIMIZATION_METHOD
+        st.session_state["optimizer_method"] = normalize_method_id(
+            qp_get("method", DEFAULT_OPTIMIZATION_METHOD)
         )
-        st.session_state["optimizer_engine"] = qp_get("opt_engine", OPT_ENGINE_LEGACY)
-        st.session_state["optimizer_objective_type"] = qp_get(
-            "objective", OPT_OBJECTIVE_STAT_RANK
+        st.session_state["optimizer_engine"] = normalize_engine_id(
+            qp_get("opt_engine", OPT_ENGINE_LEGACY)
+        )
+        st.session_state["optimizer_objective_type"] = normalize_objective_id(
+            qp_get("objective", OPT_OBJECTIVE_STAT_RANK)
         )
         st.session_state["optimizer_encounter_profile"] = qp_get("profile", "")
         try:
@@ -971,16 +1021,6 @@ def main():
             frame[target_cols].fillna(""), index=False
         ).values
         return hashlib.sha256(hashed.tobytes()).hexdigest()
-
-    def list_encounter_profiles() -> list[str]:
-        profile_dir = ROOT / "data" / "profiles"
-        if not profile_dir.exists():
-            return []
-        names = []
-        for path in sorted(profile_dir.iterdir()):
-            if path.is_file() and path.suffix.lower() in {".yaml", ".yml", ".json"}:
-                names.append(path.name)
-        return names
 
     def ensure_state_in_options(key: str, options: list, fallback):
         current = st.session_state.get(key, fallback)
@@ -1703,7 +1743,7 @@ def main():
                     st.sidebar.caption("No locked slots selected. Custom scope behaves like full-set search.")
 
                 st.sidebar.info(
-                    "Custom scope uses Optimization 2.0 full-set search with optional slot locks."
+                    "Custom scope uses Advanced Optimizer full-set search with optional slot locks."
                 )
         else:
             detailed_view_active = True
@@ -2345,6 +2385,7 @@ def main():
     optimizer_lambda_status = 1.0
     optimizer_weights = None
     optimizer_weight_signature = None
+    optimization_view = None
     optimize_with_weight = False
     use_max_weight = False
     max_weight_limit = None
@@ -2473,43 +2514,25 @@ def main():
             if selected_name:
                 armor_custom_include_names.append(selected_name)
 
+    optimization_scope_key = "single_piece"
+    if dataset == "armors" and (armor_full_set or armor_custom_set):
+        optimization_scope_key = "full_set"
+    elif dataset == "talismans" and talisman_full_set:
+        optimization_scope_key = "full_set"
+
     if advanced_mode and not detailed_view_active:
-        engine_options = [OPT_ENGINE_LEGACY, OPT_ENGINE_DIALECT_V2]
-        ensure_state_in_options("optimizer_engine", engine_options, OPT_ENGINE_LEGACY)
-        optimizer_engine = str(st.session_state.get("optimizer_engine", OPT_ENGINE_LEGACY))
-
-        objective_options = [OPT_OBJECTIVE_STAT_RANK]
-        if dataset == "armors":
-            objective_options.append(OPT_OBJECTIVE_ENCOUNTER)
-        ensure_state_in_options(
-            "optimizer_objective_type",
-            objective_options,
-            OPT_OBJECTIVE_STAT_RANK,
+        optimization_view = resolve_optimization_view_state(
+            ROOT,
+            dataset,
+            optimization_scope_key,
+            st.session_state,
+            ranking_stat_count=len(ranking_stats),
         )
-        optimizer_objective_type = str(
-            st.session_state.get("optimizer_objective_type", OPT_OBJECTIVE_STAT_RANK)
-        )
-
-        profile_options = list_encounter_profiles()
-        if profile_options:
-            ensure_state_in_options(
-                "optimizer_encounter_profile",
-                profile_options,
-                profile_options[0],
-            )
-            optimizer_encounter_profile = str(
-                st.session_state.get("optimizer_encounter_profile", profile_options[0])
-            )
-
-        if "optimizer_lambda_status" not in st.session_state:
-            st.session_state["optimizer_lambda_status"] = 1.0
-        optimizer_lambda_status = float(st.session_state.get("optimizer_lambda_status", 1.0))
-
-        method_options = list(OPTIMIZER_METHODS.keys())
-        ensure_state_in_options("optimizer_method", method_options, DEFAULT_OPTIMIZATION_METHOD)
-        optimizer_method = str(
-            st.session_state.get("optimizer_method", DEFAULT_OPTIMIZATION_METHOD)
-        )
+        optimizer_engine = optimization_view.optimizer_engine
+        optimizer_objective_type = optimization_view.optimizer_objective_type
+        optimizer_encounter_profile = optimization_view.optimizer_encounter_profile
+        optimizer_lambda_status = optimization_view.optimizer_lambda_status
+        optimizer_method = optimization_view.optimizer_method
 
     # perform sorting and show rows using internal rendering
     # Inline minimal renderer to avoid external dependencies
@@ -2761,17 +2784,14 @@ def main():
 
         ascending = sort_choice == "Lowest First"
         use_dialect_optimizer = optimizer_engine == OPT_ENGINE_DIALECT_V2
-        use_encounter_objective = (
-            use_dialect_optimizer
-            and optimizer_objective_type == OPT_OBJECTIVE_ENCOUNTER
-            and dataset == "armors"
-        )
+        use_encounter_objective = optimizer_objective_type == OPT_OBJECTIVE_ENCOUNTER and dataset == "armors"
         can_optimize = len(ranking_stats) >= 2 or use_encounter_objective
 
         if dataset in ["armors", "talismans"] and can_optimize:
             try:
                 local_optimizer_weights = None
                 local_weight_signature = None
+                effective_weighted_stats = list(ranking_stats)
                 if (
                     optimizer_method == "weighted_sum_normalized"
                     and ranking_stats
@@ -2783,10 +2803,19 @@ def main():
                         local_optimizer_weights[stat] = float(
                             st.session_state.get(weight_key, 1.0)
                         )
+                    effective_weighted_stats = get_effective_weighted_stats(
+                        ranking_stats,
+                        local_optimizer_weights,
+                    )
                     local_weight_signature = tuple(
                         float(local_optimizer_weights.get(stat, 1.0))
                         for stat in ranking_stats
                     )
+                    if not effective_weighted_stats:
+                        st.error(
+                            "Weighted Sum requires at least one stat with a weight greater than zero."
+                        )
+                        return working_df, sampled_mode
 
                 cache_key = (
                     dataset,
@@ -2817,77 +2846,54 @@ def main():
 
                 dialect_request_payload = {}
                 if use_encounter_objective:
-                    profile_request = None
-                    if optimizer_encounter_profile:
-                        profile_path = ROOT / "data" / "profiles" / optimizer_encounter_profile
-                        if profile_path.exists():
-                            try:
-                                profile_request = load_request(profile_path)
-                            except Exception:
-                                profile_request = None
+                    profile_request, profile_error = load_encounter_profile_request(
+                        ROOT,
+                        optimizer_encounter_profile,
+                    )
+                    if profile_error:
+                        st.error(profile_error)
+                        return working_df, sampled_mode
 
-                    if profile_request is None:
-                        fallback_mix = {"neg.phys": 1.0}
-                        primary_to_neg = {
-                            "Dmg: Phy": "neg.phys",
-                            "Dmg: VS Str.": "neg.str",
-                            "Dmg: VS Sla.": "neg.sla",
-                            "Dmg: VS Pie.": "neg.pie",
-                            "Dmg: Mag": "neg.mag",
-                            "Dmg: Fir": "neg.fir",
-                            "Dmg: Lit": "neg.lit",
-                            "Dmg: Hol": "neg.hol",
-                        }
-                        if primary_highlight in primary_to_neg:
-                            fallback_mix = {primary_to_neg[str(primary_highlight)]: 1.0}
-
-                        dialect_request_payload = {
-                            "version": 1,
-                            "scope": encounter_scope,
-                            "objective": {
-                                "type": OPT_OBJECTIVE_ENCOUNTER,
-                                "hp": 1600,
-                                "eps": 0.01,
-                                "lambda_status": float(optimizer_lambda_status),
-                            },
-                            "constraints": {
-                                "max_weight": float(max_weight_limit)
-                                if use_max_weight and max_weight_limit is not None
-                                else None,
-                                "include_names": list(armor_custom_include_names)
-                                if armor_custom_set and armor_custom_include_names
-                                else None,
-                            },
-                            "encounter": {
-                                "name": "UI_Fallback_Profile",
-                                "incoming": {"damage_mix": fallback_mix},
-                                "status_threats": {},
-                            },
-                        }
-                    else:
-                        dialect_request_payload = dict(profile_request)
-                        dialect_request_payload["scope"] = encounter_scope
-                        dialect_request_payload["objective"] = dict(
-                            dialect_request_payload.get("objective") or {}
+                    dialect_request_payload = dict(profile_request or {})
+                    dialect_request_payload["dataset"] = dataset
+                    dialect_request_payload["engine"] = optimizer_engine
+                    dialect_request_payload["scope"] = encounter_scope
+                    dialect_request_payload["objective"] = dict(
+                        dialect_request_payload.get("objective") or {}
+                    )
+                    dialect_request_payload["objective"]["type"] = OPT_OBJECTIVE_ENCOUNTER
+                    dialect_request_payload["objective"]["lambda_status"] = float(
+                        optimizer_lambda_status
+                    )
+                    dialect_request_payload["constraints"] = dict(
+                        dialect_request_payload.get("constraints") or {}
+                    )
+                    if use_max_weight and max_weight_limit is not None:
+                        dialect_request_payload["constraints"]["max_weight"] = float(
+                            max_weight_limit
                         )
-                        dialect_request_payload["objective"]["type"] = OPT_OBJECTIVE_ENCOUNTER
-                        dialect_request_payload["objective"]["lambda_status"] = float(
-                            optimizer_lambda_status
+                    if armor_custom_set and armor_custom_include_names:
+                        dialect_request_payload["constraints"]["include_names"] = list(
+                            armor_custom_include_names
                         )
-                        dialect_request_payload["constraints"] = dict(
-                            dialect_request_payload.get("constraints") or {}
-                        )
-                        if use_max_weight and max_weight_limit is not None:
-                            dialect_request_payload["constraints"]["max_weight"] = float(
-                                max_weight_limit
-                            )
-                        if armor_custom_set and armor_custom_include_names:
-                            dialect_request_payload["constraints"]["include_names"] = list(
-                                armor_custom_include_names
-                            )
                 else:
+                    if (
+                        optimizer_method == "weighted_sum_normalized"
+                        and len(effective_weighted_stats) == 1
+                    ):
+                        return (
+                            sort_rows_by_effective_single_stat(
+                                working_df,
+                                effective_weighted_stats[0],
+                                ascending=ascending,
+                                optimize_with_weight=optimize_with_weight,
+                            ),
+                            sampled_mode,
+                        )
                     dialect_request_payload = {
                         "version": 1,
+                        "dataset": dataset,
+                        "engine": optimizer_engine,
                         "scope": stat_rank_scope,
                         "objective": {
                             "type": OPT_OBJECTIVE_STAT_RANK,
@@ -2902,7 +2908,7 @@ def main():
                             if armor_custom_set and armor_custom_include_names
                             else None,
                         },
-                        "selected_stats": list(ranking_stats),
+                        "selected_stats": list(effective_weighted_stats),
                         "config": {
                             "minimize_stats": ["weight"] if optimize_with_weight else [],
                             "lock_stat_order": lock_stat_order,
@@ -2924,7 +2930,7 @@ def main():
                         else:
                             working_df = optimize_single_piece(
                                 working_df,
-                                selected_stats=ranking_stats,
+                                selected_stats=effective_weighted_stats,
                                 method=optimizer_method,
                                 config={
                                     "weights": weight_payload,
@@ -2939,7 +2945,7 @@ def main():
                     else:
                         working_df = optimize_single_piece(
                             working_df,
-                            selected_stats=ranking_stats,
+                            selected_stats=effective_weighted_stats,
                             method=optimizer_method,
                             config={
                                 "weights": weight_payload,
@@ -2962,8 +2968,8 @@ def main():
                         )
                 elif primary_highlight and primary_highlight in working_df.columns:
                     working_df = working_df.sort_values(by=primary_highlight, ascending=ascending)
-            except ValueError:
-                pass
+            except ValueError as exc:
+                st.error(str(exc))
         elif primary_highlight:
             if primary_highlight in working_df.columns:
                 working_df = working_df.sort_values(by=primary_highlight, ascending=ascending)
@@ -3320,81 +3326,65 @@ def main():
 
         if show_controls:
             if advanced_mode:
+                view_state = optimization_view or resolve_optimization_view_state(
+                    ROOT,
+                    dataset,
+                    optimization_scope_key,
+                    st.session_state,
+                    ranking_stat_count=len(ranking_stats),
+                )
                 controls_left, controls_right = st.columns([1, 1], gap="medium")
                 with controls_right:
-                    engine_options = [OPT_ENGINE_LEGACY, OPT_ENGINE_DIALECT_V2]
-                    ensure_state_in_options(
-                        "optimizer_engine",
-                        engine_options,
-                        OPT_ENGINE_LEGACY,
-                    )
                     st.markdown("<div style='height: 0.32rem;'></div>", unsafe_allow_html=True)
                     optimizer_engine = st.selectbox(
                         "Optimization engine",
-                        options=engine_options,
+                        options=view_state.engine_options,
                         key="optimizer_engine",
+                        format_func=format_engine_option_label,
                     )
+                    st.caption(get_engine_description(optimizer_engine))
 
-                    objective_options = [OPT_OBJECTIVE_STAT_RANK]
-                    if dataset == "armors":
-                        objective_options.append(OPT_OBJECTIVE_ENCOUNTER)
-                    ensure_state_in_options(
-                        "optimizer_objective_type",
-                        objective_options,
-                        OPT_OBJECTIVE_STAT_RANK,
-                    )
                     optimizer_objective_type = st.selectbox(
                         "Objective",
-                        options=objective_options,
+                        options=view_state.objective_options,
                         key="optimizer_objective_type",
+                        format_func=format_objective_option_label,
                     )
 
-                    if optimizer_engine == OPT_ENGINE_DIALECT_V2 and optimizer_objective_type == OPT_OBJECTIVE_ENCOUNTER:
-                        profile_options = list_encounter_profiles()
-                        if profile_options:
-                            ensure_state_in_options(
-                                "optimizer_encounter_profile",
-                                profile_options,
-                                profile_options[0],
-                            )
+                    if view_state.show_encounter_profile:
+                        if view_state.profile_options:
                             optimizer_encounter_profile = st.selectbox(
                                 "Encounter profile",
-                                options=profile_options,
+                                options=view_state.profile_options,
                                 key="optimizer_encounter_profile",
+                                format_func=format_encounter_profile_option_label,
                             )
+                        else:
+                            st.error("No encounter profiles were found in `data/profiles`.")
+
+                    if view_state.show_status_penalty_weight:
                         optimizer_lambda_status = st.number_input(
-                            "Status fear (λ)",
+                            "Status Penalty Weight",
                             min_value=0.0,
                             step=0.1,
                             key="optimizer_lambda_status",
+                            help="How strongly status threats affect the encounter score.",
                         )
 
-                    method_options = list(OPTIMIZER_METHODS.keys())
-                    ensure_state_in_options(
-                        "optimizer_method",
-                        method_options,
-                        DEFAULT_OPTIMIZATION_METHOD,
-                    )
-                    optimizer_method = st.selectbox(
-                        "Optimization method",
-                        options=method_options,
-                        key="optimizer_method",
-                        disabled=(
-                            optimizer_engine == OPT_ENGINE_DIALECT_V2
-                            and optimizer_objective_type == OPT_OBJECTIVE_ENCOUNTER
-                        ),
-                    )
+                    if view_state.show_optimization_method:
+                        optimizer_method = st.selectbox(
+                            "Optimization method",
+                            options=view_state.method_options,
+                            key="optimizer_method",
+                            format_func=format_method_option_label,
+                        )
+                    else:
+                        st.session_state["optimizer_method"] = ""
+                        optimizer_method = ""
 
                     optimizer_weights = None
                     optimizer_weight_signature = None
-                    if (
-                        optimizer_method == "weighted_sum_normalized"
-                        and ranking_stats
-                        and not (
-                            optimizer_engine == OPT_ENGINE_DIALECT_V2
-                            and optimizer_objective_type == OPT_OBJECTIVE_ENCOUNTER
-                        )
-                    ):
+                    if view_state.show_weight_controls and ranking_stats:
                         st.markdown("<div style='height: 0.25rem;'></div>", unsafe_allow_html=True)
                         optimizer_weights = {}
                         for stat in ranking_stats:
@@ -3418,13 +3408,11 @@ def main():
                             for stat in ranking_stats:
                                 st.write(f"- {format_stat_option_label(stat)}")
 
-                    if (
-                        optimizer_engine == OPT_ENGINE_DIALECT_V2
-                        and optimizer_objective_type == OPT_OBJECTIVE_ENCOUNTER
-                    ):
+                    if view_state.show_status_penalty_weight:
                         st.info(
-                            "Optimization 2.0 active: score minimizes encounter survival cost "
-                            "(J = M + λ·StatusPenalty)."
+                            "Advanced Optimizer encounter ranking is active. "
+                            "Lower encounter score is better, and Status Penalty Weight controls "
+                            "how strongly status threats affect that score."
                         )
                     if show_weight_note and "weight" in ranking_stats:
                         st.info("Optimization note: `weight` is minimized; all other selected stats are maximized.")
@@ -4007,17 +3995,17 @@ def main():
         if dataset == "armors" and optimizer_engine == OPT_ENGINE_DIALECT_V2:
             ranked_sets_df, _ = rank_display_df(display_df, None)
             if ranked_sets_df.empty:
-                st.info("No full-set candidates matched the current Optimization 2.0 constraints.")
+                st.info("No full-set candidates matched the current Advanced Optimizer constraints.")
                 return
 
             required_cols = {"Helm", "Armor", "Gauntlets", "Greaves"}
             if not required_cols.issubset(set(ranked_sets_df.columns)):
-                st.info("Select at least two stats to enable full-set optimization in Optimization 2.0.")
+                st.info("Select at least two stats to enable Advanced Optimizer full-set ranking.")
                 return
 
             if optimizer_objective_type == OPT_OBJECTIVE_ENCOUNTER:
                 st.caption(
-                    "Optimization 2.0 full-set ranking is active. "
+                    "Advanced Optimizer full-set encounter ranking is active. "
                     "Lower `final_score_J` is better for encounter survival."
                 )
                 shown_cols = [
@@ -4034,7 +4022,7 @@ def main():
                 ]
             else:
                 st.caption(
-                    "Optimization 2.0 full-set stat ranking is active. "
+                    "Advanced Optimizer full-set stat ranking is active. "
                     "Higher `__opt_score` is better for maximin/weighted stat-rank methods."
                 )
                 shown_cols = [
@@ -4054,7 +4042,7 @@ def main():
 
             shown_cols = [col for col in shown_cols if col in ranked_sets_df.columns]
             display_rows = ranked_sets_df.head(per_page)
-            render_download_button_for_rows(display_rows, "Full set (Optimization 2.0)", "full_set_opt2")
+            render_download_button_for_rows(display_rows, "Full set (Advanced Optimizer)", "full_set_opt2")
             st.dataframe(display_rows[shown_cols], use_container_width=True)
 
             selected_names = set()
@@ -4070,15 +4058,15 @@ def main():
 
         if dataset == "armors" and armor_custom_set and optimizer_engine != OPT_ENGINE_DIALECT_V2:
             st.info(
-                "Custom scope optimization requires Optimization 2.0. "
-                "Switch engine to Optimization 2.0 to apply slot-lock constraints."
+                "Custom scope optimization requires Advanced Optimizer. "
+                "Switch engine to Advanced Optimizer to apply slot-lock constraints."
             )
             return
 
         if dataset == "armors" and armor_full_set and optimizer_engine != OPT_ENGINE_DIALECT_V2:
             st.info(
                 "Legacy full-scope preview composes per-slot rankings. "
-                "Switch engine to Optimization 2.0 for true full-set optimization."
+                "Switch engine to Advanced Optimizer for true full-set optimization."
             )
 
         st.markdown(
