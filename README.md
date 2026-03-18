@@ -8,6 +8,7 @@ A Streamlit app for exploring Elden Ring datasets, ranking candidates, and optim
 - Provides a UI for sorting/ranking and side-by-side comparison workflows.
 - Supports optimization modes for armor and talismans (single and set-based flows).
 - Includes script-based startup, verification, and recovery workflows for fast development loops.
+- Depends on `plotly` for chart and interaction paths used by the UI.
 
 ## Documentation
 
@@ -15,7 +16,7 @@ A Streamlit app for exploring Elden Ring datasets, ranking candidates, and optim
 - `docs/optimizer/README.md` — optimizer documentation hub.
 - `docs/developer/icon_and_stat_layout_customization.md` — current UI layout/icon/detailed-scope customization points.
 - Latest deep dive: `docs/session/2026-02-16_optimizer_v2_iteration_summary.md`.
-- Latest commit summary: `docs/session/2026-02-16_optimizer_v2_iteration_summary.md`.
+- Latest commit summary: `docs/session/2026-02-15_commit_summary.md`.
 
 ## Repository layout
 
@@ -196,6 +197,7 @@ The `scripts/` folder is the best path for repeatable runs.
 - `DataLoader` reads from `data/` and `data/items/`.
 - Column-loading profiles are driven by `data/column_loading_instructions.json`.
 - Streamlit caching is used for file reads and loader resources.
+- Cached dataset and column-instruction reads are keyed by each file's current size and modification time, so normal file edits should invalidate stale reads without a manual cache reset.
 
 ### If CSV content changes while the app is running
 
@@ -216,8 +218,13 @@ Use one of these reliable refresh paths:
 3. **Manual restart:** stop Streamlit process, then rerun:
 
    ```powershell
-  ./scripts/run_streamlit_local.ps1
+   ./scripts/run_streamlit_local.ps1
    ```
+
+Regression note:
+
+- File-based data loading and column-instruction caching are keyed by file signature, so normal edits invalidate stale reads.
+- This behavior is covered by tests in `tests/`.
 
 ## Debugging and verification
 
@@ -246,6 +253,32 @@ Use one of these reliable refresh paths:
   ```powershell
   ./scripts/verify-workspace.ps1
   ```
+
+- Full regression suite:
+
+  ```powershell
+  python -m unittest discover tests
+  ```
+
+- Focused UI smoke suite:
+
+  ```powershell
+  python -m unittest tests.test_ui_smoke
+  ```
+
+- Fast verify mode:
+
+  ```powershell
+  ./scripts/verify-workspace.ps1 -Quick
+  ```
+
+### CI coverage
+
+- Current GitHub Actions CI runs `ruff check .` and `python -m tools.workspace_verify`.
+- `tools.workspace_verify` runs `tools.final_check`, `tools.optimizer_check`, and `unittest discover tests` by default.
+- The unit-test suite now includes Streamlit UI smoke coverage for the default detailed view and the main optimization flow.
+- `./scripts/verify-workspace.ps1 -Quick` keeps the wrapper fast by skipping optimizer and test execution.
+- Use `python -m tools.workspace_verify` or the wrapper before release-critical changes when you need full verification.
 
 ### Typical issues and fixes
 

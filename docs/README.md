@@ -14,6 +14,14 @@ If you are onboarding to this repo, read in this order:
 6. `developer/icon_and_stat_layout_customization.md`
 7. `session/2026-02-16_optimizer_v2_iteration_summary.md`
 
+If you are preparing a release or verifying a change, also read:
+
+1. `../README.md` for the documented run and verification commands.
+2. `specs/optimizer_dialect.md` for the current optimizer request contract.
+3. `specs/encounter_profiles.md` for encounter input expectations.
+4. `specs/icon_registry.md` for icon asset conventions.
+5. `release/README.md` for the release documentation hub and checklist links.
+
 ## Quick verification
 
 ```powershell
@@ -22,6 +30,10 @@ python -m venv .venv
 pip install -r requirements.txt
 ./scripts/run_streamlit_local.ps1
 python -m tools.optimizer_smoke
+python -m tools.workspace_verify
+python -m unittest discover tests
+python -m unittest tests.test_ui_smoke
+./scripts/verify-workspace.ps1 -Quick
 ./scripts/stop_streamlit_port.ps1 -Port 8501
 ```
 
@@ -30,6 +42,19 @@ Expected outcomes:
 - App starts at `http://localhost:8501`.
 - App binds to localhost by default (not `0.0.0.0`) via `.streamlit/config.toml`.
 - Smoke script prints top-5 sections and ends with `optimizer_smoke: SUCCESS`.
+- Workspace verification passes for the current tree.
+- Unit tests complete without failures in the current environment.
+- The focused UI smoke suite covers the default detailed view and the main optimization flow.
+- Quick verification mode intentionally skips optimizer and tests.
+
+## Current CI coverage
+
+The repository's GitHub Actions workflow currently runs:
+
+- `ruff check .`
+- `python -m tools.workspace_verify`
+
+`tools.workspace_verify` runs the final check, optimizer check, and unit tests by default. Use `./scripts/verify-workspace.ps1 -Quick` when you want the wrapper to skip optimizer and tests during a fast local loop.
 
 ## Session docs (`docs/session/`)
 
@@ -58,6 +83,7 @@ Expected outcomes:
 
 - Keep `../README.md` user-facing and task-oriented.
 - Keep `docs/session/` chronological and implementation-focused.
+- Keep `docs/specs/` for stable contracts that are referenced by code and higher-level docs.
 - Prefer short, searchable headings and concrete command examples.
 
 ### Session file minimum template
