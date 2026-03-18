@@ -23,6 +23,11 @@ from streamlit.testing.v1 import AppTest, element_tree
 
 ROOT = Path(__file__).resolve().parents[1]
 PYTHON = ROOT.parent / "anaconda3" / "envs" / "elden_ring_ui" / "python.exe"
+TEST_TEMP_ROOT = ROOT / ".cache" / "ui-smoke"
+TEST_TEMP_ROOT.mkdir(parents=True, exist_ok=True)
+os.environ["TMP"] = str(TEST_TEMP_ROOT)
+os.environ["TEMP"] = str(TEST_TEMP_ROOT)
+tempfile.tempdir = str(TEST_TEMP_ROOT)
 
 
 def _get_free_port() -> int:

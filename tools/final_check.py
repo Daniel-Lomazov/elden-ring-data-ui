@@ -1,8 +1,21 @@
+import contextlib
 import importlib
+import io
+import logging
 import sys
 
 from data_loader import DataLoader
 from ui_components import parse_armor_stats
+
+logging.getLogger("streamlit").setLevel(logging.ERROR)
+logging.getLogger("streamlit.runtime.caching.cache_data_api").setLevel(logging.ERROR)
+logging.getLogger("streamlit.runtime.caching.cache_data_api").disabled = True
+
+
+def _run_quietly(callback):
+    buffer = io.StringIO()
+    with contextlib.redirect_stdout(buffer), contextlib.redirect_stderr(buffer):
+        return callback()
 
 
 def run_checks(include_app_import: bool = True, include_data_probe: bool = True) -> int:
@@ -15,7 +28,7 @@ def run_checks(include_app_import: bool = True, include_data_probe: bool = True)
 
     for module_name in modules:
         try:
-            importlib.import_module(module_name)
+            _run_quietly(lambda: importlib.import_module(module_name))
             print(f"OK: imported {module_name}")
         except Exception as exc:
             print(f"ERR: failed to import {module_name}: {exc}")
@@ -33,7 +46,7 @@ def run_checks(include_app_import: bool = True, include_data_probe: bool = True)
                 print("WARN: file could not be loaded")
             else:
                 try:
-                    parsed = parse_armor_stats(df)
+                    parsed = _run_quietly(lambda: parse_armor_stats(df))
                     print("Parsed columns sample:", parsed.columns.tolist()[:20])
                 except Exception as exc:
                     print("ERR parsing stats:", exc)

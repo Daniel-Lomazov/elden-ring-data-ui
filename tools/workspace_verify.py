@@ -1,4 +1,9 @@
 import argparse
+import contextlib
+import io
+import logging
+import os
+import tempfile
 import time
 import unittest
 from pathlib import Path
@@ -8,32 +13,83 @@ from tools.optimizer_check import run_checks as run_optimizer_checks
 from tools.optimizer_smoke import main as run_optimizer_smoke
 
 ROOT = Path(__file__).resolve().parents[1]
+WORKSPACE_VERIFY_TEMP_ROOT = ROOT / ".cache" / "workspace-verify"
+_ORIGINAL_TEMP_CLEANUP = tempfile.TemporaryDirectory._cleanup.__func__
+
+logging.getLogger("streamlit").setLevel(logging.ERROR)
+logging.getLogger("streamlit.runtime.caching.cache_data_api").setLevel(logging.ERROR)
+logging.getLogger("streamlit.runtime.caching.cache_data_api").disabled = True
+
+
+@classmethod
+def _patched_temp_cleanup(cls, name, warn_message, ignore_errors=False):
+    try:
+        return _ORIGINAL_TEMP_CLEANUP(cls, name, warn_message, True)
+    except PermissionError:
+        return None
 
 
 def run_step(name: str, callback) -> tuple[bool, float, str]:
     started = time.perf_counter()
+    captured = io.StringIO()
     try:
-        callback()
+        with contextlib.redirect_stdout(captured), contextlib.redirect_stderr(captured):
+            callback()
         elapsed = time.perf_counter() - started
-        return True, elapsed, "ok"
+        return True, elapsed, captured.getvalue()
     except SystemExit as exc:
         code = int(getattr(exc, "code", 1) or 0)
         elapsed = time.perf_counter() - started
         if code == 0:
-            return True, elapsed, "ok"
+            return True, elapsed, captured.getvalue()
+        details = captured.getvalue()
+        if details:
+            return False, elapsed, f"{details}\nexit={code}"
         return False, elapsed, f"exit={code}"
     except Exception as exc:
         elapsed = time.perf_counter() - started
+        details = captured.getvalue()
+        if details:
+            return False, elapsed, f"{details}\n{exc}"
         return False, elapsed, str(exc)
 
 
+def _filter_noisy_output(output: str) -> str:
+    if not output:
+        return ""
+    filtered_lines: list[str] = []
+    skip_next = False
+    for line in output.splitlines():
+        if skip_next:
+            skip_next = False
+            continue
+        stripped = line.strip()
+        if "No runtime found, using MemoryCacheStorageManager" in line:
+            continue
+        if "to view this Streamlit app on a browser, run it with the following" in line:
+            skip_next = True
+            continue
+        if stripped.startswith("streamlit run ") and "workspace_verify.py" in stripped:
+            continue
+        filtered_lines.append(line)
+    return "\n".join(filtered_lines).strip()
+
+
 def run_unittest_checks() -> None:
-    root = unittest.defaultTestLoader.discover(
-        start_dir=str(ROOT / "tests"),
-        top_level_dir=str(ROOT),
-    )
-    result = unittest.TextTestRunner(verbosity=2).run(root)
+    WORKSPACE_VERIFY_TEMP_ROOT.mkdir(parents=True, exist_ok=True)
+    os.environ["TMP"] = str(WORKSPACE_VERIFY_TEMP_ROOT)
+    os.environ["TEMP"] = str(WORKSPACE_VERIFY_TEMP_ROOT)
+    tempfile.tempdir = str(WORKSPACE_VERIFY_TEMP_ROOT)
+    tempfile.TemporaryDirectory._cleanup = _patched_temp_cleanup
+    output_buffer = io.StringIO()
+    with contextlib.redirect_stdout(output_buffer), contextlib.redirect_stderr(output_buffer):
+        root = unittest.defaultTestLoader.discover(
+            start_dir=str(ROOT / "tests"),
+            top_level_dir=str(ROOT),
+        )
+        result = unittest.TextTestRunner(stream=output_buffer, verbosity=2).run(root)
     if not result.wasSuccessful():
+        print(output_buffer.getvalue(), end="")
         raise SystemExit(1)
 
 
@@ -82,7 +138,10 @@ def main() -> int:
         ok, elapsed, message = run_step(step_name, callback)
         state = "PASS" if ok else "FAIL"
         print(f"[workspace_verify] {step_name}: {state} ({elapsed:.2f}s)")
-        if message != "ok":
+        filtered_message = _filter_noisy_output(message)
+        if filtered_message:
+            print(filtered_message)
+        if not ok and not filtered_message and message:
             print(f"[workspace_verify] {step_name} details: {message}")
         all_ok = all_ok and ok
 
