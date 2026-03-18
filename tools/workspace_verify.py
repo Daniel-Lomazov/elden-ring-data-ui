@@ -1,8 +1,12 @@
 import argparse
 import time
+import unittest
+from pathlib import Path
 
 from tools.final_check import run_checks as run_final_checks
 from tools.optimizer_check import run_checks as run_optimizer_checks
+
+ROOT = Path(__file__).resolve().parents[1]
 
 
 def run_step(name: str, callback) -> tuple[bool, float, str]:
@@ -22,14 +26,26 @@ def run_step(name: str, callback) -> tuple[bool, float, str]:
         return False, elapsed, str(exc)
 
 
+def run_unittest_checks() -> None:
+    root = unittest.defaultTestLoader.discover(
+        start_dir=str(ROOT / "tests"),
+        top_level_dir=str(ROOT),
+    )
+    result = unittest.TextTestRunner(verbosity=2).run(root)
+    if not result.wasSuccessful():
+        raise SystemExit(1)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Run workspace verification checks")
     parser.add_argument("--skip-final", action="store_true", help="Skip final_check")
     parser.add_argument("--skip-optimizer", action="store_true", help="Skip optimizer_check")
+    parser.add_argument("--skip-tests", action="store_true", help="Skip unittest discovery")
     parser.add_argument("--quick", action="store_true", help="Run faster verification path")
     args = parser.parse_args()
 
     steps: list[tuple[str, object]] = []
+    skip_tests = args.skip_tests or args.quick
 
     def run_final_entry() -> None:
         exit_code = int(
@@ -46,6 +62,8 @@ def main() -> int:
         steps.append(("final_check", run_final_entry))
     if not args.skip_optimizer:
         steps.append(("optimizer_check", run_optimizer_checks))
+    if not skip_tests:
+        steps.append(("tests", run_unittest_checks))
 
     if not steps:
         print("WORKSPACE_VERIFY: no checks selected")

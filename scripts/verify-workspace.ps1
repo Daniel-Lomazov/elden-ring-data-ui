@@ -26,6 +26,7 @@ $requiredPaths = @(
     "app.py",
     "environment.yml",
     "requirements.txt",
+    "tests",
     "data/armors.csv",
     "tools/final_check.py",
     "tools/optimizer_check.py",
@@ -81,6 +82,7 @@ if ($skipOptimizer) {
 }
 if ($Quick) {
     $pythonArgs += "--quick"
+    $pythonArgs += "--skip-tests"
 }
 
 & $pythonExe @pythonArgs
