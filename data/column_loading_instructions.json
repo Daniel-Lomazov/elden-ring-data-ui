@@ -67,6 +67,45 @@
         "dlc",
         "weight"
       ]
+    },
+    "shared_catalog_cards": {
+      "description": "Shared card/list rendering profile for non-optimizer catalog datasets.",
+      "include": [
+        "type",
+        "image",
+        "description",
+        "effect",
+        "value",
+        "weight",
+        "dlc"
+      ]
+    },
+    "shared_catalog_detail": {
+      "description": "Shared detail-inspector profile for non-optimizer catalog datasets.",
+      "include": [
+        "type",
+        "image",
+        "description",
+        "effect",
+        "value",
+        "weight",
+        "special effect",
+        "how to acquire",
+        "in-game section",
+        "dlc"
+      ]
+    },
+    "shared_catalog_ranking": {
+      "description": "Shared ranking profile for non-optimizer catalog datasets when generic numeric sorting is enabled.",
+      "include": [
+        "type",
+        "image",
+        "description",
+        "effect",
+        "value",
+        "weight",
+        "dlc"
+      ]
     }
   },
   "dataset_overrides": {

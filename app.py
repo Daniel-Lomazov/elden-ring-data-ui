@@ -53,10 +53,17 @@ from app_support import (
     ARMOR_FULL_SCOPE_DESCRIPTION_PLACEHOLDER,
     ARMOR_CUSTOM_SCOPE_NAME_PLACEHOLDER,
     ARMOR_CUSTOM_SCOPE_DESCRIPTION_PLACEHOLDER,
+    DATASET_FAMILY_ARMOR,
+    DATASET_FAMILY_CATALOG,
+    DATASET_FAMILY_TALISMAN,
     list_weighted_preset_options,
+    list_supported_datasets,
     normalize_dataset_text,
     focus_detail_anchor,
+    resolve_dataset_ui_spec,
+    resolve_default_view,
     resolve_optimization_view_state,
+    resolve_rankable_numeric_fields,
     load_encounter_profile_request,
     load_weighted_preset_option,
     save_weighted_preset,
@@ -266,6 +273,26 @@ def sort_rows_by_effective_single_stat(
     stat_is_minimized = optimize_with_weight and str(stat).strip().lower() == "weight"
     effective_ascending = ascending if not stat_is_minimized else not ascending
     return frame.sort_values(by=stat, ascending=effective_ascending)
+
+
+def sort_rows_by_selected_stats(
+    frame: pd.DataFrame,
+    stats: list[str],
+    *,
+    ascending: bool,
+) -> pd.DataFrame:
+    ordered_stats = [stat for stat in stats if stat in frame.columns]
+    if not ordered_stats:
+        return frame
+    sorted_frame = frame.copy()
+    for stat in reversed(ordered_stats):
+        sorted_frame = sorted_frame.sort_values(
+            by=stat,
+            ascending=ascending,
+            kind="mergesort",
+            na_position="last",
+        )
+    return sorted_frame
 
 
 @st.cache_resource
@@ -754,7 +781,7 @@ def main():
             pass
 
         column_key = str(column or "").strip().lower()
-        if dataset == "talismans" and column_key == "dlc":
+        if is_talisman_dataset and column_key == "dlc":
             return talisman_dlc_label(value)
 
         if isinstance(value, (int, float)):
@@ -770,6 +797,60 @@ def main():
         if mapped_name:
             return mapped_name
         return token.replace("_", " ").title()
+
+    def iter_present_text_fields(row: pd.Series, fields: tuple[str, ...] | list[str]):
+        for field in fields:
+            if field not in row.index:
+                continue
+            raw_value = row.get(field)
+            if pd.isna(raw_value):
+                continue
+            text = str(raw_value).strip()
+            if not text or text.lower() == "nan":
+                continue
+            yield field, text
+
+    def render_summary_text_fields(container, row: pd.Series, fields: tuple[str, ...] | list[str]):
+        for field, text in iter_present_text_fields(row, fields):
+            if field == "description":
+                container.caption(text)
+            else:
+                container.markdown(f"**{format_item_detail_label(field)}:** {text}")
+
+    def resolve_item_detail_columns(source_df: pd.DataFrame) -> list[str]:
+        hidden_columns = {
+            "image",
+            "Res: Imm.",
+            "Res: Imm",
+            "Res: Rob.",
+            "Res: Rob",
+            "Res: Foc.",
+            "Res: Foc",
+            "Res: Vit.",
+            "Res: Vit",
+        }
+        ordered_columns = []
+        summary_fields = {
+            field
+            for field in ui_spec.detail_fields
+            if field in {"description", "effect", "special effect", "how to acquire", "in-game section", "type"}
+        }
+        hidden_columns.update(summary_fields)
+        for column in ui_spec.detail_fields:
+            if column in source_df.columns and column not in hidden_columns and column not in ordered_columns:
+                ordered_columns.append(column)
+        for column in source_df.columns:
+            if column in hidden_columns or column in ordered_columns:
+                continue
+            ordered_columns.append(column)
+        return ordered_columns
+
+    def render_card_meta_fields(container, row: pd.Series):
+        for field, text in iter_present_text_fields(row, ui_spec.card_meta_fields):
+            if field == "description":
+                container.caption(text)
+            else:
+                container.markdown(f"**{format_item_detail_label(field)}:** {text}")
 
     def render_item_detail_inspector(source_df: pd.DataFrame, panel_key: str):
         if source_df is None or source_df.empty or "name" not in source_df.columns:
@@ -813,34 +894,19 @@ def main():
                 except Exception:
                     pass
 
-            if dataset == "talismans":
-                effect_text = str(selected_row.get("effect", "")).strip()
-                if effect_text:
-                    st.markdown(f"**Effect:** {effect_text}")
+            render_summary_text_fields(
+                st,
+                selected_row,
+                tuple(
+                    field
+                    for field in ui_spec.detail_fields
+                    if field in {"effect", "description", "special effect", "how to acquire", "in-game section", "type"}
+                ),
+            )
 
-                if "description" in source_df.columns and pd.notna(selected_row.get("description")):
-                    st.caption(str(selected_row.get("description", "")))
-            else:
-                if "description" in source_df.columns and pd.notna(selected_row.get("description")):
-                    st.caption(str(selected_row.get("description", "")))
-
-            hidden_columns = {
-                "description",
-                "image",
-                "effect",
-                "Res: Imm.",
-                "Res: Imm",
-                "Res: Rob.",
-                "Res: Rob",
-                "Res: Foc.",
-                "Res: Foc",
-                "Res: Vit.",
-                "Res: Vit",
-            }
+            detail_columns = resolve_item_detail_columns(source_df)
             detail_rows = []
-            for column in source_df.columns:
-                if column in hidden_columns:
-                    continue
+            for column in detail_columns:
                 detail_rows.append(
                     {
                         "Field": format_item_detail_label(column),
@@ -1159,7 +1225,7 @@ def main():
     )
 
     loader = get_loader("v2_profile_loader")
-    datasets = loader.get_available_datasets()
+    available_datasets = loader.get_available_datasets()
 
     def load_active_dataset_keys() -> list[str]:
         config_path = ROOT / "data" / "active_datasets.json"
@@ -1178,89 +1244,89 @@ def main():
 
     active_dataset_keys = load_active_dataset_keys()
     active_dataset_set = set(active_dataset_keys)
+    supported_dataset_keys = list(list_supported_datasets(available_datasets))
 
-    # Sidebar dataset chooser
-    active_ds_keys = [key for key in active_dataset_keys if key in datasets]
-    inactive_ds_keys = [key for key in datasets if key not in active_dataset_set]
-    ds_keys = [*active_ds_keys, *inactive_ds_keys]
+    if not supported_dataset_keys:
+        st.info("No supported datasets were found in the current project.")
+        return
+
+    active_ds_keys = [key for key in active_dataset_keys if key in supported_dataset_keys]
+    ds_keys = [*active_ds_keys, *[key for key in supported_dataset_keys if key not in active_dataset_set]]
     if not ds_keys:
-        ds_keys = datasets
+        ds_keys = supported_dataset_keys
 
-    # Build friendly labels for datasets (e.g., 'items/ammos' -> 'Items / Ammos')
-    def pretty_dataset_label(k: str) -> str:
-        # replace separators with spaced equivalents and title-case words
-        label = k.replace("/", " / ").replace("_", " ")
-        return " ".join(part.capitalize() for part in label.split())
+    dataset_key_to_label = {}
+    for key in ds_keys:
+        spec = resolve_dataset_ui_spec(key)
+        if spec is not None:
+            dataset_key_to_label[key] = spec.label
+    dataset_label_to_key = {label: key for key, label in dataset_key_to_label.items()}
+    ds_labels = [dataset_key_to_label[key] for key in ds_keys if key in dataset_key_to_label]
 
-    dataset_label_map = {
-        (
-            pretty_dataset_label(k)
-            if k in active_dataset_set
-            else f"{pretty_dataset_label(k)} · Not implemented yet"
-        ): k
-        for k in ds_keys
-    }
-    ds_labels = list(dataset_label_map.keys())
+    requested_dataset_token = str(st.session_state.get("selected_dataset_label", "")).strip()
+    unsupported_dataset_notice = None
+    if requested_dataset_token in dataset_key_to_label:
+        st.session_state["selected_dataset_label"] = dataset_key_to_label[requested_dataset_token]
+    elif requested_dataset_token and requested_dataset_token not in dataset_label_to_key:
+        unsupported_spec = resolve_dataset_ui_spec(requested_dataset_token)
+        fallback_label = ds_labels[0] if ds_labels else ""
+        if unsupported_spec is not None and unsupported_spec.unsupported_reason:
+            unsupported_dataset_notice = (
+                f"{unsupported_spec.label} is excluded from the unified dataset UI. "
+                f"{unsupported_spec.unsupported_reason}"
+            )
+        elif fallback_label:
+            unsupported_dataset_notice = (
+                f"Dataset '{requested_dataset_token}' is not available in this app state. "
+                f"Showing {fallback_label} instead."
+            )
+
     if ds_labels:
         ensure_state_in_options("selected_dataset_label", ds_labels, ds_labels[0])
-    active_count = len(active_ds_keys)
-    if inactive_ds_keys:
-        st.markdown(
-            f"""
-            <style>
-            div[role=\"listbox\"] > div:nth-child(n+{active_count + 1}) {{
-                color: var(--secondary-text-color) !important;
-            }}
-            </style>
-            """,
-            unsafe_allow_html=True,
-        )
     selected_dataset_label = st.sidebar.selectbox(
         "Choose Dataset:", options=ds_labels, key="selected_dataset_label"
     )
-    dataset = dataset_label_map.get(selected_dataset_label)
+    dataset = dataset_label_to_key.get(selected_dataset_label)
+    ui_spec = resolve_dataset_ui_spec(dataset)
+    if ui_spec is None:
+        st.info("The selected dataset does not have a registered UI specification.")
+        return
 
-    view_mode_options = [VIEW_MODE_DETAILED, VIEW_MODE_OPTIMIZATION]
-    if dataset == "armors":
-        ensure_state_in_options("armor_view_mode", view_mode_options, VIEW_MODE_DETAILED)
-        st.sidebar.selectbox(
-            "Choose View:",
-            options=view_mode_options,
-            key="armor_view_mode",
-        )
-    elif dataset == "talismans":
-        ensure_state_in_options("talisman_view_mode", view_mode_options, VIEW_MODE_DETAILED)
-        st.sidebar.selectbox(
-            "Choose View:",
-            options=view_mode_options,
-            key="talisman_view_mode",
-        )
-    else:
-        ensure_state_in_options("generic_view_mode", view_mode_options, VIEW_MODE_DETAILED)
-        st.sidebar.selectbox(
-            "Choose View:",
-            options=view_mode_options,
-            key="generic_view_mode",
-        )
+    if unsupported_dataset_notice:
+        st.warning(unsupported_dataset_notice)
+
+    default_view_mode = resolve_default_view(ui_spec)
+    if len(ui_spec.supported_views) > 1:
+        if dataset == "armors":
+            ensure_state_in_options("armor_view_mode", list(ui_spec.supported_views), default_view_mode)
+            st.sidebar.selectbox(
+                "Choose View:",
+                options=list(ui_spec.supported_views),
+                key="armor_view_mode",
+            )
+        elif dataset == "talismans":
+            ensure_state_in_options("talisman_view_mode", list(ui_spec.supported_views), default_view_mode)
+            st.sidebar.selectbox(
+                "Choose View:",
+                options=list(ui_spec.supported_views),
+                key="talisman_view_mode",
+            )
 
     # load selected dataset
     df = None
     if dataset:
-        if dataset == "armors":
-            if hasattr(loader, "load_dataset_by_profile"):
-                df = loader.load_dataset_by_profile(
-                    dataset_key=dataset,
-                    profile_name="single_piece_visual",
-                )
-            else:
-                filepath = f"data/{dataset}.csv"
-                df = DataLoader.load_file(filepath)
-            if df is None:
-                filepath = f"data/{dataset}.csv"
-                df = DataLoader.load_file(filepath)
-        else:
-            filepath = f"data/{dataset}.csv"
-            df = DataLoader.load_file(filepath)
+        dataset_path = (
+            loader.resolve_dataset_path(dataset)
+            if hasattr(loader, "resolve_dataset_path")
+            else Path("data") / f"{dataset}.csv"
+        )
+        if ui_spec.loader_profile and hasattr(loader, "load_dataset_by_profile"):
+            df = loader.load_dataset_by_profile(
+                dataset_key=dataset,
+                profile_name=ui_spec.loader_profile,
+            )
+        if df is None:
+            df = DataLoader.load_file(str(dataset_path))
 
     if df is None:
         st.info("No dataset loaded. Add CSV files to the `data/` folder.")
@@ -1419,6 +1485,10 @@ def main():
             armor_col_map = None
 
     # Additional armor-specific UI: single-piece vs set and piece-type filter
+    is_armor_dataset = ui_spec.family == DATASET_FAMILY_ARMOR
+    is_talisman_dataset = ui_spec.family == DATASET_FAMILY_TALISMAN
+    is_catalog_dataset = ui_spec.family == DATASET_FAMILY_CATALOG
+
     armor_single_piece = False
     armor_full_set = False
     armor_custom_set = False
@@ -1443,7 +1513,6 @@ def main():
         stack_keys = [
             "armor_custom_stack_view",
             "talisman_custom_stack_view",
-            "generic_custom_stack_view",
         ]
         for stack_key in stack_keys:
             current_value = st.session_state.get(stack_key)
@@ -1489,7 +1558,7 @@ def main():
         ordered.extend([label for label in labels if label not in ordered])
         return label_map, ordered
 
-    if dataset == "armors" and str(
+    if is_armor_dataset and str(
         st.session_state.get("armor_view_mode", VIEW_MODE_DETAILED)
     ) == VIEW_MODE_DETAILED:
         detail_scope_options = [
@@ -1639,12 +1708,11 @@ def main():
                 STACK_VIEW_HORIZONTAL,
             )
 
-    if dataset == "talismans" and str(
+    if is_talisman_dataset and str(
         st.session_state.get("talisman_view_mode", VIEW_MODE_DETAILED)
     ) == VIEW_MODE_DETAILED:
         detail_scope_options = [
             DETAILED_SCOPE_SINGLE,
-            DETAILED_SCOPE_FULL,
             DETAILED_SCOPE_CUSTOM,
         ]
         ensure_state_in_options(
@@ -1670,7 +1738,7 @@ def main():
                 key="talisman_custom_stack_view",
             )
 
-    if dataset == "armors":
+    if is_armor_dataset:
         armor_view_mode = str(
             st.session_state.get("armor_view_mode", VIEW_MODE_DETAILED)
         )
@@ -2242,7 +2310,7 @@ def main():
                     selected_name = str(st.session_state.get(key, "")).strip()
                     if selected_name:
                         armor_detail_set_selection[piece_label] = selected_name
-    elif dataset == "talismans":
+    elif is_talisman_dataset:
         talisman_view_mode = str(
             st.session_state.get("talisman_view_mode", VIEW_MODE_DETAILED)
         )
@@ -2283,22 +2351,6 @@ def main():
                         options=talisman_names,
                         key="talisman_detail_single_item",
                     )
-            elif talisman_detailed_scope_mode == DETAILED_SCOPE_FULL:
-                placeholder_families = ["Not implemented yet"]
-                ensure_state_in_options(
-                    "talisman_detail_family",
-                    placeholder_families,
-                    placeholder_families[0],
-                )
-                st.sidebar.selectbox(
-                    "Choose family:",
-                    options=placeholder_families,
-                    key="talisman_detail_family",
-                )
-                st.sidebar.info(
-                    "Family grouping is not implemented yet. "
-                    "This selector will be connected once family definitions are added."
-                )
             else:
                 st.sidebar.markdown("---")
                 st.sidebar.subheader("All pieces (Custom scope)")
@@ -2314,43 +2366,6 @@ def main():
                         key=key,
                     )
                     talisman_detail_set_selection.append((slot_label, selected_name))
-
-    else:
-        generic_view_mode = str(
-            st.session_state.get("generic_view_mode", VIEW_MODE_DETAILED)
-        )
-        if generic_view_mode == VIEW_MODE_DETAILED:
-            detailed_view_active = True
-            st.sidebar.markdown("---")
-            st.sidebar.subheader("All pieces (Custom scope)")
-            ensure_state_in_options(
-                "generic_custom_stack_view",
-                custom_stack_view_options,
-                STACK_VIEW_HORIZONTAL,
-            )
-            st.sidebar.selectbox(
-                "Choose View:",
-                options=custom_stack_view_options,
-                key="generic_custom_stack_view",
-            )
-            generic_names = sorted(
-                {
-                    str(name).strip()
-                    for name in df.get("name", pd.Series(dtype=str)).dropna().tolist()
-                    if str(name).strip()
-                }
-            )
-            for idx in range(1, 5):
-                if not generic_names:
-                    continue
-                key = f"generic_detail_slot_{idx}"
-                default_name = generic_names[min(idx - 1, len(generic_names) - 1)]
-                ensure_state_in_options(key, generic_names, default_name)
-                st.sidebar.selectbox(
-                    f"Slot {idx}:",
-                    options=generic_names,
-                    key=key,
-                )
 
     # determine possible highlight stats
     numeric_cols = df.select_dtypes(include=["number"]).columns.tolist()
@@ -2376,39 +2391,7 @@ def main():
         *status_resistance_cols,
         "Res: Poi.",
     ]
-    # prefer weight/poise and damage/resistance columns
-    stat_options = [c for c in numeric_cols if c.startswith("Dmg:") or c.startswith("status.")]
-    if "Res: Poi." in numeric_cols and "Res: Poi." not in stat_options:
-        stat_options.append("Res: Poi.")
-    for s in ["weight", "poise"]:
-        if s in numeric_cols and s not in stat_options:
-            stat_options.insert(0, s)
-    if dataset == "armors":
-        stat_options = [s for s in stat_options if str(s).strip().lower() != "weight"]
-        ordered_options = [s for s in armor_primary_stat_order if s in stat_options]
-        ordered_options.extend([s for s in stat_options if s not in ordered_options])
-        stat_options = ordered_options
-    elif dataset == "talismans":
-        stat_options = [
-            s for s in numeric_cols if str(s).strip().lower() not in ["id", "dlc", "weight"]
-        ]
-
-    if dataset not in ["armors", "talismans"] and not detailed_view_active:
-        st.markdown("---")
-        st.info(
-            "This dataset view is currently a placeholder and is not implemented yet."
-        )
-        st.caption(
-            "A dedicated per-dataset skeleton flow will be added in upcoming iterations."
-        )
-        qp_update(
-            {
-                "dataset": selected_dataset_label,
-                "stats": "",
-                "single_stat": "",
-            }
-        )
-        return
+    stat_options = list(resolve_rankable_numeric_fields(df, ui_spec))
 
     # Controls (sidebar)
     # Use raw CSV column names for stat options and display labels (no friendly renaming)
@@ -2446,8 +2429,12 @@ def main():
 
     # In single-piece armor/talisman optimization mode, allow selecting many highlighted stats.
     advanced_mode = (
-        (dataset == "armors" and (armor_single_piece or armor_full_set or armor_custom_set))
-        or (dataset == "talismans" and (talisman_single_piece or talisman_full_set))
+        (is_armor_dataset and (armor_single_piece or armor_full_set or armor_custom_set))
+        or (is_talisman_dataset and (talisman_single_piece or talisman_full_set))
+    )
+    generic_multi_sort_mode = is_catalog_dataset and bool(options_labels)
+    show_ranking_controls = not detailed_view_active and (
+        advanced_mode or generic_multi_sort_mode or bool(options_labels)
     )
 
     sort_options = ["Highest First", "Lowest First"]
@@ -2457,7 +2444,7 @@ def main():
     sort_choice = st.session_state.get("sort_order", "Highest First")
     per_page = st.session_state.get("rows_to_show", 5)
 
-    if not detailed_view_active:
+    if show_ranking_controls:
         st.sidebar.markdown("---")
         st.sidebar.subheader("Ranking Controls")
 
@@ -2492,7 +2479,7 @@ def main():
             if not lock_stat_order:
                 highlighted_stats = sorted(highlighted_stats)
 
-            if dataset == "armors":
+            if is_armor_dataset:
                 optimize_with_weight = st.sidebar.checkbox(
                     "Optimize with weight",
                     key="optimize_with_weight",
@@ -2519,6 +2506,20 @@ def main():
                             step=0.1,
                             key="max_weight_limit",
                         )
+        elif generic_multi_sort_mode:
+            default_sort_stat = (
+                ui_spec.default_sort_field if ui_spec.default_sort_field in options_labels else (
+                    options_labels[0] if options_labels else None
+                )
+            )
+            default_highlights = [default_sort_stat] if default_sort_stat else []
+            ensure_state_multiselect("highlighted_stats", options_labels, default_highlights)
+            highlighted_stats = st.sidebar.multiselect(
+                "Highlighted stats:",
+                options=options_labels,
+                key="highlighted_stats",
+                format_func=format_stat_option_label,
+            )
         else:
             if options_labels:
                 ensure_state_in_options("single_highlight_stat", options_labels, options_labels[0])
@@ -2539,7 +2540,7 @@ def main():
         primary_highlight = highlighted_stats[0]
         sync_optimizer_weight_state(highlighted_stats)
 
-    if dataset == "talismans":
+    if is_talisman_dataset:
         optimize_with_weight = False
         use_max_weight = False
         max_weight_limit = None
@@ -2549,16 +2550,16 @@ def main():
         ranking_stats = [*ranking_stats, "weight"]
 
     armor_custom_include_names = []
-    if dataset == "armors" and armor_custom_set:
+    if is_armor_dataset and armor_custom_set:
         for piece_label in ARMOR_PIECE_ORDER:
             selected_name = str(armor_detail_set_selection.get(piece_label, "")).strip()
             if selected_name:
                 armor_custom_include_names.append(selected_name)
 
     optimization_scope_key = "single_piece"
-    if dataset == "armors" and (armor_full_set or armor_custom_set):
+    if is_armor_dataset and (armor_full_set or armor_custom_set):
         optimization_scope_key = "full_set"
-    elif dataset == "talismans" and talisman_full_set:
+    elif is_talisman_dataset and talisman_full_set:
         optimization_scope_key = "full_set"
 
     if advanced_mode and not detailed_view_active:
@@ -2584,7 +2585,7 @@ def main():
     display_df = df.copy()
 
     # If armor single-piece mode is active, filter by piece type
-    if dataset == "armors" and armor_single_piece and armor_piece_type:
+    if is_armor_dataset and armor_single_piece and armor_piece_type:
         if "type" in display_df.columns:
             display_df = display_df[display_df['type'].astype(str) == str(armor_piece_type)]
 
@@ -2794,7 +2795,7 @@ def main():
     # Persist current UI state to query params for refresh/share.
     qp_update(
         {
-            "dataset": selected_dataset_label,
+            "dataset": dataset,
             "armor_mode": str(st.session_state.get("armor_mode", ARMOR_MODE_SINGLE_PIECE)),
             "talisman_mode": str(st.session_state.get("talisman_mode", TALISMAN_MODE_SINGLE)),
             "piece_type": str(armor_piece_type) if armor_piece_type else "",
@@ -2829,10 +2830,12 @@ def main():
 
         ascending = sort_choice == "Lowest First"
         use_dialect_optimizer = optimizer_engine == OPT_ENGINE_DIALECT_V2
-        use_encounter_objective = optimizer_objective_type == OPT_OBJECTIVE_ENCOUNTER and dataset == "armors"
+        use_encounter_objective = (
+            optimizer_objective_type == OPT_OBJECTIVE_ENCOUNTER and is_armor_dataset
+        )
         can_optimize = len(ranking_stats) >= 2 or use_encounter_objective
 
-        if dataset in ["armors", "talismans"] and can_optimize:
+        if ui_spec.supports_optimization and can_optimize:
             try:
                 local_optimizer_weights = None
                 local_weight_signature = None
@@ -2882,11 +2885,11 @@ def main():
                 )
 
                 encounter_scope = "single_piece"
-                if dataset == "armors" and (armor_full_set or armor_custom_set):
+                if is_armor_dataset and (armor_full_set or armor_custom_set):
                     encounter_scope = "full_set"
 
                 stat_rank_scope = "single_piece"
-                if dataset == "armors" and (armor_full_set or armor_custom_set):
+                if is_armor_dataset and (armor_full_set or armor_custom_set):
                     stat_rank_scope = "full_set"
 
                 dialect_request_payload = {}
@@ -3015,9 +3018,40 @@ def main():
                     working_df = working_df.sort_values(by=primary_highlight, ascending=ascending)
             except ValueError as exc:
                 st.error(str(exc))
-        elif primary_highlight:
-            if primary_highlight in working_df.columns:
-                working_df = working_df.sort_values(by=primary_highlight, ascending=ascending)
+        elif ranking_stats:
+            if len(ranking_stats) == 1:
+                primary_sort_stat = ranking_stats[0]
+                if primary_sort_stat in working_df.columns:
+                    working_df = working_df.sort_values(
+                        by=primary_sort_stat,
+                        ascending=ascending,
+                        kind="mergesort",
+                        na_position="last",
+                    )
+            else:
+                working_df = sort_rows_by_selected_stats(
+                    working_df,
+                    ranking_stats,
+                    ascending=ascending,
+                )
+        else:
+            fallback_sort_field = ""
+            for candidate in [
+                ui_spec.default_sort_field,
+                "name",
+                "id",
+            ]:
+                if candidate and candidate in working_df.columns:
+                    fallback_sort_field = candidate
+                    break
+            if fallback_sort_field:
+                fallback_ascending = True if fallback_sort_field in {"name", "id"} else ascending
+                working_df = working_df.sort_values(
+                    by=fallback_sort_field,
+                    ascending=fallback_ascending,
+                    kind="mergesort",
+                    na_position="last",
+                )
 
         if "__opt_score" in working_df.columns:
             opt_series = pd.to_numeric(working_df["__opt_score"], errors="coerce")
@@ -3034,14 +3068,18 @@ def main():
         return working_df, sampled_mode
 
     def build_ranking_caption() -> str | None:
-        if dataset == "armors" and armor_full_set:
+        if is_armor_dataset and armor_full_set:
             return "Ranking full armor sets"
-        if dataset == "armors" and armor_custom_set:
+        if is_armor_dataset and armor_custom_set:
             return "Ranking custom armor-set constraints"
-        if dataset == "talismans" and talisman_full_set:
+        if is_talisman_dataset and talisman_full_set:
             return "Ranking full talisman sets"
-        if dataset in ["armors", "talismans"] and len(ranking_stats) >= 2:
+        if ui_spec.supports_optimization and len(ranking_stats) >= 2:
             return "Ranking single piece stats"
+        if ranking_stats and is_catalog_dataset:
+            if len(ranking_stats) == 1:
+                return "Ranking selected dataset by one stat"
+            return "Ranking selected dataset by multiple stats"
         if primary_highlight:
             return "Ranking single piece stats"
         return None
@@ -3222,12 +3260,13 @@ def main():
                             )
                         else:
                             st.markdown(f"### {name_text}")
-                if dataset != "armors":
+                if not is_armor_dataset:
                     for hs in highlighted_stats:
                         if hs in row:
                             val_h = row.get(hs)
                             render_stat_metric(st, hs, val_h, highlighted=True)
-                if dataset == "armors":
+                render_card_meta_fields(st, row)
+                if is_armor_dataset:
                     render_armor_square_stat_panel(st, row)
             else:
                 if not allow_nested_columns:
@@ -3241,21 +3280,18 @@ def main():
                         overall_val = float(row.get("__overall_score_100", 0.0))
                         st.metric("Overall", f"{overall_val:.2f}")
 
-                    if "description" in df.columns and pd.notna(row.get("description")):
-                        description_text = str(row.get("description", "")).strip()
-                        if description_text:
-                            st.caption(description_text)
+                    render_card_meta_fields(st, row)
 
-                    if dataset != "armors":
+                    if not is_armor_dataset:
                         for hs in highlighted_stats:
                             if hs in row:
                                 val_h = row.get(hs)
                                 render_stat_metric(st, hs, val_h, highlighted=True)
 
                     stats = [c for c in numeric_cols if c not in ["id"]]
-                    if dataset == "armors":
+                    if is_armor_dataset:
                         display_stats = []
-                    elif dataset == "talismans":
+                    elif is_talisman_dataset:
                         desired_cols = ["weight"]
                         found_cols = [c for c in desired_cols if c in numeric_cols]
                         display_stats = [
@@ -3285,7 +3321,7 @@ def main():
                 c1, c2 = st.columns([1, 3])
                 with c1:
                     render_image_or_grid(row, width_px=140)
-                    if dataset != "armors":
+                    if not is_armor_dataset:
                         for hs in highlighted_stats:
                             if hs in row:
                                 val_h = row.get(hs)
@@ -3301,21 +3337,12 @@ def main():
                         if "__overall_score_100" in row and pd.notna(row.get("__overall_score_100")):
                             overall_val = float(row.get("__overall_score_100", 0.0))
                             st.metric("Overall", f"{overall_val:.2f}")
-                    if dataset == "talismans":
-                        if "description" in df.columns and pd.notna(row.get("description")):
-                            description_text = str(row.get("description", "")).strip()
-                            if description_text:
-                                st.caption(description_text)
-                    else:
-                        if "description" in df.columns and pd.notna(row.get("description")):
-                            description_text = str(row.get("description", "")).strip()
-                            if description_text:
-                                st.caption(description_text)
+                    render_card_meta_fields(st, row)
 
                     stats = [c for c in numeric_cols if c not in ["id"]]
-                    if dataset == "armors":
+                    if is_armor_dataset:
                         display_stats = []
-                    elif dataset == "talismans":
+                    elif is_talisman_dataset:
                         desired_cols = ["weight"]
                         found_cols = [c for c in desired_cols if c in numeric_cols]
                         display_stats = [
@@ -3346,7 +3373,7 @@ def main():
                                     else:
                                         display_val = format_metric_value(val, stat_name=s)
                                         render_stat_metric(p, label, display_val)
-                if dataset == "armors":
+                if is_armor_dataset:
                     render_armor_square_stat_panel(st, row)
             st.markdown("</div>", unsafe_allow_html=True)
             gap_px = FULL_SET_ROW_GAP_PX if full_set_mode and compact_mode else 8
@@ -3558,7 +3585,7 @@ def main():
                                 "Lower encounter score is better, and Status Penalty Weight controls "
                                 "how strongly status threats affect that score."
                             )
-                        if show_weight_note and "weight" in ranking_stats:
+                        if ui_spec.supports_optimization and show_weight_note and "weight" in ranking_stats:
                             st.info("Optimization note: `weight` is minimized; all other selected stats are maximized.")
 
                         caption = build_ranking_caption()
@@ -3570,14 +3597,14 @@ def main():
                 else:
                     render_download_button_for_rows(display_rows, section_label, "main")
             else:
-                if show_weight_note and "weight" in ranking_stats:
+                if ui_spec.supports_optimization and show_weight_note and "weight" in ranking_stats:
                     st.info("Optimization note: `weight` is minimized; all other selected stats are maximized.")
                 caption = build_ranking_caption()
                 if caption:
                     st.markdown(caption)
                 render_download_button_for_rows(display_rows, section_label, "main")
 
-        if show_controls and dataset in ["armors", "talismans"] and len(ranking_stats) >= 2 and len(display_rows) >= 1:
+        if show_controls and ui_spec.supports_optimization and len(ranking_stats) >= 2 and len(display_rows) >= 1:
             st.markdown("---")
             with st.expander(f"Why this is #1 — {section_label}", expanded=False):
                 top_1 = display_rows.iloc[0]
@@ -3786,7 +3813,7 @@ def main():
 
             def resolve_detail_stat_columns() -> list[str]:
                 stats = [c for c in numeric_cols if c not in ["id"]]
-                if dataset == "armors":
+                if is_armor_dataset:
                     desired_cols = armor_primary_stat_order
                     found_cols = [c for c in desired_cols if c in numeric_cols]
                     for c in numeric_cols:
@@ -3797,7 +3824,7 @@ def main():
                         ) and c not in found_cols:
                             found_cols.append(c)
                     return [s for s in found_cols if s in stats and s not in highlighted_stats]
-                if dataset == "talismans":
+                if is_talisman_dataset:
                     desired_cols = ["weight"]
                     found_cols = [c for c in desired_cols if c in numeric_cols]
                     return [
@@ -3857,7 +3884,7 @@ def main():
                     if rows is None or rows.empty:
                         continue
                     valid_items.append((label, rows.iloc[0]))
-                if include_armor_totals and dataset == "armors" and valid_items:
+                if include_armor_totals and is_armor_dataset and valid_items:
                     totals_row = build_armor_totals_row([row for _, row in valid_items])
                     valid_items.append(("Totals", totals_row))
                 if not valid_items:
@@ -3926,7 +3953,7 @@ def main():
                         slot_name = str(label or "").strip()
                         row_name = str(row.get("name", "")).strip().lower()
                         is_totals = slot_name.lower() == "totals" or row_name == "set totals"
-                        if is_totals and dataset != "armors":
+                        if is_totals and not is_armor_dataset:
                             for hs in highlighted_stats:
                                 if hs in row:
                                     render_stat_metric(st, hs, row.get(hs), highlighted=True)
@@ -3942,9 +3969,14 @@ def main():
                                 else:
                                     render_stat_metric(st, stat_name, format_metric_value(raw_value, stat_name=stat_name))
                         else:
-                            description = str(row.get("description", "")).strip()
+                            field_text = "—"
+                            for field, text in iter_present_text_fields(row, ui_spec.card_meta_fields):
+                                field_text = html.escape(text) if field == "description" else html.escape(
+                                    f"{format_item_detail_label(field)}: {text}"
+                                )
+                                break
                             st.markdown(
-                                f"<div class='detail-scope-desc'>{html.escape(description) if description else '—'}</div>",
+                                f"<div class='detail-scope-desc'>{field_text}</div>",
                                 unsafe_allow_html=True,
                             )
 
@@ -3955,7 +3987,7 @@ def main():
                         slot_name = str(label or "").strip()
                         row_name = str(row.get("name", "")).strip().lower()
                         is_totals = slot_name.lower() == "totals" or row_name == "set totals"
-                        if dataset == "armors":
+                        if is_armor_dataset:
                             render_armor_square_stat_panel(st, row)
                         elif is_totals:
                             st.markdown("&nbsp;", unsafe_allow_html=True)
@@ -3976,7 +4008,7 @@ def main():
                                     render_stat_metric(st, stat_name, format_metric_value(raw_value, stat_name=stat_name))
                 st.markdown("</div>", unsafe_allow_html=True)
             else:
-                if include_armor_totals and dataset == "armors":
+                if include_armor_totals and is_armor_dataset:
                     vertical_items = []
                     for _label, rows in items:
                         if rows is None or rows.empty:
@@ -3995,7 +4027,7 @@ def main():
                     st.markdown(f"#### {slot_icon_for_label(label_text)} {label_text}")
                     render_card_rows(rows, compact_mode=False, full_set_mode=False)
 
-        if dataset == "armors":
+        if is_armor_dataset:
             def render_armor_set_scope_card(
                 empty_message: str,
                 scope_mode: str,
@@ -4079,7 +4111,7 @@ def main():
                     scope_mode=DETAILED_SCOPE_CUSTOM,
                 )
 
-        elif dataset == "talismans":
+        elif is_talisman_dataset:
             if talisman_detailed_scope_mode == DETAILED_SCOPE_SINGLE:
                 if talisman_detail_item_name:
                     slot_rows = df[df["name"].astype(str) == str(talisman_detail_item_name)].head(1)
@@ -4090,11 +4122,6 @@ def main():
                         st.info("No talisman matches the current selection.")
                 else:
                     st.info("No talisman available for single item view.")
-            elif talisman_detailed_scope_mode == DETAILED_SCOPE_FULL:
-                st.info(
-                    "Full set view by family is not implemented yet. "
-                    "Choose Custom view to use current slot controls."
-                )
             else:
                 custom_items = []
                 for slot_label, selected_name in talisman_detail_set_selection:
@@ -4111,34 +4138,16 @@ def main():
                     )
                 else:
                     st.info("No complete talisman set selection available.")
-        else:
-            custom_items = []
-            for idx in range(1, 5):
-                key = f"generic_detail_slot_{idx}"
-                selected_name = st.session_state.get(key)
-                if not selected_name:
-                    continue
-                slot_rows = df[df["name"].astype(str) == str(selected_name)].head(1)
-                if slot_rows.empty:
-                    continue
-                custom_items.append((f"Slot {idx}", slot_rows))
-            if custom_items:
-                render_detail_items(
-                    custom_items,
-                    str(st.session_state.get("generic_custom_stack_view", STACK_VIEW_HORIZONTAL)),
-                )
-            else:
-                st.info("No complete set selection available for detailed view.")
         return
 
-    if (dataset == "armors" and (armor_full_set or armor_custom_set)) or (dataset == "talismans" and talisman_full_set):
+    if (is_armor_dataset and (armor_full_set or armor_custom_set)) or (is_talisman_dataset and talisman_full_set):
         st.markdown("---")
-        if dataset == "armors" and armor_custom_set:
+        if is_armor_dataset and armor_custom_set:
             st.subheader("Custom armor set optimization preview")
         else:
-            st.subheader("Full armor set preview" if dataset == "armors" else "Full talisman set preview")
+            st.subheader("Full armor set preview" if is_armor_dataset else "Full talisman set preview")
 
-        if dataset == "armors" and optimizer_engine == OPT_ENGINE_DIALECT_V2:
+        if is_armor_dataset and optimizer_engine == OPT_ENGINE_DIALECT_V2:
             ranked_sets_df, _ = rank_display_df(display_df, None)
             if ranked_sets_df.empty:
                 st.info("No full-set candidates matched the current Advanced Optimizer constraints.")
@@ -4202,7 +4211,7 @@ def main():
                 render_item_detail_inspector(detail_df, panel_key=f"{dataset}_full_set_opt2")
             return
 
-        if dataset == "armors" and optimizer_engine != OPT_ENGINE_DIALECT_V2:
+        if is_armor_dataset and optimizer_engine != OPT_ENGINE_DIALECT_V2:
             st.info(
                 "Full and Custom optimization previews use Advanced Optimizer only. "
                 "Switch engine to Advanced Optimizer to generate set-level results."
@@ -4338,9 +4347,9 @@ def main():
             """,
             unsafe_allow_html=True,
         )
-        full_set_piece_labels = armor_piece_labels if dataset == "armors" else TALISMAN_SLOT_LABELS
+        full_set_piece_labels = armor_piece_labels if is_armor_dataset else TALISMAN_SLOT_LABELS
 
-        if dataset == "armors" and not full_set_piece_labels:
+        if is_armor_dataset and not full_set_piece_labels:
             st.info("No armor piece types available for full set preview.")
         else:
             if "weight" in ranking_stats:
@@ -4364,7 +4373,7 @@ def main():
                 )
 
             ranked_columns = []
-            if dataset == "armors":
+            if is_armor_dataset:
                 piece_column_count = min(
                     len(full_set_piece_labels),
                     max(1, FULL_SET_PIECE_COLUMN_COUNT),
@@ -4426,14 +4435,14 @@ def main():
 
             export_row = st.columns(full_set_layout)
             for idx, (label, _raw_type, display_rows) in enumerate(ranked_columns):
-                export_map = FULL_SET_LABELS if dataset == "armors" else TALISMAN_FULL_SET_LABELS
+                export_map = FULL_SET_LABELS if is_armor_dataset else TALISMAN_FULL_SET_LABELS
                 export_label = export_map.get(label, label)
                 with export_row[idx * 2]:
                     render_download_button_for_rows(display_rows, export_label, export_label)
 
             columns = st.columns(full_set_layout)
             for idx, (label, raw_type, display_rows) in enumerate(ranked_columns):
-                header_map = FULL_SET_LABELS if dataset == "armors" else TALISMAN_FULL_SET_LABELS
+                header_map = FULL_SET_LABELS if is_armor_dataset else TALISMAN_FULL_SET_LABELS
                 header_label = header_map.get(label, label)
                 with columns[idx * 2]:
                     st.markdown("<div class='full-set-col'>", unsafe_allow_html=True)
@@ -4453,13 +4462,13 @@ def main():
             render_item_detail_inspector(df, panel_key=f"{dataset}_dataset")
         return
 
-    if dataset == "armors" and armor_single_piece:
+    if is_armor_dataset and armor_single_piece:
         render_ranked_cards(display_df, "Single piece", armor_piece_type)
         st.markdown("---")
         render_item_detail_inspector(df, panel_key=f"{dataset}_dataset")
         return
 
-    if dataset == "talismans" and talisman_single_piece:
+    if is_talisman_dataset and talisman_single_piece:
         render_ranked_cards(display_df, "Single", None)
         st.markdown("---")
         render_item_detail_inspector(df, panel_key=f"{dataset}_dataset")

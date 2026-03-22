@@ -8,6 +8,17 @@ from .detail_scope import (
     normalize_dataset_text,
     focus_detail_anchor,
 )
+from .dataset_ui import (
+    DATASET_FAMILY_ARMOR,
+    DATASET_FAMILY_CATALOG,
+    DATASET_FAMILY_TALISMAN,
+    DATASET_FAMILY_UNSUPPORTED,
+    DatasetUiSpec,
+    list_supported_datasets,
+    resolve_dataset_ui_spec,
+    resolve_default_view,
+    resolve_rankable_numeric_fields,
+)
 from .optimization_view import (
     OptimizationViewState,
     list_encounter_profiles,
@@ -25,6 +36,15 @@ __all__ = [
     "ARMOR_CUSTOM_SCOPE_DESCRIPTION_PLACEHOLDER",
     "normalize_dataset_text",
     "focus_detail_anchor",
+    "DATASET_FAMILY_ARMOR",
+    "DATASET_FAMILY_CATALOG",
+    "DATASET_FAMILY_TALISMAN",
+    "DATASET_FAMILY_UNSUPPORTED",
+    "DatasetUiSpec",
+    "list_supported_datasets",
+    "resolve_dataset_ui_spec",
+    "resolve_default_view",
+    "resolve_rankable_numeric_fields",
     "OptimizationViewState",
     "list_encounter_profiles",
     "list_weighted_preset_options",

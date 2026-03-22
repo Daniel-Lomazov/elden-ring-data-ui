@@ -150,6 +150,13 @@ class UiSmokeTests(unittest.TestCase):
         self.assertEqual(len(app.exception), 0)
         return app
 
+    def _select_dataset(self, app: AppTest, dataset_label: str) -> AppTest:
+        next(widget for widget in app.selectbox if widget.label == "Choose Dataset:").select(
+            dataset_label
+        ).run(timeout=60)
+        self.assertEqual(len(app.exception), 0)
+        return app
+
     def test_app_starts_headless_and_serves_http(self):
         port = _get_free_port()
         env = os.environ.copy()
@@ -262,6 +269,82 @@ class UiSmokeTests(unittest.TestCase):
         self.assertIn("Optimization method", selectboxes)
         self.assertNotIn("Encounter profile", selectboxes)
         self.assertNotIn("Status Penalty Weight", number_inputs)
+
+    def test_dataset_chooser_lists_supported_registry_datasets_only(self):
+        app = self._new_app()
+
+        dataset_selectbox = next(
+            widget for widget in app.selectbox if widget.label == "Choose Dataset:"
+        )
+
+        self.assertEqual(dataset_selectbox.options[:2], ["Armors", "Talismans"])
+        self.assertIn("Armors", dataset_selectbox.options)
+        self.assertIn("Talismans", dataset_selectbox.options)
+        self.assertIn("Ashes Of War", dataset_selectbox.options)
+        self.assertIn("Items / Remembrances", dataset_selectbox.options)
+        self.assertNotIn("Weapons Upgrades", dataset_selectbox.options)
+        self.assertNotIn("Shields Upgrades", dataset_selectbox.options)
+        self.assertTrue(
+            all("Not implemented yet" not in option for option in dataset_selectbox.options)
+        )
+
+    def test_generic_rankable_dataset_uses_shared_catalog_flow(self):
+        app = self._select_dataset(self._new_app(), "Weapons")
+
+        selectboxes = {widget.label: widget for widget in app.selectbox}
+        multiselects = {widget.label: widget for widget in app.multiselect}
+        radios = {widget.label: widget for widget in app.radio}
+
+        self.assertNotIn("Choose View:", selectboxes)
+        self.assertNotIn("Choose Scope:", selectboxes)
+        self.assertIn("Highlighted stats:", multiselects)
+        self.assertIn("Sort order:", selectboxes)
+        self.assertIn("Rows to show:", selectboxes)
+        self.assertNotIn("Optimization engine", selectboxes)
+        self.assertNotIn("Mode:", radios)
+        self.assertFalse(any(label.startswith("Slot ") for label in selectboxes))
+
+    def test_generic_browse_only_dataset_hides_ranking_controls(self):
+        app = self._select_dataset(self._new_app(), "Bosses")
+
+        selectboxes = {widget.label: widget for widget in app.selectbox}
+        multiselects = {widget.label: widget for widget in app.multiselect}
+
+        self.assertNotIn("Choose View:", selectboxes)
+        self.assertNotIn("Choose Scope:", selectboxes)
+        self.assertNotIn("Highlighted stats:", multiselects)
+        self.assertNotIn("Highlight stat:", selectboxes)
+        self.assertNotIn("Sort order:", selectboxes)
+        self.assertNotIn("Rows to show:", selectboxes)
+
+    def test_talisman_flows_hide_unimplemented_family_scope(self):
+        app = self._select_dataset(self._new_app(), "Talismans")
+
+        selectboxes = {widget.label: widget for widget in app.selectbox}
+        self.assertEqual(selectboxes["Choose Scope:"].options, ["Single", "Custom"])
+        self.assertNotIn("Choose family:", selectboxes)
+
+        selectboxes["Choose Scope:"].select("Custom").run(timeout=60)
+        self.assertEqual(len(app.exception), 0)
+
+        next(widget for widget in app.selectbox if widget.label == "Choose View:").select(
+            "Optimization view"
+        ).run(timeout=60)
+        self.assertEqual(len(app.exception), 0)
+
+        radios = {widget.label: widget for widget in app.radio}
+        self.assertIn("Mode:", radios)
+        self.assertEqual(radios["Mode:"].options, ["Single", "Full Set"])
+
+    def test_items_dataset_uses_shared_catalog_flow_without_slot_controls(self):
+        app = self._select_dataset(self._new_app(), "Items / Remembrances")
+
+        selectboxes = {widget.label: widget for widget in app.selectbox}
+
+        self.assertNotIn("Choose View:", selectboxes)
+        self.assertNotIn("Choose Scope:", selectboxes)
+        self.assertNotIn("Optimization engine", selectboxes)
+        self.assertFalse(any(label.startswith("Slot ") for label in selectboxes))
 
     def test_optimizer_smoke_script_runs_successfully(self):
         env = os.environ.copy()
