@@ -270,3 +270,88 @@ PHASE BENCHMARK
 - Gaps or regressions: No wrapper-specific automated tests were added; script-layer proof remains command-based rather than unit-based.
 - Decision: proceed
 - Plan adjustment for next phase: Only extract tiny shared support if it meaningfully reduces duplication without broadening scope; otherwise preserve the current shape and move to the tray decision checkpoint.
+
+## Phase 6 - Minimal Cleanup Checkpoint
+
+- No additional code extraction was performed.
+- Reviewed duplication after controller landing and decided the remaining overlap did not justify a new helper or refactor in this branch.
+- The current shape keeps risk localized: one Python controller module, thin wrappers, unchanged direct fallback.
+
+PHASE BENCHMARK
+- Phase: 6 - Minimal code extraction only where justified by the controller work
+- Planned outcome: Extract only tiny support helpers if they were clearly useful and low risk.
+- Actual outcome: No extraction was justified; the branch stayed smaller and safer by preserving the current module and wrapper shapes.
+- Evidence: Post-controller code review after Phase 5 and unchanged runtime behavior after verification.
+- Tests/checks run: Review of controller module and wrapper duplication against the green verification baseline.
+- Pass/fail summary: PASS
+- Self-score on correctness (0-5): 5
+- Self-score on stability (0-5): 5
+- Self-score on minimalism/scope control (0-5): 5
+- Self-score on rollback safety (0-5): 5
+- Gaps or regressions: None introduced; duplication remains intentionally limited.
+- Decision: proceed
+- Plan adjustment for next phase: Ask the explicit tray-next product decision and do not drift into tray work without approval.
+
+## Phase 7 - BA/CS Tray Decision Checkpoint
+
+- Developer-customer answer: defer tray until more Streamlit cleanup is done.
+- Accepted scope consequence: stop at the controller milestone for this branch and treat tray work as out of scope.
+
+PHASE BENCHMARK
+- Phase: 7 - BA/CS decision checkpoint for tray-next question
+- Planned outcome: Get explicit customer approval or deferral before any tray work is started.
+- Actual outcome: Customer decision captured: defer tray until more Streamlit cleanup is done.
+- Evidence: BA/CS question flow and recorded answer above.
+- Tests/checks run: Customer decision checkpoint only.
+- Pass/fail summary: PASS
+- Self-score on correctness (0-5): 5
+- Self-score on stability (0-5): 5
+- Self-score on minimalism/scope control (0-5): 5
+- Self-score on rollback safety (0-5): 5
+- Gaps or regressions: None; the decision reduced scope rather than expanding it.
+- Decision: proceed
+- Plan adjustment for next phase: Skip tray implementation entirely and move straight to final handoff hardening.
+
+## Phase 8 - Optional Thin Tray Shell
+
+- Not executed.
+- Reason: deferred by the Phase 7 customer decision.
+
+PHASE BENCHMARK
+- Phase: 8 - Optional thin tray shell
+- Planned outcome: Add a tray shell only if customer-approved.
+- Actual outcome: Not executed because tray work was explicitly deferred.
+- Evidence: Phase 7 decision record.
+- Tests/checks run: None.
+- Pass/fail summary: PASS
+- Self-score on correctness (0-5): 5
+- Self-score on stability (0-5): 5
+- Self-score on minimalism/scope control (0-5): 5
+- Self-score on rollback safety (0-5): 5
+- Gaps or regressions: None.
+- Decision: proceed
+- Plan adjustment for next phase: Produce final handoff docs, rerun verification, and leave the branch in a reviewable state without tray code.
+
+## Phase 9 - Final Hardening And Handoff
+
+- Added handoff doc: `docs/session/2026-04-01_runtime_controller_handoff.md`
+- Reran `./scripts/verify-workspace.ps1` successfully as the final hardening pass.
+- Left the app online through the rewired controller-backed path:
+  - `./scripts/start-app.ps1 -Port 8501 -OpenBrowser:$false`
+  - final controller `status` reported `STATUS=running`, `APP_PID=11604`, `READY=true`
+- Tray work remains deferred.
+
+PHASE BENCHMARK
+- Phase: 9 - Final hardening and handoff
+- Planned outcome: Leave the branch in a reviewable, benchmarked, reversible state with final verification, rollback guidance, and next-step clarity.
+- Actual outcome: Added a final handoff document, reran the verification suite successfully, confirmed the controller-managed app is online, and closed the branch with tray work explicitly deferred.
+- Evidence: `docs/session/2026-04-01_runtime_controller_handoff.md`, final `verify-workspace.ps1` success output, final `start-app.ps1` run, and final controller `status`.
+- Tests/checks run: final `./scripts/verify-workspace.ps1`, final `./scripts/start-app.ps1 -Port 8501 -OpenBrowser:$false`, final `python -m tools.runtime_controller status --port 8501`.
+- Pass/fail summary: PASS
+- Self-score on correctness (0-5): 5
+- Self-score on stability (0-5): 5
+- Self-score on minimalism/scope control (0-5): 5
+- Self-score on rollback safety (0-5): 5
+- Gaps or regressions: None identified beyond the already-documented lack of wrapper-specific automation.
+- Decision: proceed
+- Plan adjustment for next phase: Branch complete; next work should target a Streamlit cleanup slice before revisiting tray ideas.
