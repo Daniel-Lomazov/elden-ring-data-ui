@@ -137,3 +137,50 @@ PHASE BENCHMARK
 - Gaps or regressions: Browser focus implementation details still need code-level validation on Windows.
 - Decision: proceed
 - Plan adjustment for next phase: Implement the controller in one additive Python module first, then only extract tiny helpers if that becomes necessary for testability or clarity.
+
+## Phase 3 - Controller Core Implementation
+
+- Added controller module: `tools/runtime_controller.py`
+- Implemented commands:
+  - `start`
+  - `stop`
+  - `status`
+  - `open`
+  - `restart`
+  - `recover`
+- Implemented controller-owned artifacts:
+  - `.cache/runtime-controller.json`
+  - `.cache/runtime-controller.log`
+- Implemented same-app safeguards:
+  - controller-owned state is validated against live process identity when possible
+  - same-app `streamlit run app.py` processes can be reconciled when metadata is stale or absent
+  - unrelated port owners report conflict instead of being terminated
+- Implemented browser behavior:
+  - Windows path prefers existing Edge window focus/refresh when possible
+  - fallback path opens the default browser if Edge-specific automation is unavailable
+
+### Live command evidence
+
+- `python -m tools.runtime_controller status --port 8501` reported `STATUS=stopped` before launch.
+- `python -m tools.runtime_controller start --port 8501 --wait-seconds 45 --no-open-browser` launched a detached Streamlit session and wrote runtime state/log artifacts.
+- `python -m tools.runtime_controller status --port 8501` reported a live session with matching `APP_PID` and `LISTENER_PID`.
+- `python -m tools.runtime_controller open --port 8501` returned `BROWSER_ACTION=opened`.
+- Repeating `start` reused the live session rather than spawning a duplicate process.
+- `python -m tools.runtime_controller restart --port 8501 --wait-seconds 45 --no-open-browser` stopped PID `34728` and relaunched PID `31560`.
+- `python -m tools.runtime_controller recover --port 8501 --wait-seconds 45 --no-open-browser` relaunched a fresh session and preserved controller ownership.
+- `python -m tools.runtime_controller stop --port 8501` stopped the managed process, and a final `status` returned `STATUS=stopped`.
+
+PHASE BENCHMARK
+- Phase: 3 - Implement the controller core
+- Planned outcome: Create an additive Python runtime controller that owns detached Streamlit lifecycle, state, readiness, open, and recovery behavior.
+- Actual outcome: Added `tools/runtime_controller.py`, persisted runtime metadata/logging in `.cache`, and verified live lifecycle commands against the app on port `8501`.
+- Evidence: `tools/runtime_controller.py`, `.cache/runtime-controller.json`, `.cache/runtime-controller.log`, and live command runs recorded above.
+- Tests/checks run: module error check, direct `status`, direct `start`, direct `open`, repeated `start`, `restart`, `recover`, `stop`, and final `status`.
+- Pass/fail summary: PASS
+- Self-score on correctness (0-5): 5
+- Self-score on stability (0-5): 4
+- Self-score on minimalism/scope control (0-5): 5
+- Self-score on rollback safety (0-5): 5
+- Gaps or regressions: Browser actions were verified through command success and log/state updates, but wrapper-level launch behavior is still untested because scripts have not been rewired yet.
+- Decision: proceed
+- Plan adjustment for next phase: Rewire existing lifecycle scripts into thin controller wrappers while preserving `scripts/run_streamlit_local.ps1` as the direct foreground fallback.
