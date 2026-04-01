@@ -14,6 +14,7 @@ VIEW_MODE_OPTIMIZATION = "Optimization view"
 DATASET_FAMILY_ARMOR = "armor"
 DATASET_FAMILY_TALISMAN = "talisman"
 DATASET_FAMILY_CATALOG = "catalog"
+DATASET_FAMILY_PROGRESSION = "progression"
 DATASET_FAMILY_UNSUPPORTED = "unsupported"
 
 SCOPE_SINGLE = "Single"
@@ -154,47 +155,56 @@ _DATASET_UI_REGISTRY: dict[str, DatasetUiSpec] = {
     "shields_upgrades": DatasetUiSpec(
         dataset_key="shields_upgrades",
         label="Shields Upgrades",
-        family=DATASET_FAMILY_UNSUPPORTED,
-        supported_views=tuple(),
+        family=DATASET_FAMILY_PROGRESSION,
+        supported_views=("Catalog",),
         supported_scopes=tuple(),
         supports_ranking=False,
         supports_multi_stat_sort=False,
         supports_optimization=False,
-        default_sort_field="id",
-        card_meta_fields=tuple(),
-        detail_fields=tuple(),
-        loader_profile=None,
-        unsupported_reason=(
-            "Upgrade tables stay excluded for now because they use progression-table schemas "
-            "instead of the shared item-card dataset shape."
+        default_sort_field="shield name",
+        card_meta_fields=("upgrade", "attack power", "damage reduction (%)"),
+        detail_fields=(
+            "upgrade",
+            "attack power",
+            "damage reduction (%)",
+            "stat scaling",
+            "passive effects",
         ),
+        loader_profile=None,
     ),
     "weapons_upgrades": DatasetUiSpec(
         dataset_key="weapons_upgrades",
         label="Weapons Upgrades",
-        family=DATASET_FAMILY_UNSUPPORTED,
-        supported_views=tuple(),
+        family=DATASET_FAMILY_PROGRESSION,
+        supported_views=("Catalog",),
         supported_scopes=tuple(),
         supports_ranking=False,
         supports_multi_stat_sort=False,
         supports_optimization=False,
-        default_sort_field="id",
-        card_meta_fields=tuple(),
-        detail_fields=tuple(),
-        loader_profile=None,
-        unsupported_reason=(
-            "Upgrade tables stay excluded for now because they use progression-table schemas "
-            "instead of the shared item-card dataset shape."
+        default_sort_field="weapon name",
+        card_meta_fields=("upgrade", "attack power", "damage reduction (%)"),
+        detail_fields=(
+            "upgrade",
+            "attack power",
+            "damage reduction (%)",
+            "stat scaling",
+            "passive effects",
         ),
+        loader_profile=None,
     ),
 }
 
 
-def list_supported_datasets(available_datasets: Sequence[str] | None = None) -> tuple[str, ...]:
+def list_visible_datasets(available_datasets: Sequence[str] | None = None) -> tuple[str, ...]:
     if available_datasets is None:
         keys = list(_DATASET_UI_REGISTRY.keys())
     else:
         keys = [str(key).strip() for key in available_datasets if str(key).strip()]
+    return tuple(key for key in keys if key in _DATASET_UI_REGISTRY)
+
+
+def list_supported_datasets(available_datasets: Sequence[str] | None = None) -> tuple[str, ...]:
+    keys = list_visible_datasets(available_datasets)
     supported = []
     for key in keys:
         spec = _DATASET_UI_REGISTRY.get(key)
@@ -202,6 +212,17 @@ def list_supported_datasets(available_datasets: Sequence[str] | None = None) -> 
             continue
         supported.append(key)
     return tuple(supported)
+
+
+def format_dataset_selector_label(
+    spec: DatasetUiSpec | None,
+    dataset_key: str = "",
+) -> str:
+    if spec is None:
+        return _pretty_dataset_label(dataset_key)
+    if spec.unsupported_reason:
+        return f"{spec.label} (Not implemented yet)"
+    return spec.label
 
 
 def resolve_dataset_ui_spec(dataset_key: str) -> DatasetUiSpec | None:
@@ -215,7 +236,7 @@ def resolve_rankable_numeric_fields(
     df: pd.DataFrame,
     spec: DatasetUiSpec | None,
 ) -> tuple[str, ...]:
-    if spec is None or df is None or df.empty:
+    if spec is None or df is None or df.empty or not spec.supports_ranking:
         return tuple()
 
     numeric_cols = [str(col) for col in df.select_dtypes(include=["number"]).columns.tolist()]

@@ -19,3 +19,6 @@ Use this quick checklist after running `streamlit run app.py`.
 16. Switch to `Talismans`, open `Optimization view`, and verify `Highlighted stats:` includes `value` but does not include `weight`.
 17. Switch to `Incantations` and verify the shared catalog controls expose numeric spell stats such as `slot`, `FAI`, and `stamina cost`.
 18. Open a spell, weapon, and location card and verify detail panels render semantic fields cleanly: costs as costs, requirements maps parsed, and serialized lists shown as readable text instead of raw literals.
+19. Switch to `Weapons Upgrades` or `Shields Upgrades` and verify the page shows a browse-only progression summary with `Rows to preview:` instead of ranking controls.
+20. In the upgrade dataset, open `Item details` and verify the grouped table uses readable columns such as `Upgrade`, `Attack Power`, `Damage Reduction`, `Stat Scaling`, and `Passive Effects`.
+21. If any deferred dataset is reintroduced to the registry, verify it stays visible in `Choose Dataset:` with a `Not implemented yet` label and surfaces a warning instead of falling back silently.

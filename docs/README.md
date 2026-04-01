@@ -52,6 +52,9 @@ Expected outcomes:
 - App starts at `http://localhost:8501`.
 - App binds to localhost by default (not `0.0.0.0`) via `.streamlit/config.toml`.
 - `start-app.ps1` leaves the app under controller ownership, and `recover-app.ps1` performs a controller-backed restart instead of a second independent launch.
+- The dataset chooser includes the supported top-level datasets, including `Weapons Upgrades` and `Shields Upgrades`.
+- Upgrade-table datasets render a browse-only progression summary plus grouped item-detail table instead of ranked cards.
+- Any deferred dataset that remains registered should stay visible in the selector with a `Not implemented yet` suffix.
 - Smoke script prints top-5 sections and ends with `optimizer_smoke: SUCCESS`.
 - Workspace verification passes for the current tree.
 - Unit tests complete without failures in the current environment.

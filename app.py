@@ -57,12 +57,15 @@ from app_support import (
     ARMOR_CUSTOM_SCOPE_DESCRIPTION_PLACEHOLDER,
     DATASET_FAMILY_ARMOR,
     DATASET_FAMILY_CATALOG,
+    DATASET_FAMILY_PROGRESSION,
     DATASET_FAMILY_TALISMAN,
+    DISPLAY_VARIANT_PROGRESSION_TABLE,
     field_matches_column,
+    format_dataset_selector_label,
     format_presentation_value,
     iter_presented_fields,
     list_weighted_preset_options,
-    list_supported_datasets,
+    list_visible_datasets,
     normalize_numeric_like_columns,
     normalize_dataset_text,
     focus_detail_anchor,
@@ -1023,7 +1026,7 @@ def main():
                         if source_key in selected_rows.columns and source_key not in ordered_columns:
                             ordered_columns.append(source_key)
                 for column in selected_rows.columns:
-                    if column in {name_field, "image"} or column in ordered_columns:
+                    if column in {name_field, "image", "id"} or column in ordered_columns:
                         continue
                     ordered_columns.append(column)
 
@@ -1383,22 +1386,43 @@ def main():
 
     active_dataset_keys = load_active_dataset_keys()
     active_dataset_set = set(active_dataset_keys)
-    supported_dataset_keys = list(list_supported_datasets(available_datasets))
+    visible_dataset_keys = list(list_visible_datasets(available_datasets))
+
+    if not visible_dataset_keys:
+        st.info("No registered datasets were found in the current project.")
+        return
+
+    supported_dataset_keys = []
+    unsupported_dataset_keys = []
+    for key in visible_dataset_keys:
+        spec = resolve_dataset_ui_spec(key)
+        if spec is None:
+            continue
+        if spec.unsupported_reason:
+            unsupported_dataset_keys.append(key)
+        else:
+            supported_dataset_keys.append(key)
 
     if not supported_dataset_keys:
         st.info("No supported datasets were found in the current project.")
         return
 
     active_ds_keys = [key for key in active_dataset_keys if key in supported_dataset_keys]
-    ds_keys = [*active_ds_keys, *[key for key in supported_dataset_keys if key not in active_dataset_set]]
+    active_unsupported_keys = [key for key in active_dataset_keys if key in unsupported_dataset_keys]
+    ds_keys = [
+        *active_ds_keys,
+        *[key for key in supported_dataset_keys if key not in active_dataset_set],
+        *active_unsupported_keys,
+        *[key for key in unsupported_dataset_keys if key not in active_dataset_set],
+    ]
     if not ds_keys:
-        ds_keys = supported_dataset_keys
+        ds_keys = [*supported_dataset_keys, *unsupported_dataset_keys]
 
     dataset_key_to_label = {}
     for key in ds_keys:
         spec = resolve_dataset_ui_spec(key)
         if spec is not None:
-            dataset_key_to_label[key] = spec.label
+            dataset_key_to_label[key] = format_dataset_selector_label(spec, key)
     dataset_label_to_key = {label: key for key, label in dataset_key_to_label.items()}
     ds_labels = [dataset_key_to_label[key] for key in ds_keys if key in dataset_key_to_label]
 
@@ -1429,6 +1453,9 @@ def main():
     ui_spec = resolve_dataset_ui_spec(dataset)
     if ui_spec is None:
         st.info("The selected dataset does not have a registered UI specification.")
+        return
+    if ui_spec.unsupported_reason:
+        st.warning(f"{ui_spec.label} is not implemented yet. {ui_spec.unsupported_reason}")
         return
     presentation_spec = resolve_dataset_presentation_spec(dataset)
 
@@ -1629,6 +1656,7 @@ def main():
     is_armor_dataset = ui_spec.family == DATASET_FAMILY_ARMOR
     is_talisman_dataset = ui_spec.family == DATASET_FAMILY_TALISMAN
     is_catalog_dataset = ui_spec.family == DATASET_FAMILY_CATALOG
+    is_progression_dataset = ui_spec.family == DATASET_FAMILY_PROGRESSION
 
     armor_single_piece = False
     armor_full_set = False
@@ -2573,9 +2601,9 @@ def main():
         (is_armor_dataset and (armor_single_piece or armor_full_set or armor_custom_set))
         or (is_talisman_dataset and (talisman_single_piece or talisman_full_set))
     )
-    generic_multi_sort_mode = is_catalog_dataset and bool(options_labels)
+    generic_multi_sort_mode = bool(options_labels) and ui_spec.supports_multi_stat_sort
     show_ranking_controls = not detailed_view_active and (
-        advanced_mode or generic_multi_sort_mode or bool(options_labels)
+        advanced_mode or (ui_spec.supports_ranking and bool(options_labels))
     )
 
     sort_options = ["Highest First", "Lowest First"]
@@ -3240,6 +3268,67 @@ def main():
             key=f"download_{safe_label}_{key_suffix}",
         )
 
+    def build_progression_preview_rows(source_df: pd.DataFrame) -> pd.DataFrame:
+        name_field = resolve_name_field(source_df)
+        if source_df is None or source_df.empty or name_field not in source_df.columns:
+            return pd.DataFrame()
+
+        name_label = format_item_detail_label(name_field)
+        summary_rows = []
+        for item_name, rows in source_df.groupby(name_field, sort=True):
+            item_text = str(item_name or "").strip()
+            if not item_text:
+                continue
+
+            upgrade_series = rows["upgrade"] if "upgrade" in rows.columns else pd.Series(dtype=object)
+            upgrade_values = [
+                str(value or "").strip()
+                for value in upgrade_series.tolist()
+                if str(value or "").strip()
+            ]
+            first_upgrade = upgrade_values[0] if upgrade_values else ""
+            final_upgrade = upgrade_values[-1] if upgrade_values else ""
+            summary_rows.append(
+                {
+                    name_label: item_text,
+                    "Upgrade Rows": int(len(rows)),
+                    "First Upgrade": first_upgrade,
+                    "Final Upgrade": final_upgrade,
+                }
+            )
+
+        if not summary_rows:
+            return pd.DataFrame()
+        return pd.DataFrame(summary_rows)
+
+    def render_progression_table_dataset(source_df: pd.DataFrame, section_label: str):
+        name_field = resolve_name_field(source_df)
+        name_label = format_item_detail_label(name_field)
+        filter_key = f"progression_filter_{dataset}"
+        rows_key = f"progression_rows_to_show_{dataset}"
+        preview_options = [10, 25, 50, 100]
+        ensure_state_in_options(rows_key, preview_options, 25)
+
+        st.caption(
+            "Browse one progression path per base item. Open Item details below to inspect the full upgrade table."
+        )
+        filter_text = st.text_input(f"Filter {name_label}:", key=filter_key).strip()
+        preview_rows = st.selectbox("Rows to preview:", preview_options, key=rows_key)
+
+        summary_df = build_progression_preview_rows(source_df)
+        if not summary_df.empty and filter_text:
+            summary_df = summary_df[
+                summary_df[name_label].astype(str).str.contains(filter_text, case=False, na=False)
+            ]
+
+        if summary_df.empty:
+            st.info("No upgrade groups matched the current filter.")
+            return
+
+        st.caption(f"Showing {min(len(summary_df), preview_rows)} of {len(summary_df)} upgrade groups.")
+        render_download_button_for_rows(summary_df, f"{section_label} summary", "progression_summary")
+        st.dataframe(summary_df.head(preview_rows), use_container_width=True, hide_index=True)
+
     def render_card_rows(
         display_rows: pd.DataFrame,
         compact_mode: bool = False,
@@ -3475,6 +3564,13 @@ def main():
         nonlocal optimizer_method, optimizer_weights, optimizer_weight_signature
         if source_df.empty:
             st.info(f"No candidates found for {section_label}.")
+            return
+
+        if presentation_spec.display_variant == DISPLAY_VARIANT_PROGRESSION_TABLE:
+            render_progression_table_dataset(source_df, section_label)
+            panel_piece = str(piece_key) if piece_key is not None else "all"
+            panel_key = f"{dataset}_{section_label}_{panel_piece}"
+            render_item_detail_inspector(source_df, panel_key=panel_key)
             return
 
         ranked_df, _ = rank_display_df(source_df, piece_key)

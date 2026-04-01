@@ -126,7 +126,7 @@ This plan standardizes how the app documents startup and restart flows, how it p
 | Task | Description | Completed | Date |
 |------|-------------|-----------|------|
 | TASK-005 | Create `app_support/dataset_presentations.py` with explicit dataclasses such as `FieldPresentation`, `SectionPresentation`, and `DatasetPresentationSpec`, plus registry entries for each top-level dataset family. | Yes | 2026-04-01 |
-| TASK-006 | Extend `app_support/dataset_ui.py` so each dataset maps to both a capability spec and a presentation spec, including a new progression-table family for `shields_upgrades` and `weapons_upgrades`. |  |  |
+| TASK-006 | Extend `app_support/dataset_ui.py` so each dataset maps to both a capability spec and a presentation spec, including a new progression-table family for `shields_upgrades` and `weapons_upgrades`. | Yes | 2026-04-01 |
 | TASK-007 | Extend `data/column_loading_instructions.json` with visual/detail profiles for spells, equipment, world entities, and progression tables so the UI loads the columns it needs deterministically. |  |  |
 | TASK-008 | Add parser and formatter helpers to `app_support/dataset_presentations.py` for numeric-like text, talisman effect magnitude extraction, spell costs, equipment requirements, and structured list/dict rendering. | Yes | 2026-04-01 |
 
@@ -149,10 +149,10 @@ This plan standardizes how the app documents startup and restart flows, how it p
 
 | Task | Description | Completed | Date |
 |------|-------------|-----------|------|
-| TASK-015 | Replace the unsupported placeholder state for `shields_upgrades` and `weapons_upgrades` with a dedicated progression-table view that shows parsed attack power, stat scaling, passive effects, and damage reduction subfields. |  |  |
-| TASK-016 | Add a renderer helper in `app_support/dataset_presentations.py` or a dedicated support module for progression-table datasets so `app.py` does not grow new table-specific branches inline. |  |  |
+| TASK-015 | Replace the unsupported placeholder state for `shields_upgrades` and `weapons_upgrades` with a dedicated progression-table view that shows parsed attack power, stat scaling, passive effects, and damage reduction subfields. | Yes | 2026-04-01 |
+| TASK-016 | Add a renderer helper in `app_support/dataset_presentations.py` or a dedicated support module for progression-table datasets so `app.py` does not grow new table-specific branches inline. | Yes | 2026-04-01 |
 | TASK-017 | Add a default onboarding path for `data/items/*` in the presentation registry so future item-subfolder datasets can be enabled by metadata registration and column-profile wiring rather than by new rendering branches. |  |  |
-| TASK-018 | After representative manual verification passes, expand `data/active_datasets.json` from `armors` and `talismans` to the full supported top-level dataset list. |  |  |
+| TASK-018 | After representative manual verification passes, expand `data/active_datasets.json` from `armors` and `talismans` to the full supported top-level dataset list. | Yes | 2026-04-01 |
 
 ### Implementation Phase 5
 
@@ -160,10 +160,10 @@ This plan standardizes how the app documents startup and restart flows, how it p
 
 | Task | Description | Completed | Date |
 |------|-------------|-----------|------|
-| TASK-019 | Extend `tests/test_dataset_ui_registry.py` for the new dataset family matrix, including progression-table support and the expected default views per family. |  |  |
+| TASK-019 | Extend `tests/test_dataset_ui_registry.py` for the new dataset family matrix, including progression-table support and the expected default views per family. | Yes | 2026-04-01 |
 | TASK-020 | Add `tests/test_dataset_presentation.py` to validate field ordering, presentation sections, and dataset-to-family mapping. | Yes | 2026-04-01 |
 | TASK-021 | Add `tests/test_dataset_value_standardization.py` to validate percentage formatting, weight formatting, spell costs, parsed requirements, and list or dict rendering for structured text fields. | Yes | 2026-04-01 |
-| TASK-022 | Extend `tests/test_ui_smoke.py` so at least one representative dataset from each family is opened and inspected: `talismans`, `incantations` or `sorceries`, `weapons` or `shields`, `bosses` or `locations`, and one progression-table dataset. |  |  |
+| TASK-022 | Extend `tests/test_ui_smoke.py` so at least one representative dataset from each family is opened and inspected: `talismans`, `incantations` or `sorceries`, `weapons` or `shields`, `bosses` or `locations`, and one progression-table dataset. | Yes | 2026-04-01 |
 | TASK-023 | Update `ui_smoke_checklist.md` to cover direct run, managed restart, and representative non-armor dataset checks before the full supported dataset list is enabled by default. | Yes | 2026-04-01 |
 
 ## 3. Alternatives

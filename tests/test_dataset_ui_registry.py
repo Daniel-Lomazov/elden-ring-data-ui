@@ -7,7 +7,10 @@ import pandas as pd
 from app_support import (
     DATASET_FAMILY_ARMOR,
     DATASET_FAMILY_CATALOG,
+    DATASET_FAMILY_PROGRESSION,
     DATASET_FAMILY_TALISMAN,
+    DatasetUiSpec,
+    format_dataset_selector_label,
     list_supported_datasets,
     resolve_dataset_ui_spec,
     resolve_default_view,
@@ -16,7 +19,7 @@ from app_support import (
 
 
 class DatasetUiRegistryTests(unittest.TestCase):
-    def test_supported_dataset_list_excludes_upgrade_tables(self):
+    def test_supported_dataset_list_includes_upgrade_tables(self):
         available = [
             "armors",
             "talismans",
@@ -30,14 +33,43 @@ class DatasetUiRegistryTests(unittest.TestCase):
 
         self.assertEqual(
             supported,
-            ("armors", "talismans", "weapons", "items/remembrances"),
+            (
+                "armors",
+                "talismans",
+                "weapons",
+                "weapons_upgrades",
+                "shields_upgrades",
+                "items/remembrances",
+            ),
+        )
+
+    def test_selector_label_marks_deferred_registry_entries(self):
+        unsupported_spec = DatasetUiSpec(
+            dataset_key="future_dataset",
+            label="Future Dataset",
+            family="unsupported",
+            supported_views=tuple(),
+            supported_scopes=tuple(),
+            supports_ranking=False,
+            supports_multi_stat_sort=False,
+            supports_optimization=False,
+            default_sort_field="id",
+            card_meta_fields=tuple(),
+            detail_fields=tuple(),
+            loader_profile=None,
+            unsupported_reason="Renderer pending.",
+        )
+
+        self.assertEqual(
+            format_dataset_selector_label(unsupported_spec),
+            "Future Dataset (Not implemented yet)",
         )
 
     def test_registry_exposes_expected_families_and_capabilities(self):
         armor_spec = resolve_dataset_ui_spec("armors")
         talisman_spec = resolve_dataset_ui_spec("talismans")
         catalog_spec = resolve_dataset_ui_spec("items/bells")
-        unsupported_spec = resolve_dataset_ui_spec("weapons_upgrades")
+        progression_spec = resolve_dataset_ui_spec("weapons_upgrades")
 
         self.assertIsNotNone(armor_spec)
         self.assertEqual(armor_spec.family, DATASET_FAMILY_ARMOR)
@@ -51,13 +83,16 @@ class DatasetUiRegistryTests(unittest.TestCase):
         self.assertEqual(catalog_spec.family, DATASET_FAMILY_CATALOG)
         self.assertFalse(catalog_spec.supports_optimization)
 
-        self.assertIsNotNone(unsupported_spec)
-        self.assertIsNotNone(unsupported_spec.unsupported_reason)
+        self.assertIsNotNone(progression_spec)
+        self.assertEqual(progression_spec.family, DATASET_FAMILY_PROGRESSION)
+        self.assertFalse(progression_spec.supports_ranking)
+        self.assertIsNone(progression_spec.unsupported_reason)
 
     def test_default_view_resolver_matches_dataset_family(self):
         self.assertEqual(resolve_default_view(resolve_dataset_ui_spec("armors")), "Detailed view")
         self.assertEqual(resolve_default_view(resolve_dataset_ui_spec("talismans")), "Detailed view")
         self.assertEqual(resolve_default_view(resolve_dataset_ui_spec("weapons")), "Catalog")
+        self.assertEqual(resolve_default_view(resolve_dataset_ui_spec("weapons_upgrades")), "Catalog")
 
     def test_generic_rankable_numeric_fields_exclude_id_and_dlc(self):
         spec = resolve_dataset_ui_spec("items/remembrances")
@@ -91,6 +126,21 @@ class DatasetUiRegistryTests(unittest.TestCase):
         fields = resolve_rankable_numeric_fields(frame, spec)
 
         self.assertEqual(fields, ("Dmg: Phy", "Dmg: Hol", "status.poison", "Res: Poi."))
+
+    def test_progression_datasets_are_browse_only(self):
+        spec = resolve_dataset_ui_spec("weapons_upgrades")
+        frame = pd.DataFrame(
+            {
+                "id": [1, 2],
+                "weapon name": ["A", "A"],
+                "upgrade": ["Standard", "Standard +1"],
+                "some_numeric": [10, 20],
+            }
+        )
+
+        fields = resolve_rankable_numeric_fields(frame, spec)
+
+        self.assertEqual(fields, tuple())
 
 
 if __name__ == "__main__":

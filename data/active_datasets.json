@@ -1,6 +1,19 @@
 {
   "active_datasets": [
     "armors",
-    "talismans"
+    "talismans",
+    "ashesOfWar",
+    "bosses",
+    "creatures",
+    "incantations",
+    "locations",
+    "npcs",
+    "shields",
+    "shields_upgrades",
+    "skills",
+    "sorceries",
+    "spiritAshes",
+    "weapons",
+    "weapons_upgrades"
   ]
 }

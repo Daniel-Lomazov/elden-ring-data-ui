@@ -89,9 +89,16 @@ These datasets must surface category, damage type, skill, passive effect, parsed
 
 These datasets must render serialized list or dict fields as readable structured content instead of raw Python-like literals whenever parsing is reliable.
 
-## Future family
+### Progression-table datasets
 
-`weapons_upgrades` and `shields_upgrades` are progression-table datasets. Their future contract is different from item-card datasets and should use grouped upgrade detail rendering rather than plain item cards.
+- `weapons_upgrades`
+- `shields_upgrades`
+
+These datasets use a browse-only progression summary plus grouped item-detail rendering rather than ranked item cards.
+
+## Deferred selector contract
+
+If a dataset remains registered but unsupported, it stays visible in the selector with a `Not implemented yet` suffix instead of disappearing from the UI entirely.
 
 ## Extension rule for `data/items/*`
 

@@ -133,6 +133,20 @@ class DatasetPresentationTests(unittest.TestCase):
         self.assertEqual(section_rows["NPCs"], "Spirit NPC")
         self.assertEqual(section_rows["Edition"], "DLC")
 
+    def test_progression_dataset_presentation_orders_grouped_upgrade_fields(self):
+        spec = resolve_dataset_presentation_spec("weapons_upgrades")
+        ordered_labels = [
+            field.label
+            for section in spec.detail_sections
+            for field in section.fields
+        ]
+
+        self.assertEqual(spec.name_field, "weapon name")
+        self.assertEqual(
+            ordered_labels,
+            ["Upgrade", "Attack Power", "Damage Reduction", "Stat Scaling", "Passive Effects"],
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

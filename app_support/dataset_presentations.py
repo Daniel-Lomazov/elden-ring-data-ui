@@ -717,7 +717,10 @@ _DATASET_PRESENTATION_REGISTRY: dict[str, DatasetPresentationSpec] = {
         ),
         detail_sections=(
             _section(
-                "Upgrade Data",
+                "Upgrade Path",
+                _field("upgrade", "Upgrade"),
+                _field("attack power", "Attack Power", formatter="structured"),
+                _field("damage reduction (%)", "Damage Reduction", formatter="structured"),
                 _field("stat scaling", "Stat Scaling", formatter="structured"),
                 _field("passive effects", "Passive Effects", formatter="structured"),
             ),
@@ -735,7 +738,10 @@ _DATASET_PRESENTATION_REGISTRY: dict[str, DatasetPresentationSpec] = {
         ),
         detail_sections=(
             _section(
-                "Upgrade Data",
+                "Upgrade Path",
+                _field("upgrade", "Upgrade"),
+                _field("attack power", "Attack Power", formatter="structured"),
+                _field("damage reduction (%)", "Damage Reduction", formatter="structured"),
                 _field("stat scaling", "Stat Scaling", formatter="structured"),
                 _field("passive effects", "Passive Effects", formatter="structured"),
             ),

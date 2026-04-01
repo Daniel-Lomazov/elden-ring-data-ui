@@ -136,15 +136,31 @@ The `scripts/` folder is the best path for repeatable runs.
 ### Datasets
 
 - Default active datasets are controlled by `data/active_datasets.json`.
-- The current default is:
+- The default selector now prioritizes the full supported top-level set:
   - `armors`
   - `talismans`
-- Additional datasets can be present in `data/` and `data/items/`; app coverage for non-primary datasets may be partial/placeholder depending on view.
+  - `ashesOfWar`
+  - `bosses`
+  - `creatures`
+  - `incantations`
+  - `locations`
+  - `npcs`
+  - `shields`
+  - `shields_upgrades`
+  - `skills`
+  - `sorceries`
+  - `spiritAshes`
+  - `weapons`
+  - `weapons_upgrades`
+- `data/items/*` datasets still remain available after the top-level defaults in the selector.
+- If a registry entry is present but still deferred, the selector label appends `Not implemented yet` instead of silently hiding it.
+- Upgrade tables use a browse-only progression view with grouped item details rather than the ranked item-card layout.
 
 ### Ranking and optimization behavior
 
 - Single-stat selection uses direct sort behavior.
 - Multi-stat selection (2+ valid stats) uses optimizer ranking.
+- Upgrade-table datasets are browse-only and do not expose ranking controls.
 - Current optimization methods:
   - `Maximin` (`maximin_normalized`, default)
   - `Weighted Sum` (`weighted_sum_normalized`)
