@@ -110,3 +110,30 @@ PHASE BENCHMARK
 - Gaps or regressions: No runtime execution yet; controller contract still needs to formalize exact CLI, metadata schema, and stale-state semantics.
 - Decision: proceed
 - Plan adjustment for next phase: Define the controller as a Python operational module with stable commands, repo-local transient metadata/logging, and wrapper-compatible output markers before any implementation begins.
+
+## Phase 2 - Controller Architecture Contract
+
+- Contract file: `docs/specs/runtime_controller.md`
+- Chosen implementation location: `tools/runtime_controller.py`
+- Chosen CLI surface: `python -m tools.runtime_controller start|stop|status|open|restart|recover`
+- Chosen transient artifacts:
+  - `.cache/runtime-controller.json`
+  - `.cache/runtime-controller.log`
+- Chosen ownership rule: detached/background lifecycle is controller-owned; direct foreground Streamlit runs stay outside controller ownership.
+- Chosen recovery rule: stale same-app state may be reconciled or cleaned up automatically; unrelated port owners must never be terminated by the controller.
+- Chosen browser rule: `start` implies `open`, and already-running sessions are brought to the front instead of duplicated.
+
+PHASE BENCHMARK
+- Phase: 2 - Controller architecture contract
+- Planned outcome: Freeze the controller interface, state layout, readiness contract, and wrapper integration points before implementation.
+- Actual outcome: Added a concrete controller spec with command semantics, state schema, `.cache` artifact locations, same-app recovery rules, logging rules, and wrapper responsibilities.
+- Evidence: `docs/specs/runtime_controller.md`
+- Tests/checks run: Repo pattern review against existing `tools.*` module entrypoints and script integration points.
+- Pass/fail summary: PASS
+- Self-score on correctness (0-5): 5
+- Self-score on stability (0-5): 5
+- Self-score on minimalism/scope control (0-5): 5
+- Self-score on rollback safety (0-5): 5
+- Gaps or regressions: Browser focus implementation details still need code-level validation on Windows.
+- Decision: proceed
+- Plan adjustment for next phase: Implement the controller in one additive Python module first, then only extract tiny helpers if that becomes necessary for testability or clarity.
