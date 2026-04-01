@@ -49,19 +49,27 @@ from histogram_views import (
 )
 from histogram_layout import resolve_auto_render_layer
 from app_support import (
+    DETAIL_MODE_GROUPED,
     DETAIL_SCOPE_ANCHOR_ID,
+    STYLE_CAPTION,
     ARMOR_FULL_SCOPE_DESCRIPTION_PLACEHOLDER,
     ARMOR_CUSTOM_SCOPE_NAME_PLACEHOLDER,
     ARMOR_CUSTOM_SCOPE_DESCRIPTION_PLACEHOLDER,
     DATASET_FAMILY_ARMOR,
     DATASET_FAMILY_CATALOG,
     DATASET_FAMILY_TALISMAN,
+    field_matches_column,
+    format_presentation_value,
+    iter_presented_fields,
     list_weighted_preset_options,
     list_supported_datasets,
+    normalize_numeric_like_columns,
     normalize_dataset_text,
     focus_detail_anchor,
+    resolve_dataset_presentation_spec,
     resolve_dataset_ui_spec,
     resolve_default_view,
+    resolve_field_source_key,
     resolve_optimization_view_state,
     resolve_rankable_numeric_fields,
     load_encounter_profile_request,
@@ -771,22 +779,29 @@ def main():
 
         return "Passive effects"
 
-    def format_item_detail_value(column: str, value):
-        if value is None:
-            return "—"
+    def resolve_name_field(source_df: pd.DataFrame | None = None) -> str:
+        preferred = str(presentation_spec.name_field or "name").strip() or "name"
+        if source_df is not None and preferred in source_df.columns:
+            return preferred
+        if source_df is not None and "name" in source_df.columns:
+            return "name"
+        return preferred
+
+    def resolve_row_name(row: pd.Series, source_df: pd.DataFrame | None = None) -> str:
+        name_field = resolve_name_field(source_df)
+        if name_field not in row.index:
+            return ""
+        raw_value = row.get(name_field)
         try:
-            if pd.isna(value):
-                return "—"
+            if pd.isna(raw_value):
+                return ""
         except Exception:
             pass
+        return str(raw_value or "").strip()
 
-        column_key = str(column or "").strip().lower()
-        if is_talisman_dataset and column_key == "dlc":
-            return talisman_dlc_label(value)
-
-        if isinstance(value, (int, float)):
-            return format_metric_value(value, stat_name=column)
-        return str(value)
+    def format_item_detail_value(column: str, value):
+        text = format_presentation_value(value, "auto", field_key=column)
+        return text or "—"
 
     def format_item_detail_label(column: str) -> str:
         token = str(column or "").strip()
@@ -798,24 +813,29 @@ def main():
             return mapped_name
         return token.replace("_", " ").title()
 
-    def iter_present_text_fields(row: pd.Series, fields: tuple[str, ...] | list[str]):
-        for field in fields:
-            if field not in row.index:
-                continue
-            raw_value = row.get(field)
-            if pd.isna(raw_value):
-                continue
-            text = str(raw_value).strip()
-            if not text or text.lower() == "nan":
-                continue
-            yield field, text
+    def render_named_metric(container, label: str, value: str, highlighted: bool = False):
+        label_text = str(label or "").strip()
+        value_text = str(value or "").strip()
+        star = "⭐ " if highlighted else ""
+        container.markdown(
+            (
+                "<div class='er-stat-row'>"
+                f"<span class='er-stat-label'>{html.escape(star + label_text)}</span>"
+                f"<span class='er-stat-value'>{html.escape(value_text)}</span>"
+                "</div>"
+            ),
+            unsafe_allow_html=True,
+        )
 
-    def render_summary_text_fields(container, row: pd.Series, fields: tuple[str, ...] | list[str]):
+    def iter_present_text_fields(row: pd.Series, fields):
+        yield from iter_presented_fields(row, fields)
+
+    def render_summary_text_fields(container, row: pd.Series, fields):
         for field, text in iter_present_text_fields(row, fields):
-            if field == "description":
+            if field.style == STYLE_CAPTION:
                 container.caption(text)
             else:
-                container.markdown(f"**{format_item_detail_label(field)}:** {text}")
+                container.markdown(f"**{field.label}:** {text}")
 
     def resolve_item_detail_columns(source_df: pd.DataFrame) -> list[str]:
         hidden_columns = {
@@ -829,16 +849,15 @@ def main():
             "Res: Vit.",
             "Res: Vit",
         }
+        hidden_columns.add(resolve_name_field(source_df))
         ordered_columns = []
-        summary_fields = {
-            field
-            for field in ui_spec.detail_fields
-            if field in {"description", "effect", "special effect", "how to acquire", "in-game section", "type"}
+        rendered_source_fields = {
+            resolve_field_source_key(field)
+            for field in presentation_spec.detail_summary_fields
         }
-        hidden_columns.update(summary_fields)
-        for column in ui_spec.detail_fields:
-            if column in source_df.columns and column not in hidden_columns and column not in ordered_columns:
-                ordered_columns.append(column)
+        for section in presentation_spec.detail_sections:
+            rendered_source_fields.update(resolve_field_source_key(field) for field in section.fields)
+        hidden_columns.update(rendered_source_fields)
         for column in source_df.columns:
             if column in hidden_columns or column in ordered_columns:
                 continue
@@ -846,17 +865,102 @@ def main():
         return ordered_columns
 
     def render_card_meta_fields(container, row: pd.Series):
-        for field, text in iter_present_text_fields(row, ui_spec.card_meta_fields):
-            if field == "description":
+        for field, text in iter_present_text_fields(row, presentation_spec.card_meta_fields):
+            if field.style == STYLE_CAPTION:
                 container.caption(text)
             else:
-                container.markdown(f"**{format_item_detail_label(field)}:** {text}")
+                container.markdown(f"**{field.label}:** {text}")
 
-    def render_item_detail_inspector(source_df: pd.DataFrame, panel_key: str):
-        if source_df is None or source_df.empty or "name" not in source_df.columns:
+    def first_card_meta_text(row: pd.Series) -> str:
+        for field, text in iter_present_text_fields(row, presentation_spec.card_meta_fields):
+            if field.style == STYLE_CAPTION:
+                return text
+            return f"{field.label}: {text}"
+        return "—"
+
+    def resolve_dataset_metric_entries(row: pd.Series) -> list[tuple[str, str]]:
+        metric_entries: list[tuple[str, str]] = []
+        seen_labels: set[str] = set()
+        for field, text in iter_present_text_fields(row, presentation_spec.card_metric_fields):
+            if any(field_matches_column(field, stat_name) for stat_name in highlighted_stats):
+                continue
+            label = str(field.label).strip()
+            if not label or label in seen_labels:
+                continue
+            seen_labels.add(label)
+            metric_entries.append((label, text))
+        return metric_entries
+
+    def render_dataset_metric_rows(container, row: pd.Series, allow_columns: bool = False):
+        metric_entries = resolve_dataset_metric_entries(row)
+        if metric_entries:
+            if allow_columns:
+                cols_per_row = 4
+                for i in range(0, len(metric_entries), cols_per_row):
+                    parts = container.columns(cols_per_row)
+                    for j, part in enumerate(parts):
+                        if i + j < len(metric_entries):
+                            label, text = metric_entries[i + j]
+                            render_named_metric(part, label, text)
+            else:
+                for label, text in metric_entries:
+                    render_named_metric(container, label, text)
             return
 
-        name_series = source_df["name"].dropna().astype(str).str.strip()
+        stats = [c for c in numeric_cols if c not in ["id"]]
+        if is_armor_dataset:
+            display_stats = []
+        elif is_talisman_dataset:
+            desired_cols = ["weight"]
+            found_cols = [c for c in desired_cols if c in numeric_cols]
+            display_stats = [
+                s
+                for s in found_cols
+                if s in stats and s not in highlighted_stats and str(s).strip().lower() != "dlc"
+            ]
+        else:
+            display_stats = [s for s in stats if s not in highlighted_stats]
+
+        if allow_columns:
+            if display_stats:
+                cols_per_row = 4
+                for i in range(0, len(display_stats), cols_per_row):
+                    parts = container.columns(cols_per_row)
+                    for j, part in enumerate(parts):
+                        if i + j < len(display_stats):
+                            stat_name = display_stats[i + j]
+                            value = row.get(stat_name, 0)
+                            num_val = None
+                            try:
+                                num_val = float(value)
+                            except Exception:
+                                num_val = None
+
+                            if num_val is not None and num_val == 0 and stat_name not in highlighted_stats:
+                                part.write("")
+                            else:
+                                display_value = format_metric_value(value, stat_name=stat_name)
+                                render_stat_metric(part, stat_name, display_value)
+            return
+
+        for stat_name in display_stats:
+            value = row.get(stat_name, 0)
+            num_val = None
+            try:
+                num_val = float(value)
+            except Exception:
+                num_val = None
+            if num_val is not None and num_val == 0 and stat_name not in highlighted_stats:
+                continue
+            display_value = format_metric_value(value, stat_name=stat_name)
+            render_stat_metric(container, stat_name, display_value)
+
+    def render_item_detail_inspector(source_df: pd.DataFrame, panel_key: str):
+        name_field = resolve_name_field(source_df)
+        if source_df is None or source_df.empty or name_field not in source_df.columns:
+            return
+
+        name_series = source_df[name_field].dropna().astype(str).str.strip()
         name_options = [name for name in name_series.tolist() if name]
         if not name_options:
             return
@@ -881,7 +985,7 @@ def main():
                 key=select_key,
             )
             st.caption(f"Focused item: {selected_name}")
-            selected_rows = source_df[source_df["name"].astype(str) == str(selected_name)]
+            selected_rows = source_df[source_df[name_field].astype(str) == str(selected_name)]
             if selected_rows.empty:
                 st.info("No details available for this item.")
                 return
@@ -897,12 +1001,47 @@ def main():
             render_summary_text_fields(
                 st,
                 selected_row,
-                tuple(
-                    field
-                    for field in ui_spec.detail_fields
-                    if field in {"effect", "description", "special effect", "how to acquire", "in-game section", "type"}
-                ),
+                presentation_spec.detail_summary_fields,
             )
+
+            for section in presentation_spec.detail_sections:
+                section_rows = list(iter_present_text_fields(selected_row, section.fields))
+                if not section_rows:
+                    continue
+                st.markdown(f"#### {section.title}")
+                for field, text in section_rows:
+                    if field.style == STYLE_CAPTION:
+                        st.caption(text)
+                    else:
+                        st.markdown(f"**{field.label}:** {text}")
+
+            if presentation_spec.detail_mode == DETAIL_MODE_GROUPED and len(selected_rows) > 1:
+                ordered_columns: list[str] = []
+                for section in presentation_spec.detail_sections:
+                    for field in section.fields:
+                        source_key = resolve_field_source_key(field)
+                        if source_key in selected_rows.columns and source_key not in ordered_columns:
+                            ordered_columns.append(source_key)
+                for column in selected_rows.columns:
+                    if column in {name_field, "image"} or column in ordered_columns:
+                        continue
+                    ordered_columns.append(column)
+
+                grouped_rows = []
+                for _, grouped_row in selected_rows.iterrows():
+                    grouped_rows.append(
+                        {
+                            format_item_detail_label(column): format_item_detail_value(
+                                column,
+                                grouped_row.get(column),
+                            )
+                            for column in ordered_columns
+                        }
+                    )
+
+                if grouped_rows:
+                    st.dataframe(pd.DataFrame(grouped_rows), use_container_width=True, hide_index=True)
+                return
 
             detail_columns = resolve_item_detail_columns(source_df)
             detail_rows = []
@@ -1291,6 +1430,7 @@ def main():
     if ui_spec is None:
         st.info("The selected dataset does not have a registered UI specification.")
         return
+    presentation_spec = resolve_dataset_presentation_spec(dataset)
 
     if unsupported_dataset_notice:
         st.warning(unsupported_dataset_notice)
@@ -1343,6 +1483,7 @@ def main():
     # parse armor-like stats when present
     df = parse_armor_stats(df)
     df = apply_post_parse_column_pruning(dataset, df)
+    df = normalize_numeric_like_columns(df, presentation_spec)
 
     def load_json_file(path: Path, fallback):
         try:
@@ -3181,7 +3322,7 @@ def main():
                 else:
                     image_html = "<div class='full-set-img-placeholder'>[img]</div>"
 
-                title_text = html.escape(str(row.get("name", "")))
+                title_text = html.escape(resolve_row_name(row, df))
                 metrics_html = ""
                 for hs in highlighted_stats:
                     if hs in row:
@@ -3248,34 +3389,34 @@ def main():
                         unsafe_allow_html=True,
                     )
                 render_image_or_grid(row, width_px=140)
-                if "name" in df.columns:
-                    name_text = str(row.get("name", "")).strip()
-                    if name_text:
-                        title_class = "full-set-title" if full_set_mode else ""
-                        if title_class:
-                            safe_name = html.escape(name_text)
-                            st.markdown(
-                                f"<div class='{title_class}'><strong>{safe_name}</strong></div>",
-                                unsafe_allow_html=True,
-                            )
-                        else:
-                            st.markdown(f"### {name_text}")
+                name_text = resolve_row_name(row, df)
+                if name_text:
+                    title_class = "full-set-title" if full_set_mode else ""
+                    if title_class:
+                        safe_name = html.escape(name_text)
+                        st.markdown(
+                            f"<div class='{title_class}'><strong>{safe_name}</strong></div>",
+                            unsafe_allow_html=True,
+                        )
+                    else:
+                        st.markdown(f"### {name_text}")
                 if not is_armor_dataset:
                     for hs in highlighted_stats:
                         if hs in row:
                             val_h = row.get(hs)
                             render_stat_metric(st, hs, val_h, highlighted=True)
                 render_card_meta_fields(st, row)
+                if not is_armor_dataset:
+                    render_dataset_metric_rows(st, row, allow_columns=False)
                 if is_armor_dataset:
                     render_armor_square_stat_panel(st, row)
             else:
                 if not allow_nested_columns:
                     render_image_or_grid(row, width_px=140)
 
-                    if "name" in df.columns:
-                        name_text = str(row.get("name", "")).strip()
-                        if name_text:
-                            st.markdown(f"### {name_text}")
+                    name_text = resolve_row_name(row, df)
+                    if name_text:
+                        st.markdown(f"### {name_text}")
                     if "__overall_score_100" in row and pd.notna(row.get("__overall_score_100")):
                         overall_val = float(row.get("__overall_score_100", 0.0))
                         st.metric("Overall", f"{overall_val:.2f}")
@@ -3288,31 +3429,8 @@ def main():
                                 val_h = row.get(hs)
                                 render_stat_metric(st, hs, val_h, highlighted=True)
 
-                    stats = [c for c in numeric_cols if c not in ["id"]]
-                    if is_armor_dataset:
-                        display_stats = []
-                    elif is_talisman_dataset:
-                        desired_cols = ["weight"]
-                        found_cols = [c for c in desired_cols if c in numeric_cols]
-                        display_stats = [
-                            s
-                            for s in found_cols
-                            if s in stats and s not in highlighted_stats and str(s).strip().lower() != "dlc"
-                        ]
-                    else:
-                        display_stats = [s for s in stats if s not in highlighted_stats]
-
-                    for s in display_stats:
-                        val = row.get(s, 0)
-                        num_val = None
-                        try:
-                            num_val = float(val)
-                        except Exception:
-                            num_val = None
-                        if num_val is not None and num_val == 0 and s not in highlighted_stats:
-                            continue
-                        display_val = format_metric_value(val, stat_name=s)
-                        render_stat_metric(st, s, display_val)
+                    if not is_armor_dataset:
+                        render_dataset_metric_rows(st, row, allow_columns=False)
                     st.markdown("</div>", unsafe_allow_html=True)
                     gap_px = FULL_SET_ROW_GAP_PX if full_set_mode and compact_mode else 8
                     st.markdown(f"<div style='height:{gap_px}px'></div>", unsafe_allow_html=True)
@@ -3329,50 +3447,16 @@ def main():
                 with c2:
                     title_left, title_right = st.columns([4, 1])
                     with title_left:
-                        if "name" in df.columns:
-                            name_text = str(row.get("name", "")).strip()
-                            if name_text:
-                                st.markdown(f"### {name_text}")
+                        name_text = resolve_row_name(row, df)
+                        if name_text:
+                            st.markdown(f"### {name_text}")
                     with title_right:
                         if "__overall_score_100" in row and pd.notna(row.get("__overall_score_100")):
                             overall_val = float(row.get("__overall_score_100", 0.0))
                             st.metric("Overall", f"{overall_val:.2f}")
                     render_card_meta_fields(st, row)
-
-                    stats = [c for c in numeric_cols if c not in ["id"]]
-                    if is_armor_dataset:
-                        display_stats = []
-                    elif is_talisman_dataset:
-                        desired_cols = ["weight"]
-                        found_cols = [c for c in desired_cols if c in numeric_cols]
-                        display_stats = [
-                            s
-                            for s in found_cols
-                            if s in stats and s not in highlighted_stats and str(s).strip().lower() != "dlc"
-                        ]
-                    else:
-                        display_stats = [s for s in stats if s not in highlighted_stats]
-
-                    if display_stats:
-                        cols_per_row = 4
-                        for i in range(0, len(display_stats), cols_per_row):
-                            parts = st.columns(cols_per_row)
-                            for j, p in enumerate(parts):
-                                if i + j < len(display_stats):
-                                    s = display_stats[i + j]
-                                    label = s
-                                    val = row.get(s, 0)
-                                    num_val = None
-                                    try:
-                                        num_val = float(val)
-                                    except Exception:
-                                        num_val = None
-
-                                    if num_val is not None and num_val == 0 and s not in highlighted_stats:
-                                        p.write("")
-                                    else:
-                                        display_val = format_metric_value(val, stat_name=s)
-                                        render_stat_metric(p, label, display_val)
+                    if not is_armor_dataset:
+                        render_dataset_metric_rows(st, row, allow_columns=True)
                 if is_armor_dataset:
                     render_armor_square_stat_panel(st, row)
             st.markdown("</div>", unsafe_allow_html=True)
@@ -3936,11 +4020,11 @@ def main():
                 for col, (label, row) in zip(image_cols, valid_items):
                     with col:
                         slot_name = str(label or "").strip()
-                        row_name = str(row.get("name", "")).strip().lower()
+                        row_name = resolve_row_name(row, df).lower()
                         is_totals = slot_name.lower() == "totals" or row_name == "set totals"
                         render_detail_image_or_grid(row, width_px=120)
                         if not is_totals:
-                            item_name = str(row.get("name", "")).strip()
+                            item_name = resolve_row_name(row, df)
                             st.markdown(
                                 f"<div class='detail-scope-name'><strong>{item_name or '—'}</strong></div>",
                                 unsafe_allow_html=True,
@@ -3951,7 +4035,7 @@ def main():
                 for col, (label, row) in zip(desc_cols, valid_items):
                     with col:
                         slot_name = str(label or "").strip()
-                        row_name = str(row.get("name", "")).strip().lower()
+                        row_name = resolve_row_name(row, df).lower()
                         is_totals = slot_name.lower() == "totals" or row_name == "set totals"
                         if is_totals and not is_armor_dataset:
                             for hs in highlighted_stats:
@@ -3969,12 +4053,7 @@ def main():
                                 else:
                                     render_stat_metric(st, stat_name, format_metric_value(raw_value, stat_name=stat_name))
                         else:
-                            field_text = "—"
-                            for field, text in iter_present_text_fields(row, ui_spec.card_meta_fields):
-                                field_text = html.escape(text) if field == "description" else html.escape(
-                                    f"{format_item_detail_label(field)}: {text}"
-                                )
-                                break
+                            field_text = html.escape(first_card_meta_text(row))
                             st.markdown(
                                 f"<div class='detail-scope-desc'>{field_text}</div>",
                                 unsafe_allow_html=True,
@@ -3985,7 +4064,7 @@ def main():
                 for col, (label, row) in zip(stat_cols, valid_items):
                     with col:
                         slot_name = str(label or "").strip()
-                        row_name = str(row.get("name", "")).strip().lower()
+                        row_name = resolve_row_name(row, df).lower()
                         is_totals = slot_name.lower() == "totals" or row_name == "set totals"
                         if is_armor_dataset:
                             render_armor_square_stat_panel(st, row)

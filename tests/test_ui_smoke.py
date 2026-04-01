@@ -336,6 +336,31 @@ class UiSmokeTests(unittest.TestCase):
         self.assertIn("Mode:", radios)
         self.assertEqual(radios["Mode:"].options, ["Single", "Full Set"])
 
+    def test_talismans_expose_value_as_rankable_stat(self):
+        app = self._select_dataset(self._new_app(), "Talismans")
+
+        next(widget for widget in app.selectbox if widget.label == "Choose View:").select(
+            "Optimization view"
+        ).run(timeout=60)
+        self.assertEqual(len(app.exception), 0)
+
+        stat_picker = next(widget for widget in app.multiselect if widget.label == "Highlighted stats:")
+        option_text = [str(option).lower() for option in stat_picker.options]
+
+        self.assertTrue(any("value" in option for option in option_text))
+
+    def test_incantations_expose_spell_cost_and_requirement_stats(self):
+        app = self._select_dataset(self._new_app(), "Incantations")
+
+        multiselects = {widget.label: widget for widget in app.multiselect}
+        selectboxes = {widget.label: widget for widget in app.selectbox}
+        option_text = [str(option).lower() for option in multiselects["Highlighted stats:"].options]
+
+        self.assertIn("Rows to show:", selectboxes)
+        self.assertTrue(any("slot" in option for option in option_text))
+        self.assertTrue(any("fai" in option for option in option_text))
+        self.assertTrue(any("stamina" in option for option in option_text))
+
     def test_items_dataset_uses_shared_catalog_flow_without_slot_controls(self):
         app = self._select_dataset(self._new_app(), "Items / Remembrances")
 

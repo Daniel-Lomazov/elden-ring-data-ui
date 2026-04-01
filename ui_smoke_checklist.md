@@ -16,4 +16,6 @@ Use this quick checklist after running `streamlit run app.py`.
 13. Verify `Overall` sums highlighted stats and shows aligned rows (phantom spacer in place of image).
 14. Click `📥 Export <column> rows (CSV)` and verify the downloaded file reflects current rows.
 15. Open `Why this is #1` and verify top-vs-#2 deltas are shown.
-16. Enable `Show all datasets`, choose a non-armor dataset, and verify placeholder message appears.
+16. Switch to `Talismans`, open `Optimization view`, and verify `Highlighted stats:` includes `value` but does not include `weight`.
+17. Switch to `Incantations` and verify the shared catalog controls expose numeric spell stats such as `slot`, `FAI`, and `stamina cost`.
+18. Open a spell, weapon, and location card and verify detail panels render semantic fields cleanly: costs as costs, requirements maps parsed, and serialized lists shown as readable text instead of raw literals.

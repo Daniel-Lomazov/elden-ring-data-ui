@@ -29,18 +29,29 @@ python -m venv .venv
 .\.venv\Scripts\activate
 pip install -r requirements.txt
 ./scripts/run_streamlit_local.ps1
+./scripts/stop_streamlit_port.ps1 -Port 8501
+./scripts/start-app.ps1 -OpenBrowser:$false
+./scripts/recover-app.ps1 -OpenBrowser:$false
+./scripts/stop_streamlit_port.ps1 -Port 8501
 python -m tools.optimizer_smoke
 python -m tools.workspace_verify
-python -m unittest discover tests
-python -m unittest tests.test_ui_smoke
+python -m unittest discover -s tests -q
+python -m unittest tests.test_ui_smoke -q
 ./scripts/verify-workspace.ps1 -Quick
-./scripts/stop_streamlit_port.ps1 -Port 8501
 ```
+
+Runtime usage notes:
+
+- `run_streamlit_local.ps1` is the direct foreground loop. Stop it with `Ctrl+C` or `stop_streamlit_port.ps1`.
+- `start-app.ps1` is the managed detached flow backed by `tools.runtime_controller`.
+- `recover-app.ps1` is the logical restart command for the managed flow.
+- `run-all.ps1 -RunApp` is the full reset + verify + managed start wrapper.
 
 Expected outcomes:
 
 - App starts at `http://localhost:8501`.
 - App binds to localhost by default (not `0.0.0.0`) via `.streamlit/config.toml`.
+- `start-app.ps1` leaves the app under controller ownership, and `recover-app.ps1` performs a controller-backed restart instead of a second independent launch.
 - Smoke script prints top-5 sections and ends with `optimizer_smoke: SUCCESS`.
 - Workspace verification passes for the current tree.
 - Unit tests complete without failures in the current environment.
