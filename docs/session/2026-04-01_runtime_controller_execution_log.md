@@ -184,3 +184,36 @@ PHASE BENCHMARK
 - Gaps or regressions: Browser actions were verified through command success and log/state updates, but wrapper-level launch behavior is still untested because scripts have not been rewired yet.
 - Decision: proceed
 - Plan adjustment for next phase: Rewire existing lifecycle scripts into thin controller wrappers while preserving `scripts/run_streamlit_local.ps1` as the direct foreground fallback.
+
+## Phase 4 - Lifecycle Wrappers Rewired
+
+- Updated `scripts/start-app.ps1` to resolve the environment Python and delegate to `python -m tools.runtime_controller start|recover`.
+- Updated `scripts/recover-app.ps1` to become a thin wrapper over `scripts/start-app.ps1 -ResetFirst`.
+- Updated `scripts/reset-dev-session.ps1` to delegate runtime stop through `scripts/stop_streamlit_port.ps1`, keeping only optional cache cleanup responsibilities.
+- Updated `scripts/stop_streamlit_port.ps1` to delegate to `python -m tools.runtime_controller stop` by default.
+- Preserved emergency hard-kill behavior behind `scripts/stop_streamlit_port.ps1 -ForceAnyListener`.
+- Preserved `scripts/run_streamlit_local.ps1` unchanged as the direct foreground fallback path.
+
+### Wrapper verification evidence
+
+- `./scripts/start-app.ps1 -Port 8501 -OpenBrowser:$false` launched a controller-managed session.
+- `python -m tools.runtime_controller status --port 8501` immediately after wrapper start reported `STATUS=running` with matching `APP_PID` and `LISTENER_PID`.
+- `./scripts/recover-app.ps1 -Port 8501 -OpenBrowser:$false` delegated to controller recovery and restarted PID `24088` as PID `35060`.
+- `./scripts/reset-dev-session.ps1 -Port 8501` delegated stop to the controller and then completed reset cleanup.
+- `./scripts/stop_streamlit_port.ps1 -Port 8501` delegated stop to the controller and stopped PID `37424`.
+- A final controller `status` after wrapper-driven stop reported `STATUS=stopped`.
+
+PHASE BENCHMARK
+- Phase: 4 - Rewire lifecycle scripts into thin wrappers
+- Planned outcome: Remove script-owned lifecycle behavior and route the existing PowerShell entrypoints through the controller while preserving a direct foreground fallback.
+- Actual outcome: `start-app`, `recover-app`, `reset-dev-session`, and `stop_streamlit_port` now delegate runtime lifecycle to the controller, while `run_streamlit_local.ps1` remains the rollback-safe foreground path.
+- Evidence: Updated wrapper scripts plus the wrapper command runs recorded above.
+- Tests/checks run: PowerShell diagnostics, wrapper `start-app`, controller `status`, wrapper `recover-app`, wrapper `reset-dev-session`, wrapper `stop_streamlit_port`, and final controller `status`.
+- Pass/fail summary: PASS
+- Self-score on correctness (0-5): 5
+- Self-score on stability (0-5): 4
+- Self-score on minimalism/scope control (0-5): 5
+- Self-score on rollback safety (0-5): 5
+- Gaps or regressions: `start-app.ps1` output in the terminal capture occasionally surfaced only the trailing markers during verification, so full regression proof still needs broader script and test coverage.
+- Decision: proceed
+- Plan adjustment for next phase: Add controller-focused tests and run full verification, including the untouched direct foreground fallback path.

@@ -14,8 +14,5 @@ function Write-Step([string]$Message) {
 $repoRoot = Split-Path -Parent $PSScriptRoot
 Set-Location $repoRoot
 
-Write-Step "Resetting local app session..."
-& "$PSScriptRoot\reset-dev-session.ps1" -Port $Port
-
-Write-Step "Starting app in background and waiting for readiness..."
-& "$PSScriptRoot\start-app.ps1" -EnvName $EnvName -Port $Port -WaitForReadySeconds $WaitForReadySeconds -OpenBrowser:$OpenBrowser
+Write-Step "Delegating recovery to runtime controller..."
+& "$PSScriptRoot\start-app.ps1" -EnvName $EnvName -Port $Port -ResetFirst -WaitForReadySeconds $WaitForReadySeconds -OpenBrowser:$OpenBrowser
