@@ -217,3 +217,56 @@ PHASE BENCHMARK
 - Gaps or regressions: `start-app.ps1` output in the terminal capture occasionally surfaced only the trailing markers during verification, so full regression proof still needs broader script and test coverage.
 - Decision: proceed
 - Plan adjustment for next phase: Add controller-focused tests and run full verification, including the untouched direct foreground fallback path.
+
+## Phase 5 - Verification And Regression Protection
+
+- Added targeted controller tests: `tests/test_runtime_controller.py`
+- Verified controller unit coverage:
+  - stopped-state detection
+  - foreign port conflict detection
+  - idempotent `start`
+  - ready-state persistence after launch
+  - safe no-op `stop`
+  - `recover` stop-then-start composition
+
+### Automated verification evidence
+
+- `python -m unittest tests.test_runtime_controller` passed: `Ran 6 tests in 0.067s`.
+- `./scripts/verify-workspace.ps1` passed:
+  - `final_check: PASS`
+  - `optimizer_check: PASS`
+  - `optimizer_smoke: PASS`
+  - `tests: PASS`
+  - `WORKSPACE_VERIFY: SUCCESS (11.99s)`
+
+### Direct foreground fallback evidence
+
+- VS Code task `Run Streamlit (Local)` launched the untouched `scripts/run_streamlit_local.ps1` path and served `http://localhost:8501`.
+- Controller `status` during that foreground run reported:
+  - `STATUS=unmanaged_same_app`
+  - `APP_PID=39680`
+  - `READY=true`
+- VS Code task `Stop Streamlit (Kill Port)` then delegated through the controller and stopped PID `39680` cleanly.
+
+### Stale metadata recovery evidence
+
+- Injected a bogus `.cache/runtime-controller.json` with PID `99999`.
+- `python -m tools.runtime_controller status --port 8501` reported `STATUS=stale`.
+- `python -m tools.runtime_controller start --port 8501 --wait-seconds 45 --no-open-browser` recovered from the stale state and launched a new managed session.
+- A follow-up `status` reported `STATUS=running` with PID `25680`.
+- `python -m tools.runtime_controller stop --port 8501` then cleaned up the recovered session.
+
+PHASE BENCHMARK
+- Phase: 5 - Verification and regression protection
+- Planned outcome: Add focused controller coverage, run the existing verification suite, prove the untouched foreground fallback still works, and validate stale-state recovery.
+- Actual outcome: Added targeted controller unit tests, passed the full workspace verification suite, confirmed the direct foreground fallback via task execution, and validated stale metadata recovery against a real bogus state file.
+- Evidence: `tests/test_runtime_controller.py`, `./scripts/verify-workspace.ps1` output, direct fallback task output, controller status output during fallback, and stale-state recovery command runs.
+- Tests/checks run: targeted controller unittest file, full workspace verification, direct fallback task run, controller status against unmanaged fallback session, stop task cleanup, stale-state detection, stale-state recovery start, and cleanup stop.
+- Pass/fail summary: PASS
+- Self-score on correctness (0-5): 5
+- Self-score on stability (0-5): 5
+- Self-score on minimalism/scope control (0-5): 5
+- Self-score on rollback safety (0-5): 5
+- Gaps or regressions: No wrapper-specific automated tests were added; script-layer proof remains command-based rather than unit-based.
+- Decision: proceed
+- Plan adjustment for next phase: Only extract tiny shared support if it meaningfully reduces duplication without broadening scope; otherwise preserve the current shape and move to the tray decision checkpoint.
