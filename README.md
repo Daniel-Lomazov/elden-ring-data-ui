@@ -161,7 +161,7 @@ The `scripts/` folder is the best path for repeatable runs.
 
 ### Side-by-side mode
 
-- Use the top-level `Layout:` control to switch from `Single dataset` to `Side by side`.
+- Use the left-sidebar `Layout:` dropdown to switch from `Single dataset` to `Side by side`.
 - Side-by-side mode renders two embedded panes, each running the existing dataset interface independently.
 - Use `Left pane dataset:` and `Right pane dataset:` to choose starting datasets for each pane.
 - Use `Pane height:` to increase the embedded pane height when you want more of each interface visible without scrolling.

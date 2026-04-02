@@ -1321,10 +1321,9 @@ def main():
 
     embed_mode = qp_get_bool("embed", False)
     if not embed_mode:
-        layout_mode = st.radio(
+        layout_mode = st.sidebar.selectbox(
             "Layout:",
             options=["Single dataset", "Side by side"],
-            horizontal=True,
             key="layout_mode",
         )
         if layout_mode == "Side by side":

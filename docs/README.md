@@ -60,7 +60,7 @@ Expected outcomes:
 - The dataset chooser includes the supported top-level datasets, including `Weapons Upgrades` and `Shields Upgrades`.
 - Upgrade-table datasets render a browse-only progression summary plus grouped item-detail table instead of ranked cards.
 - Any deferred dataset that remains registered should stay visible in the selector with a `Not implemented yet` suffix.
-- Switching `Layout:` to `Side by side` shows two embedded panes with independent dataset interfaces and pane-specific starting datasets.
+- Switching the left-sidebar `Layout:` dropdown to `Side by side` shows two embedded panes with independent dataset interfaces and pane-specific starting datasets.
 - Smoke script prints top-5 sections and ends with `optimizer_smoke: SUCCESS`.
 - Workspace verification passes for the current tree.
 - Unit tests complete without failures in the current environment.
