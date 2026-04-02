@@ -201,6 +201,24 @@ class UiSmokeTests(unittest.TestCase):
                 process.kill()
                 process.wait(timeout=5)
 
+    def test_selector_hides_item_catalogs_and_shows_stack_layout_for_armor_custom_scope(self):
+        app = self._new_app()
+
+        dataset_select = next(widget for widget in app.selectbox if widget.label == "Choose Dataset:")
+        self.assertNotIn("Items / Bells", dataset_select.options)
+        self.assertNotIn("Items / Remembrances", dataset_select.options)
+
+        next(widget for widget in app.selectbox if widget.label == "Choose Scope:").select(
+            "Custom"
+        ).run(timeout=60)
+        self.assertEqual(len(app.exception), 0)
+
+        stack_layout = next(widget for widget in app.selectbox if widget.label == "Stack layout:")
+        self.assertEqual(stack_layout.options, ["Horizontal", "Vertical"])
+
+        stack_layout.select("Vertical").run(timeout=60)
+        self.assertEqual(len(app.exception), 0)
+
     def test_optimization_capability_labels_and_rules_are_human_readable(self):
         self.assertEqual(get_engine_label("legacy"), "Legacy Ranking")
         self.assertEqual(get_engine_label("advanced"), "Advanced Optimizer")
@@ -283,7 +301,8 @@ class UiSmokeTests(unittest.TestCase):
         self.assertIn("Ashes Of War", dataset_selectbox.options)
         self.assertIn("Weapons Upgrades", dataset_selectbox.options)
         self.assertIn("Shields Upgrades", dataset_selectbox.options)
-        self.assertIn("Items / Remembrances", dataset_selectbox.options)
+        self.assertNotIn("Items / Remembrances", dataset_selectbox.options)
+        self.assertFalse(any(option.startswith("Items /") for option in dataset_selectbox.options))
         self.assertTrue(
             all("Not implemented yet" not in option for option in dataset_selectbox.options)
         )
@@ -379,15 +398,15 @@ class UiSmokeTests(unittest.TestCase):
         self.assertTrue(any("fai" in option for option in option_text))
         self.assertTrue(any("stamina" in option for option in option_text))
 
-    def test_items_dataset_uses_shared_catalog_flow_without_slot_controls(self):
-        app = self._select_dataset(self._new_app(), "Items / Remembrances")
+    def test_item_catalog_datasets_are_hidden_from_main_selector(self):
+        app = self._new_app()
 
-        selectboxes = {widget.label: widget for widget in app.selectbox}
+        dataset_selectbox = next(
+            widget for widget in app.selectbox if widget.label == "Choose Dataset:"
+        )
 
-        self.assertNotIn("Choose View:", selectboxes)
-        self.assertNotIn("Choose Scope:", selectboxes)
-        self.assertNotIn("Optimization engine", selectboxes)
-        self.assertFalse(any(label.startswith("Slot ") for label in selectboxes))
+        self.assertNotIn("Items / Bells", dataset_selectbox.options)
+        self.assertNotIn("Items / Remembrances", dataset_selectbox.options)
 
     def test_upgrade_dataset_uses_progression_browser_without_ranking_controls(self):
         app = self._select_dataset(self._new_app(), "Weapons Upgrades")

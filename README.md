@@ -155,7 +155,7 @@ The `scripts/` folder is the best path for repeatable runs.
   - `spiritAshes`
   - `weapons`
   - `weapons_upgrades`
-- `data/items/*` datasets still remain available after the top-level defaults in the selector.
+  - Untouched `data/items/*` catalog datasets stay out of the main selector until they get a curated UI pass.
 - If a registry entry is present but still deferred, the selector label appends `Not implemented yet` instead of silently hiding it.
 - Upgrade tables use a browse-only progression view with grouped item details rather than the ranked item-card layout.
 

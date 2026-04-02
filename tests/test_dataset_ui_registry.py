@@ -12,6 +12,7 @@ from app_support import (
     DatasetUiSpec,
     format_dataset_selector_label,
     list_supported_datasets,
+    list_visible_datasets,
     resolve_dataset_ui_spec,
     resolve_default_view,
     resolve_rankable_numeric_fields,
@@ -19,6 +20,26 @@ from app_support import (
 
 
 class DatasetUiRegistryTests(unittest.TestCase):
+    def test_visible_dataset_list_hides_untouched_item_catalogs(self):
+        available = [
+            "armors",
+            "talismans",
+            "items/bells",
+            "items/remembrances",
+            "weapons_upgrades",
+        ]
+
+        visible = list_visible_datasets(available)
+
+        self.assertEqual(
+            visible,
+            (
+                "armors",
+                "talismans",
+                "weapons_upgrades",
+            ),
+        )
+
     def test_supported_dataset_list_includes_upgrade_tables(self):
         available = [
             "armors",

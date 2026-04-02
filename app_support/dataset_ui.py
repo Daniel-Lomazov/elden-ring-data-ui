@@ -61,6 +61,7 @@ class DatasetUiSpec:
     detail_fields: tuple[str, ...]
     loader_profile: str | None
     unsupported_reason: str | None = None
+    show_in_selector: bool = True
 
 
 def _pretty_dataset_label(dataset_key: str) -> str:
@@ -74,6 +75,7 @@ def _catalog_spec(
     *,
     default_sort_field: str = "name",
     supports_multi_stat_sort: bool = True,
+    show_in_selector: bool = True,
 ) -> DatasetUiSpec:
     return DatasetUiSpec(
         dataset_key=dataset_key,
@@ -88,6 +90,7 @@ def _catalog_spec(
         card_meta_fields=("description", "effect", "type"),
         detail_fields=("description", "effect", "type", "value", "weight", "dlc"),
         loader_profile=None,
+        show_in_selector=show_in_selector,
     )
 
 
@@ -139,19 +142,23 @@ _DATASET_UI_REGISTRY: dict[str, DatasetUiSpec] = {
     "sorceries": _catalog_spec("sorceries"),
     "spiritAshes": _catalog_spec("spiritAshes"),
     "weapons": _catalog_spec("weapons", default_sort_field="weight"),
-    "items/ammos": _catalog_spec("items/ammos"),
-    "items/bells": _catalog_spec("items/bells"),
-    "items/consumables": _catalog_spec("items/consumables"),
-    "items/cookbooks": _catalog_spec("items/cookbooks"),
-    "items/crystalTears": _catalog_spec("items/crystalTears"),
-    "items/greatRunes": _catalog_spec("items/greatRunes"),
-    "items/keyItems": _catalog_spec("items/keyItems"),
-    "items/materials": _catalog_spec("items/materials"),
-    "items/multi": _catalog_spec("items/multi"),
-    "items/remembrances": _catalog_spec("items/remembrances", default_sort_field="value"),
-    "items/tools": _catalog_spec("items/tools"),
-    "items/upgradeMaterials": _catalog_spec("items/upgradeMaterials"),
-    "items/whetblades": _catalog_spec("items/whetblades"),
+    "items/ammos": _catalog_spec("items/ammos", show_in_selector=False),
+    "items/bells": _catalog_spec("items/bells", show_in_selector=False),
+    "items/consumables": _catalog_spec("items/consumables", show_in_selector=False),
+    "items/cookbooks": _catalog_spec("items/cookbooks", show_in_selector=False),
+    "items/crystalTears": _catalog_spec("items/crystalTears", show_in_selector=False),
+    "items/greatRunes": _catalog_spec("items/greatRunes", show_in_selector=False),
+    "items/keyItems": _catalog_spec("items/keyItems", show_in_selector=False),
+    "items/materials": _catalog_spec("items/materials", show_in_selector=False),
+    "items/multi": _catalog_spec("items/multi", show_in_selector=False),
+    "items/remembrances": _catalog_spec(
+        "items/remembrances",
+        default_sort_field="value",
+        show_in_selector=False,
+    ),
+    "items/tools": _catalog_spec("items/tools", show_in_selector=False),
+    "items/upgradeMaterials": _catalog_spec("items/upgradeMaterials", show_in_selector=False),
+    "items/whetblades": _catalog_spec("items/whetblades", show_in_selector=False),
     "shields_upgrades": DatasetUiSpec(
         dataset_key="shields_upgrades",
         label="Shields Upgrades",
@@ -195,7 +202,9 @@ _DATASET_UI_REGISTRY: dict[str, DatasetUiSpec] = {
 }
 
 
-def list_visible_datasets(available_datasets: Sequence[str] | None = None) -> tuple[str, ...]:
+def _list_registered_dataset_keys(
+    available_datasets: Sequence[str] | None = None,
+) -> tuple[str, ...]:
     if available_datasets is None:
         keys = list(_DATASET_UI_REGISTRY.keys())
     else:
@@ -203,8 +212,15 @@ def list_visible_datasets(available_datasets: Sequence[str] | None = None) -> tu
     return tuple(key for key in keys if key in _DATASET_UI_REGISTRY)
 
 
+def list_visible_datasets(available_datasets: Sequence[str] | None = None) -> tuple[str, ...]:
+    keys = _list_registered_dataset_keys(available_datasets)
+    return tuple(
+        key for key in keys if bool(_DATASET_UI_REGISTRY[key].show_in_selector)
+    )
+
+
 def list_supported_datasets(available_datasets: Sequence[str] | None = None) -> tuple[str, ...]:
-    keys = list_visible_datasets(available_datasets)
+    keys = _list_registered_dataset_keys(available_datasets)
     supported = []
     for key in keys:
         spec = _DATASET_UI_REGISTRY.get(key)

@@ -1976,6 +1976,11 @@ def main():
                 custom_stack_view_options,
                 STACK_VIEW_HORIZONTAL,
             )
+            st.sidebar.selectbox(
+                "Stack layout:",
+                options=custom_stack_view_options,
+                key="armor_custom_stack_view",
+            )
 
     if is_talisman_dataset and str(
         st.session_state.get("talisman_view_mode", VIEW_MODE_DETAILED)
@@ -2002,7 +2007,7 @@ def main():
                 STACK_VIEW_HORIZONTAL,
             )
             st.sidebar.selectbox(
-                "Choose View:",
+                "Stack layout:",
                 options=custom_stack_view_options,
                 key="talisman_custom_stack_view",
             )
@@ -4381,10 +4386,25 @@ def main():
                     scope_mode=DETAILED_SCOPE_FULL,
                 )
             else:
-                render_armor_set_scope_card(
-                    "No complete armor set selection available.",
-                    scope_mode=DETAILED_SCOPE_CUSTOM,
-                )
+                custom_items = []
+                for piece_label in ARMOR_PIECE_ORDER:
+                    selected_name = armor_detail_set_selection.get(piece_label)
+                    if not selected_name:
+                        continue
+                    slot_rows = df[df["name"].astype(str) == str(selected_name)].head(1)
+                    if slot_rows.empty:
+                        continue
+                    custom_items.append((piece_label, slot_rows))
+                if custom_items:
+                    st.markdown(f"<div id='{DETAIL_SCOPE_ANCHOR_ID}'></div>", unsafe_allow_html=True)
+                    render_detail_items(
+                        custom_items,
+                        str(st.session_state.get("armor_custom_stack_view", STACK_VIEW_HORIZONTAL)),
+                        include_armor_totals=True,
+                    )
+                    focus_detail_anchor(DETAIL_SCOPE_ANCHOR_ID)
+                else:
+                    st.info("No complete armor set selection available.")
 
         elif is_talisman_dataset:
             if talisman_detailed_scope_mode == DETAILED_SCOPE_SINGLE:
