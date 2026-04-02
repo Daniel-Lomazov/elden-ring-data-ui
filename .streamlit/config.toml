@@ -1,0 +1,24 @@
+[theme]
+primaryColor = "rgb(255,107,107)"
+backgroundColor = "rgb(14,17,23)"
+secondaryBackgroundColor = "rgb(38,39,48)"
+textColor = "white"
+font = "sans serif"
+
+[server]
+address = "localhost"
+port = 8501
+headless = true
+enableCORS = true
+enableXsrfProtection = true
+maxUploadSize = 50
+maxMessageSize = 50
+
+[browser]
+serverAddress = "localhost"
+
+[client]
+showErrorDetails = "none"
+
+[logger]
+level = "info"

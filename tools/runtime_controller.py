@@ -960,7 +960,7 @@ def build_parser() -> argparse.ArgumentParser:
     start_parser.add_argument(
         "--open-browser",
         action=argparse.BooleanOptionalAction,
-        default=True,
+        default=False,
     )
 
     status_parser = subparsers.add_parser("status", help="Report runtime status")
@@ -978,7 +978,7 @@ def build_parser() -> argparse.ArgumentParser:
     restart_parser.add_argument(
         "--open-browser",
         action=argparse.BooleanOptionalAction,
-        default=True,
+        default=False,
     )
 
     recover_parser = subparsers.add_parser("recover", help="Recover detached Streamlit runtime")
@@ -987,7 +987,7 @@ def build_parser() -> argparse.ArgumentParser:
     recover_parser.add_argument(
         "--open-browser",
         action=argparse.BooleanOptionalAction,
-        default=True,
+        default=False,
     )
 
     return parser

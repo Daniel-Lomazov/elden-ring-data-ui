@@ -45,8 +45,8 @@ $repoRoot = Split-Path -Parent $PSScriptRoot
 Set-Location $repoRoot
 
 if (-not $PSBoundParameters.ContainsKey("OpenBrowser")) {
-    $OpenBrowser = $true
-    Write-Step "Browser handling enabled by default."
+    $OpenBrowser = $false
+    Write-Step "External browser launch disabled by default. Open the app URL inside VS Code when needed."
 }
 
 $controllerCommand = if ($ResetFirst) { "recover" } else { "start" }

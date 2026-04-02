@@ -111,15 +111,15 @@ Behavior:
 - If controller-owned or same-app state is live on the requested port, stop that same-app session and relaunch it as a fresh managed session.
 - If same-app state exists but metadata is stale or missing, reconcile it before restart logic instead of treating it as foreign.
 - If target port is occupied by an unrelated process, return `port_conflict` and exit nonzero.
-- If no valid same-app session exists, spawn a detached Streamlit process, write state, wait for readiness, and then open the UI.
-- Default browser behavior matches the customer-approved decision: `start` implies `open` on success.
-- When `start` had to replace an existing same-app session, browser open behavior should use a fresh window instead of only focusing the previous one.
+- If no valid same-app session exists, spawn a detached Streamlit process, write state, wait for readiness, and only open the UI when browser opening is explicitly enabled.
+- External browser opening is opt-in. By default, `start` leaves the app running headless and available on localhost.
+- When `start` had to replace an existing same-app session and browser opening is enabled, browser open behavior should use a fresh window instead of only focusing the previous one.
 
 Default options:
 
 - `--port 8501`
 - `--wait-seconds 45`
-- `--open-browser true`
+- `--open-browser false`
 
 Output markers:
 

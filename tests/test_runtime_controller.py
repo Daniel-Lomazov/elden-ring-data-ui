@@ -7,7 +7,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from tools.runtime_controller import RuntimeController
+from tools.runtime_controller import RuntimeController, build_parser
 
 
 class FakeProcess:
@@ -222,6 +222,17 @@ class RuntimeControllerTests(unittest.TestCase):
                 ("start", 8501, 30, True, {"replace_existing_window_on_ready": True}),
             ],
         )
+
+    def test_parser_defaults_keep_browser_launch_disabled(self):
+        parser = build_parser()
+
+        start_args = parser.parse_args(["start"])
+        restart_args = parser.parse_args(["restart"])
+        recover_args = parser.parse_args(["recover"])
+
+        self.assertFalse(start_args.open_browser)
+        self.assertFalse(restart_args.open_browser)
+        self.assertFalse(recover_args.open_browser)
 
 
 if __name__ == "__main__":
