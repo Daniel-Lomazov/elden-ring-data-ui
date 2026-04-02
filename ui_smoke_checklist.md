@@ -22,3 +22,5 @@ Use this quick checklist after running `streamlit run app.py`.
 19. Switch to `Weapons Upgrades` or `Shields Upgrades` and verify the page shows a browse-only progression summary with `Rows to preview:` instead of ranking controls.
 20. In the upgrade dataset, open `Item details` and verify the grouped table uses readable columns such as `Upgrade`, `Attack Power`, `Damage Reduction`, `Stat Scaling`, and `Passive Effects`.
 21. If any deferred dataset is reintroduced to the registry, verify it stays visible in `Choose Dataset:` with a `Not implemented yet` label and surfaces a warning instead of falling back silently.
+22. Switch `Layout:` to `Side by side` and verify the single `Choose Dataset:` control is replaced by `Left pane dataset:`, `Right pane dataset:`, and `Pane height:`.
+23. In side-by-side mode, confirm both panes render independently and can start on different datasets such as `Armors` on the left and `Talismans` on the right.

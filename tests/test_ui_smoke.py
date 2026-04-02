@@ -288,6 +288,24 @@ class UiSmokeTests(unittest.TestCase):
             all("Not implemented yet" not in option for option in dataset_selectbox.options)
         )
 
+    def test_side_by_side_mode_exposes_dual_pane_controls(self):
+        app = self._new_app()
+
+        next(widget for widget in app.radio if widget.label == "Layout:").set_value(
+            "Side by side"
+        ).run(timeout=60)
+        self.assertEqual(len(app.exception), 0)
+
+        selectboxes = {widget.label: widget for widget in app.selectbox}
+        number_inputs = {widget.label: widget for widget in app.number_input}
+
+        self.assertIn("Left pane dataset:", selectboxes)
+        self.assertIn("Right pane dataset:", selectboxes)
+        self.assertIn("Pane height:", number_inputs)
+        self.assertNotIn("Choose Dataset:", selectboxes)
+        self.assertIn("Armors", selectboxes["Left pane dataset:"].options)
+        self.assertIn("Talismans", selectboxes["Right pane dataset:"].options)
+
     def test_generic_rankable_dataset_uses_shared_catalog_flow(self):
         app = self._select_dataset(self._new_app(), "Weapons")
 
@@ -388,7 +406,7 @@ class UiSmokeTests(unittest.TestCase):
         self.assertNotIn("Rows to show:", selectboxes)
         self.assertNotIn("Optimization engine", selectboxes)
         self.assertFalse(any(label.startswith("Slot ") for label in selectboxes))
-        self.assertFalse(radios)
+        self.assertNotIn("Mode:", radios)
 
     def test_optimizer_smoke_script_runs_successfully(self):
         env = os.environ.copy()

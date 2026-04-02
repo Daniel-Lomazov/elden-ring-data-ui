@@ -9,6 +9,7 @@ import base64
 import html
 import copy
 import random
+from urllib.parse import urlencode
 from functools import lru_cache
 from datetime import datetime
 from pathlib import Path
@@ -22,6 +23,8 @@ try:
     from streamlit_plotly_events import plotly_events
 except Exception:
     plotly_events = None
+
+import streamlit.components.v1 as components
 
 from data_loader import DataLoader
 from ui_components import parse_armor_stats
@@ -150,6 +153,7 @@ FULL_SET_IMAGE_SIZE_PX = 160
 FULL_SET_PHANTOM_IMAGE_HEIGHT_PX = 159
 FULL_SET_COLUMN_GAP_RATIO = 0.12
 FULL_SET_ROW_GAP_PX = 0
+DEFAULT_COMPARE_IFRAME_HEIGHT = 2200
 
 HIST_VIEW_OPTIONS = [
     "Classic",
@@ -201,6 +205,19 @@ def build_hist_click_key(
 def safe_stat_key(value: str) -> str:
     token = re.sub(r"[^A-Za-z0-9_]+", "_", str(value or "").strip()).strip("_")
     return token.lower() if token else "stat"
+
+
+def build_compare_embed_src(
+    dataset_key: str = "",
+    *,
+    panel_id: str = "",
+) -> str:
+    params = {"embed": "true"}
+    if dataset_key:
+        params["dataset"] = str(dataset_key)
+    if panel_id:
+        params["panel"] = str(panel_id)
+    return f"/?{urlencode(params)}"
 
 
 def apply_post_parse_column_pruning(dataset_key: str, frame: pd.DataFrame) -> pd.DataFrame:
@@ -1283,6 +1300,107 @@ def main():
             filtered = [x for x in fallback if x in options]
         st.session_state[key] = filtered
 
+    def load_active_dataset_keys() -> list[str]:
+        config_path = ROOT / "data" / "active_datasets.json"
+        try:
+            if config_path.exists():
+                with config_path.open("r", encoding="utf-8") as f:
+                    payload = json.load(f)
+                configured = payload.get("active_datasets", [])
+                if isinstance(configured, list):
+                    cleaned = [str(item).strip() for item in configured if str(item).strip()]
+                    if cleaned:
+                        return cleaned
+        except Exception:
+            pass
+        return list(DEFAULT_ACTIVE_DATASET_KEYS)
+
+    loader = get_loader("v2_profile_loader")
+    available_datasets = loader.get_available_datasets()
+    active_dataset_keys = load_active_dataset_keys()
+
+    embed_mode = qp_get_bool("embed", False)
+    if not embed_mode:
+        layout_mode = st.radio(
+            "Layout:",
+            options=["Single dataset", "Side by side"],
+            horizontal=True,
+            key="layout_mode",
+        )
+        if layout_mode == "Side by side":
+            visible_dataset_keys = list(list_visible_datasets(available_datasets))
+            dataset_key_to_label = {}
+            for key in visible_dataset_keys:
+                spec = resolve_dataset_ui_spec(key)
+                if spec is not None:
+                    dataset_key_to_label[key] = format_dataset_selector_label(spec, key)
+
+            if not dataset_key_to_label:
+                st.info("No registered datasets were found in the current project.")
+                return
+
+            active_visible_keys = [key for key in active_dataset_keys if key in dataset_key_to_label]
+            ordered_dataset_keys = [
+                *active_visible_keys,
+                *[key for key in visible_dataset_keys if key not in active_visible_keys],
+            ]
+            if not ordered_dataset_keys:
+                ordered_dataset_keys = list(dataset_key_to_label.keys())
+
+            default_left = ordered_dataset_keys[0]
+            default_right = ordered_dataset_keys[1] if len(ordered_dataset_keys) > 1 else ordered_dataset_keys[0]
+
+            ensure_state_in_options("compare_left_dataset", ordered_dataset_keys, default_left)
+            ensure_state_in_options("compare_right_dataset", ordered_dataset_keys, default_right)
+            if "compare_iframe_height" not in st.session_state:
+                st.session_state["compare_iframe_height"] = DEFAULT_COMPARE_IFRAME_HEIGHT
+
+            st.title("🏆 Elden Ring — Side-by-Side Dataset View")
+            st.caption(
+                "Each pane runs the existing app interface independently. Use the controls inside each pane to explore different datasets, views, and ranking modes."
+            )
+
+            compare_controls = st.columns([1, 1, 1])
+            with compare_controls[0]:
+                left_dataset_key = st.selectbox(
+                    "Left pane dataset:",
+                    options=ordered_dataset_keys,
+                    key="compare_left_dataset",
+                    format_func=lambda dataset_key: dataset_key_to_label.get(dataset_key, dataset_key),
+                )
+            with compare_controls[1]:
+                right_dataset_key = st.selectbox(
+                    "Right pane dataset:",
+                    options=ordered_dataset_keys,
+                    key="compare_right_dataset",
+                    format_func=lambda dataset_key: dataset_key_to_label.get(dataset_key, dataset_key),
+                )
+            with compare_controls[2]:
+                iframe_height = st.number_input(
+                    "Pane height:",
+                    min_value=1200,
+                    max_value=4000,
+                    step=200,
+                    key="compare_iframe_height",
+                )
+
+            left_col, right_col = st.columns(2)
+            with left_col:
+                st.markdown(f"### {dataset_key_to_label.get(left_dataset_key, left_dataset_key)}")
+                components.iframe(
+                    build_compare_embed_src(left_dataset_key, panel_id="left"),
+                    height=int(iframe_height),
+                    scrolling=True,
+                )
+            with right_col:
+                st.markdown(f"### {dataset_key_to_label.get(right_dataset_key, right_dataset_key)}")
+                components.iframe(
+                    build_compare_embed_src(right_dataset_key, panel_id="right"),
+                    height=int(iframe_height),
+                    scrolling=True,
+                )
+            return
+
     # Ensure armor_column_map exists; if missing, inform the user how to generate it
     armor_map_path = ROOT / "armor_column_map.json"
     if not armor_map_path.exists():
@@ -1366,25 +1484,7 @@ def main():
         unsafe_allow_html=True,
     )
 
-    loader = get_loader("v2_profile_loader")
-    available_datasets = loader.get_available_datasets()
-
-    def load_active_dataset_keys() -> list[str]:
-        config_path = ROOT / "data" / "active_datasets.json"
-        try:
-            if config_path.exists():
-                with config_path.open("r", encoding="utf-8") as f:
-                    payload = json.load(f)
-                configured = payload.get("active_datasets", [])
-                if isinstance(configured, list):
-                    cleaned = [str(item).strip() for item in configured if str(item).strip()]
-                    if cleaned:
-                        return cleaned
-        except Exception:
-            pass
-        return list(DEFAULT_ACTIVE_DATASET_KEYS)
-
-    active_dataset_keys = load_active_dataset_keys()
+    
     active_dataset_set = set(active_dataset_keys)
     visible_dataset_keys = list(list_visible_datasets(available_datasets))
 

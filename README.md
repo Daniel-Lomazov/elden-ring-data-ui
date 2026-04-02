@@ -156,6 +156,14 @@ The `scripts/` folder is the best path for repeatable runs.
 - If a registry entry is present but still deferred, the selector label appends `Not implemented yet` instead of silently hiding it.
 - Upgrade tables use a browse-only progression view with grouped item details rather than the ranked item-card layout.
 
+### Side-by-side mode
+
+- Use the top-level `Layout:` control to switch from `Single dataset` to `Side by side`.
+- Side-by-side mode renders two embedded panes, each running the existing dataset interface independently.
+- Use `Left pane dataset:` and `Right pane dataset:` to choose starting datasets for each pane.
+- Use `Pane height:` to increase the embedded pane height when you want more of each interface visible without scrolling.
+- The embedded panes still use the full dataset UI, so each pane can switch datasets, views, ranking controls, and detail inspectors independently.
+
 ### Ranking and optimization behavior
 
 - Single-stat selection uses direct sort behavior.
