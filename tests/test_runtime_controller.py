@@ -62,7 +62,7 @@ class RuntimeControllerTests(unittest.TestCase):
         persisted = json.loads(controller.state_path.read_text(encoding="utf-8"))
         self.assertEqual(persisted["last_status"], "port_conflict")
 
-    def test_start_reuses_existing_running_session_without_spawning(self):
+    def test_start_restarts_existing_running_session_when_port_is_busy(self):
         controller = self.make_controller()
         existing_state = {
             "app_pid": 1234,
@@ -73,24 +73,63 @@ class RuntimeControllerTests(unittest.TestCase):
             "browser_pid": None,
         }
 
-        controller.inspect = lambda port: (  # type: ignore[method-assign]
-            "running",
-            existing_state,
-            "controller-managed session detected",
-        )
-        controller.open_browser = lambda port, state: ("skipped", None)  # type: ignore[method-assign]
-        controller.spawn_process = lambda port: (_ for _ in ()).throw(AssertionError("spawn should not run"))  # type: ignore[method-assign]
+        inspect_results = [
+            (
+                "running",
+                existing_state,
+                "controller-managed session detected",
+            ),
+            (
+                "stopped",
+                controller.build_state(
+                    port=8501,
+                    process=None,
+                    status="stopped",
+                    ready=False,
+                    listener_pid=None,
+                    previous_state={},
+                ),
+                "no running session detected",
+            ),
+        ]
+        stop_calls: list[int] = []
+        browser_calls: list[tuple[int, bool]] = []
+
+        def fake_inspect(port: int):
+            return inspect_results.pop(0)
+
+        def fake_stop(port: int) -> int:
+            stop_calls.append(port)
+            return 0
+
+        def fake_open_browser(port: int, state: dict, *, force_new_window: bool = False):
+            browser_calls.append((port, force_new_window))
+            return ("opened", 777)
+
+        controller.inspect = fake_inspect  # type: ignore[method-assign]
+        controller.stop = fake_stop  # type: ignore[method-assign]
+        controller.open_browser = fake_open_browser  # type: ignore[method-assign]
+        controller.spawn_process = lambda port: FakeProcess(pid=4321)  # type: ignore[method-assign]
+        controller.find_same_app_process = lambda port, preferred_pid=None: {  # type: ignore[method-assign]
+            "pid": 4321,
+            "created_at": "created-4321",
+            "command": "python -m streamlit run app.py --server.port 8501 --server.headless true",
+        }
+        controller.wait_for_ready = lambda process, port, wait_seconds: (True, 4321)  # type: ignore[method-assign]
 
         exit_code, output = self.capture_output(
-            lambda: controller.start(8501, wait_seconds=45, open_browser_on_ready=False)
+            lambda: controller.start(8501, wait_seconds=45, open_browser_on_ready=True)
         )
 
         self.assertEqual(exit_code, 0)
+        self.assertEqual(stop_calls, [8501])
+        self.assertEqual(browser_calls, [(8501, True)])
         self.assertIn("STATUS=running", output)
-        self.assertIn("START_PID=1234", output)
-        self.assertIn("DETAIL=session already running", output)
+        self.assertIn("START_PID=4321", output)
+        self.assertIn("BROWSER_ACTION=opened", output)
+        self.assertIn("DETAIL=session ready", output)
         persisted = json.loads(controller.state_path.read_text(encoding="utf-8"))
-        self.assertEqual(persisted["app_pid"], 1234)
+        self.assertEqual(persisted["app_pid"], 4321)
         self.assertEqual(persisted["last_status"], "running")
 
     def test_start_writes_state_when_launch_becomes_ready(self):
@@ -161,8 +200,13 @@ class RuntimeControllerTests(unittest.TestCase):
             calls.append(("stop", port))
             return 0
 
-        def fake_start(port: int, wait_seconds: int, open_browser_on_ready: bool) -> int:
-            calls.append(("start", port, wait_seconds, open_browser_on_ready))
+        def fake_start(
+            port: int,
+            wait_seconds: int,
+            open_browser_on_ready: bool,
+            **kwargs,
+        ) -> int:
+            calls.append(("start", port, wait_seconds, open_browser_on_ready, kwargs))
             return 0
 
         controller.stop = fake_stop  # type: ignore[method-assign]
@@ -175,7 +219,7 @@ class RuntimeControllerTests(unittest.TestCase):
             calls,
             [
                 ("stop", 8501),
-                ("start", 8501, 30, True),
+                ("start", 8501, 30, True, {"replace_existing_window_on_ready": True}),
             ],
         )
 

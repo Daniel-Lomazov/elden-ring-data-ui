@@ -43,15 +43,17 @@ python -m unittest tests.test_ui_smoke -q
 Runtime usage notes:
 
 - `run_streamlit_local.ps1` is the direct foreground loop. Stop it with `Ctrl+C` or `stop_streamlit_port.ps1`.
-- `start-app.ps1` is the managed detached flow backed by `tools.runtime_controller`.
-- `recover-app.ps1` is the logical restart command for the managed flow.
+- `start-app.ps1` is the managed detached flow backed by `tools.runtime_controller`; rerunning it against the same app on the same port now performs a controller-backed restart instead of reusing the old session.
+- `recover-app.ps1` is the explicit managed restart command and reopens a fresh browser window by default.
 - `run-all.ps1 -RunApp` is the full reset + verify + managed start wrapper.
 
 Expected outcomes:
 
 - App starts at `http://localhost:8501`.
 - App binds to localhost by default (not `0.0.0.0`) via `.streamlit/config.toml`.
-- `start-app.ps1` leaves the app under controller ownership, and `recover-app.ps1` performs a controller-backed restart instead of a second independent launch.
+- `start-app.ps1` leaves the app under controller ownership, and rerunning it while that same app already owns the port stops the old session and starts a fresh one.
+- `recover-app.ps1` performs a controller-backed restart instead of a second independent launch.
+- Managed restart flows reopen the app in a fresh browser window rather than only focusing the previous one.
 - The dataset chooser includes the supported top-level datasets, including `Weapons Upgrades` and `Shields Upgrades`.
 - Upgrade-table datasets render a browse-only progression summary plus grouped item-detail table instead of ranked cards.
 - Any deferred dataset that remains registered should stay visible in the selector with a `Not implemented yet` suffix.

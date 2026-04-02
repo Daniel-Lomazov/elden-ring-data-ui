@@ -498,24 +498,38 @@ if (-not $items) {
             time.sleep(0.4)
         return not self.port_is_open(port)
 
-    def open_browser(self, port: int, state: dict[str, Any]) -> tuple[str, int | None]:
+    def open_browser(
+        self,
+        port: int,
+        state: dict[str, Any],
+        *,
+        force_new_window: bool = False,
+    ) -> tuple[str, int | None]:
         url = self.url_for_port(port)
         if sys.platform != "win32":
             opened = webbrowser.open(url)
             return ("opened" if opened else "failed"), None
         try:
-            return self._open_browser_windows(url, port, state)
+            return self._open_browser_windows(url, port, state, force_new_window=force_new_window)
         except Exception as exc:
             self.append_log(f"browser helper failed: {exc}")
             opened = webbrowser.open(url)
             return ("opened" if opened else "failed"), None
 
-    def _open_browser_windows(self, url: str, port: int, state: dict[str, Any]) -> tuple[str, int | None]:
+    def _open_browser_windows(
+        self,
+        url: str,
+        port: int,
+        state: dict[str, Any],
+        *,
+        force_new_window: bool = False,
+    ) -> tuple[str, int | None]:
         script = r"""
 $TargetUrl = $env:RUNTIME_CONTROLLER_URL
 $TargetPort = [int]$env:RUNTIME_CONTROLLER_PORT
 $SavedBrowserPid = $env:RUNTIME_CONTROLLER_BROWSER_PID
 $AppTitle = $env:RUNTIME_CONTROLLER_APP_TITLE
+$ForceNewWindow = $env:RUNTIME_CONTROLLER_FORCE_NEW_WINDOW -eq 'true'
 
 function Find-TargetEdgeWindows([int]$PortToMatch) {
     try {
@@ -572,6 +586,24 @@ try {
 }
 
 $windows = @(Find-TargetEdgeWindows -PortToMatch $TargetPort)
+if ($ForceNewWindow) {
+    foreach ($proc in $windows) {
+        try {
+            Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
+        } catch {
+        }
+    }
+    if ($SavedBrowserPid) {
+        try {
+            Stop-Process -Id ([int]$SavedBrowserPid) -Force -ErrorAction SilentlyContinue
+        } catch {
+        }
+    }
+    Start-Sleep -Milliseconds 300
+    Open-NewWindow -UrlToOpen $TargetUrl
+    exit 0
+}
+
 if ($windows.Count -gt 1) {
     foreach ($proc in $windows) {
         try {
@@ -627,6 +659,7 @@ Open-NewWindow -UrlToOpen $TargetUrl
         env["RUNTIME_CONTROLLER_PORT"] = str(port)
         env["RUNTIME_CONTROLLER_BROWSER_PID"] = str(state.get("browser_pid") or "")
         env["RUNTIME_CONTROLLER_APP_TITLE"] = self.app_title
+        env["RUNTIME_CONTROLLER_FORCE_NEW_WINDOW"] = "true" if force_new_window else "false"
         completed = subprocess.run(
             [
                 "powershell",
@@ -652,7 +685,15 @@ Open-NewWindow -UrlToOpen $TargetUrl
                 browser_pid = None
         return action, browser_pid
 
-    def start(self, port: int, wait_seconds: int, open_browser_on_ready: bool) -> int:
+    def start(
+        self,
+        port: int,
+        wait_seconds: int,
+        open_browser_on_ready: bool,
+        *,
+        restart_if_busy: bool = True,
+        replace_existing_window_on_ready: bool = False,
+    ) -> int:
         started_at = time.perf_counter()
         status, state, detail = self.inspect(port)
         if status == "port_conflict":
@@ -668,45 +709,30 @@ Open-NewWindow -UrlToOpen $TargetUrl
             return 2
 
         if status in {"running", "starting", "unmanaged_same_app"}:
-            browser_action = "skipped"
-            browser_pid = state.get("browser_pid")
-            if open_browser_on_ready:
-                browser_action, browser_pid = self.open_browser(port, state)
-            next_status = "running" if bool(state.get("ready")) else "starting"
-            refreshed = self.build_state(
-                port=port,
-                process={
-                    "pid": state.get("app_pid"),
-                    "created_at": state.get("app_created_at"),
-                    "command": " ".join(state.get("command") or []),
-                }
-                if state.get("app_pid")
-                else None,
-                status=next_status,
-                ready=bool(state.get("ready")),
-                listener_pid=state.get("listener_pid"),
-                previous_state=state,
-                browser_pid=browser_pid,
-                browser_action=browser_action,
-            )
-            self.save_state(refreshed)
-            self.append_log(f"start reused existing session on {port} ({status})")
+            if restart_if_busy:
+                self.append_log(f"start detected busy same-app session on {port}; restarting")
+                stop_code = self.stop(port)
+                if stop_code != 0:
+                    return stop_code
+                return self.start(
+                    port,
+                    wait_seconds,
+                    open_browser_on_ready,
+                    restart_if_busy=False,
+                    replace_existing_window_on_ready=True,
+                )
+
+            self.append_log(f"start refused to reuse busy same-app session on {port}")
             self.emit(
-                STATUS=next_status,
+                STATUS="failed",
                 APP_URL=self.url_for_port(port),
-                START_PID=refreshed.get("app_pid") or "unknown",
-                LISTENER_PID=refreshed.get("listener_pid") or "unknown",
-                READY=to_bool_text(bool(refreshed.get("ready"))),
+                LISTENER_PID=state.get("listener_pid") or "unknown",
+                READY=to_bool_text(bool(state.get("ready"))),
                 STARTUP_SECONDS=f"{time.perf_counter() - started_at:.2f}",
-                BROWSER_ACTION=browser_action,
-                DETAIL=(
-                    "reconciled existing same-app session"
-                    if status == "unmanaged_same_app"
-                    else "session already running"
-                ),
+                DETAIL="same-app session remained busy after restart attempt",
                 LOG_PATH=self.relative_log_path(),
             )
-            return 0
+            return 1
 
         if status == "stale":
             self.append_log(f"clearing stale state before start on {port}")
@@ -767,7 +793,11 @@ Open-NewWindow -UrlToOpen $TargetUrl
             previous_state=initial_state,
         )
         if open_browser_on_ready:
-            browser_action, browser_pid = self.open_browser(port, ready_state)
+            browser_action, browser_pid = self.open_browser(
+                port,
+                ready_state,
+                force_new_window=replace_existing_window_on_ready,
+            )
             ready_state = self.build_state(
                 port=port,
                 process=final_process,
@@ -897,14 +927,24 @@ Open-NewWindow -UrlToOpen $TargetUrl
         stop_code = self.stop(port)
         if stop_code != 0:
             return stop_code
-        return self.start(port, wait_seconds, open_browser_on_ready)
+        return self.start(
+            port,
+            wait_seconds,
+            open_browser_on_ready,
+            replace_existing_window_on_ready=True,
+        )
 
     def recover(self, port: int, wait_seconds: int, open_browser_on_ready: bool) -> int:
         self.append_log(f"recover requested on port {port}")
         stop_code = self.stop(port)
         if stop_code != 0:
             return stop_code
-        return self.start(port, wait_seconds, open_browser_on_ready)
+        return self.start(
+            port,
+            wait_seconds,
+            open_browser_on_ready,
+            replace_existing_window_on_ready=True,
+        )
 
 
 def build_parser() -> argparse.ArgumentParser:

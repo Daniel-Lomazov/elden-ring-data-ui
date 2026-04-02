@@ -107,11 +107,13 @@ python -m streamlit run app.py --server.port <port> --server.headless true
 
 Behavior:
 
-- If controller-owned state is live, do not spawn a duplicate process.
-- If same-app state exists but metadata is stale or missing, reconcile it instead of blindly killing it.
+- If controller-owned state is live, do not leave the old process running alongside a second managed process.
+- If controller-owned or same-app state is live on the requested port, stop that same-app session and relaunch it as a fresh managed session.
+- If same-app state exists but metadata is stale or missing, reconcile it before restart logic instead of treating it as foreign.
 - If target port is occupied by an unrelated process, return `port_conflict` and exit nonzero.
-- If no valid running session exists, spawn a detached Streamlit process, write state, wait for readiness, and then auto-open/focus the UI.
+- If no valid same-app session exists, spawn a detached Streamlit process, write state, wait for readiness, and then open the UI.
 - Default browser behavior matches the customer-approved decision: `start` implies `open` on success.
+- When `start` had to replace an existing same-app session, browser open behavior should use a fresh window instead of only focusing the previous one.
 
 Default options:
 
@@ -127,7 +129,7 @@ Output markers:
 - `LISTENER_PID=<pid|unknown>`
 - `READY=<true|false>`
 - `STARTUP_SECONDS=<seconds>`
-- `BROWSER_ACTION=<opened|refreshed|focused|skipped>`
+- `BROWSER_ACTION=<opened|refreshed|failed|skipped>`
 
 ### `status`
 
@@ -154,12 +156,13 @@ Behavior:
 - If a controller-owned or reconciled same-app session is running, open or focus that UI.
 - If the session is not running, exit nonzero with a clear message instead of spawning a process.
 - On Windows, prefer current app-window behavior: focus and refresh an existing same-port Edge window when possible; otherwise open a new window and fall back to the default browser if Edge integration is unavailable.
+- `open` itself remains non-destructive; the forced close-and-reopen behavior is reserved for restart-style flows such as rerunning `start`, `restart`, and `recover` against the same app.
 
 Output markers:
 
 - `STATUS=<state>`
 - `APP_URL=http://localhost:<port>`
-- `BROWSER_ACTION=<opened|refreshed|focused|failed>`
+- `BROWSER_ACTION=<opened|refreshed|failed>`
 
 ### `stop`
 
@@ -183,6 +186,7 @@ Behavior:
 
 - Equivalent to `stop` followed by `start` using the same port and wait/open defaults.
 - If `stop` reports a foreign port conflict, exit nonzero without killing the foreign process.
+- If browser opening is enabled, reopen the UI in a fresh window after the restart.
 
 ### `recover`
 
@@ -191,7 +195,7 @@ Behavior:
 - Repair stale controller state.
 - Stop same-app workspace processes that are orphaned or unhealthy.
 - Preserve the customer-approved default port policy: auto-recover stale same-app state on `8501`, but never seize the port from unrelated processes.
-- Finish with a normal `start` flow, including auto-open/focus on success.
+- Finish with a normal `start` flow, including a fresh browser window on success when browser opening is enabled.
 
 ## Logging approach
 

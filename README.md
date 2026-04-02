@@ -65,15 +65,16 @@ The `scripts/` folder is the best path for repeatable runs.
 | Command | Use it when | Lifecycle owner | Browser behavior | Logical restart path |
 |---------|-------------|-----------------|------------------|----------------------|
 | `./scripts/run_streamlit_local.ps1` | You want a direct foreground Streamlit session while developing | Current terminal only | Streamlit prints the URL; browser opening is manual | `Ctrl+C`, then rerun `./scripts/run_streamlit_local.ps1` |
-| `./scripts/start-app.ps1` | You want the managed detached app flow | `tools.runtime_controller` | Opens or focuses the managed app by default; pass `-OpenBrowser:$false` to suppress it | `./scripts/recover-app.ps1` |
-| `./scripts/recover-app.ps1` | The managed app needs a clean controller-backed restart | `tools.runtime_controller` | Same browser behavior as `start-app.ps1` | This is the preferred managed restart command |
+| `./scripts/start-app.ps1` | You want the managed detached app flow | `tools.runtime_controller` | Opens the managed app by default; if the same app is already using the port, the controller closes that session and reopens a fresh window | `./scripts/recover-app.ps1` |
+| `./scripts/recover-app.ps1` | The managed app needs a clean controller-backed restart | `tools.runtime_controller` | Closes the current managed app session and reopens a fresh window by default | This is the preferred managed restart command |
 | `./scripts/stop_streamlit_port.ps1 -Port 8501` | You want to stop the current local app session | `tools.runtime_controller` by default; emergency hard kill only with `-ForceAnyListener` | None | Follow with `start-app.ps1` or `run_streamlit_local.ps1` |
 | `./scripts/run-all.ps1 -RunApp` | You want reset + environment + verification + managed start in one command | `run-all.ps1` orchestrates, controller owns the final app lifecycle | Browser handling follows the `-OpenBrowser` flag or the script default | Rerun `run-all.ps1 -RunApp` or use `recover-app.ps1` after the initial bootstrap |
 
 ### Practical restart rules
 
 - If you started the app with `run_streamlit_local.ps1`, restart it by stopping that terminal with `Ctrl+C` and running `run_streamlit_local.ps1` again.
-- If you started the app with `start-app.ps1` or `run-all.ps1 -RunApp`, restart it with `recover-app.ps1`.
+- If you rerun `start-app.ps1` while the same app still owns port `8501`, the controller now closes that current session and starts a fresh one instead of reusing the old window.
+- If you started the app with `start-app.ps1` or `run-all.ps1 -RunApp`, restart it with `recover-app.ps1` when you want the explicit managed restart command.
 - If you only need to stop the app, use `stop_streamlit_port.ps1 -Port 8501`.
 - If you need the slow but highest-confidence cycle, use `run-all.ps1 -RunApp`.
 
