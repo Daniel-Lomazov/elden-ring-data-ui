@@ -4,6 +4,7 @@ import json
 import os
 import socket
 import subprocess
+import sys
 import tempfile
 import time
 import unittest
@@ -22,7 +23,8 @@ from streamlit.testing.v1 import AppTest, element_tree
 
 
 ROOT = Path(__file__).resolve().parents[1]
-PYTHON = ROOT.parent / "anaconda3" / "envs" / "elden_ring_ui" / "python.exe"
+_PYTHON_WIN = ROOT.parent / "anaconda3" / "envs" / "elden_ring_ui" / "python.exe"
+PYTHON = _PYTHON_WIN if _PYTHON_WIN.exists() else Path(sys.executable)
 TEST_TEMP_ROOT = ROOT / ".cache" / "ui-smoke"
 TEST_TEMP_ROOT.mkdir(parents=True, exist_ok=True)
 os.environ["TMP"] = str(TEST_TEMP_ROOT)
