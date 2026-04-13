@@ -89,6 +89,8 @@ class DatasetUiRegistryTests(unittest.TestCase):
     def test_registry_exposes_expected_families_and_capabilities(self):
         armor_spec = resolve_dataset_ui_spec("armors")
         talisman_spec = resolve_dataset_ui_spec("talismans")
+        weapons_spec = resolve_dataset_ui_spec("weapons")
+        shields_spec = resolve_dataset_ui_spec("shields")
         catalog_spec = resolve_dataset_ui_spec("items/bells")
         progression_spec = resolve_dataset_ui_spec("weapons_upgrades")
 
@@ -99,6 +101,18 @@ class DatasetUiRegistryTests(unittest.TestCase):
         self.assertIsNotNone(talisman_spec)
         self.assertEqual(talisman_spec.family, DATASET_FAMILY_TALISMAN)
         self.assertTrue(talisman_spec.supports_optimization)
+
+        self.assertIsNotNone(weapons_spec)
+        self.assertEqual(weapons_spec.family, DATASET_FAMILY_CATALOG)
+        self.assertFalse(weapons_spec.supports_optimization)
+        self.assertEqual(weapons_spec.supported_views, ("Detailed view", "Catalog"))
+        self.assertEqual(weapons_spec.supported_scopes, ("Single",))
+
+        self.assertIsNotNone(shields_spec)
+        self.assertEqual(shields_spec.family, DATASET_FAMILY_CATALOG)
+        self.assertFalse(shields_spec.supports_optimization)
+        self.assertEqual(shields_spec.supported_views, ("Detailed view", "Catalog"))
+        self.assertEqual(shields_spec.supported_scopes, ("Single",))
 
         self.assertIsNotNone(catalog_spec)
         self.assertEqual(catalog_spec.family, DATASET_FAMILY_CATALOG)
@@ -112,7 +126,8 @@ class DatasetUiRegistryTests(unittest.TestCase):
     def test_default_view_resolver_matches_dataset_family(self):
         self.assertEqual(resolve_default_view(resolve_dataset_ui_spec("armors")), "Detailed view")
         self.assertEqual(resolve_default_view(resolve_dataset_ui_spec("talismans")), "Detailed view")
-        self.assertEqual(resolve_default_view(resolve_dataset_ui_spec("weapons")), "Catalog")
+        self.assertEqual(resolve_default_view(resolve_dataset_ui_spec("weapons")), "Detailed view")
+        self.assertEqual(resolve_default_view(resolve_dataset_ui_spec("shields")), "Detailed view")
         self.assertEqual(resolve_default_view(resolve_dataset_ui_spec("weapons_upgrades")), "Catalog")
 
     def test_generic_rankable_numeric_fields_exclude_id_and_dlc(self):

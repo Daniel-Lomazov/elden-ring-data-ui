@@ -17,6 +17,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from tools.runtime_controller_state import RuntimeControllerState
+
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_PORT = 8501
@@ -81,9 +83,16 @@ class RuntimeController:
             return None
         return payload
 
-    def save_state(self, state: dict[str, Any]) -> None:
+    def load_state_model(self) -> RuntimeControllerState | None:
+        return RuntimeControllerState.from_payload(self.load_state())
+
+    def save_state(self, state: dict[str, Any] | RuntimeControllerState) -> None:
         self.ensure_cache_dir()
-        normalized = dict(state)
+        normalized = (
+            state.to_payload()
+            if isinstance(state, RuntimeControllerState)
+            else dict(state)
+        )
         normalized["log_path"] = self.relative_log_path()
         self.state_path.write_text(json.dumps(normalized, indent=2, sort_keys=True), encoding="utf-8")
 
@@ -289,7 +298,7 @@ if (-not $items) {
             return str(expected_created_at) == str(observed_created_at)
         return True
 
-    def build_state(
+    def build_state_model(
         self,
         *,
         port: int,
@@ -301,7 +310,7 @@ if (-not $items) {
         browser_action: str | None = None,
         last_error: str | None = None,
         previous_state: dict[str, Any] | None = None,
-    ) -> dict[str, Any]:
+    ) -> RuntimeControllerState:
         url = self.url_for_port(port)
         state = dict(previous_state or {})
         command = self.build_command(port)
@@ -333,7 +342,35 @@ if (-not $items) {
             state["browser_pid"] = browser_pid
         if browser_action is not None:
             state["browser_last_action"] = browser_action
-        return state
+        model = RuntimeControllerState.from_payload(state)
+        if model is None:
+            raise ValueError("Could not build runtime controller state payload")
+        return model
+
+    def build_state(
+        self,
+        *,
+        port: int,
+        process: dict[str, Any] | None,
+        status: str,
+        ready: bool,
+        listener_pid: int | None,
+        browser_pid: int | None = None,
+        browser_action: str | None = None,
+        last_error: str | None = None,
+        previous_state: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        return self.build_state_model(
+            port=port,
+            process=process,
+            status=status,
+            ready=ready,
+            listener_pid=listener_pid,
+            browser_pid=browser_pid,
+            browser_action=browser_action,
+            last_error=last_error,
+            previous_state=previous_state,
+        ).to_payload()
 
     def inspect(self, port: int) -> tuple[str, dict[str, Any], str]:
         url = self.url_for_port(port)

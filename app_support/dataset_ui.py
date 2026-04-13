@@ -94,6 +94,49 @@ def _catalog_spec(
     )
 
 
+_EQUIPMENT_CARD_META_FIELDS = (
+    "category",
+    "damage type",
+    "skill",
+    "passive effect",
+    "description",
+)
+
+
+_EQUIPMENT_DETAIL_FIELDS = (
+    "category",
+    "damage type",
+    "skill",
+    "passive effect",
+    "requirements",
+    "FP cost",
+    "weight",
+    "dlc",
+    "description",
+)
+
+
+def _equipment_spec(
+    dataset_key: str,
+    *,
+    label: str,
+) -> DatasetUiSpec:
+    return DatasetUiSpec(
+        dataset_key=dataset_key,
+        label=label,
+        family=DATASET_FAMILY_CATALOG,
+        supported_views=(VIEW_MODE_DETAILED, "Catalog"),
+        supported_scopes=(SCOPE_SINGLE,),
+        supports_ranking=True,
+        supports_multi_stat_sort=True,
+        supports_optimization=False,
+        default_sort_field="weight",
+        card_meta_fields=_EQUIPMENT_CARD_META_FIELDS,
+        detail_fields=_EQUIPMENT_DETAIL_FIELDS,
+        loader_profile=None,
+    )
+
+
 _DATASET_UI_REGISTRY: dict[str, DatasetUiSpec] = {
     "armors": DatasetUiSpec(
         dataset_key="armors",
@@ -137,11 +180,11 @@ _DATASET_UI_REGISTRY: dict[str, DatasetUiSpec] = {
     "incantations": _catalog_spec("incantations"),
     "locations": _catalog_spec("locations"),
     "npcs": _catalog_spec("npcs"),
-    "shields": _catalog_spec("shields", default_sort_field="weight"),
+    "shields": _equipment_spec("shields", label="Shields"),
     "skills": _catalog_spec("skills"),
     "sorceries": _catalog_spec("sorceries"),
     "spiritAshes": _catalog_spec("spiritAshes"),
-    "weapons": _catalog_spec("weapons", default_sort_field="weight"),
+    "weapons": _equipment_spec("weapons", label="Weapons"),
     "items/ammos": _catalog_spec("items/ammos", show_in_selector=False),
     "items/bells": _catalog_spec("items/bells", show_in_selector=False),
     "items/consumables": _catalog_spec("items/consumables", show_in_selector=False),

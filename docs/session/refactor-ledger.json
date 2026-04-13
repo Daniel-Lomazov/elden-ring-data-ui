@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "updated_at": "2026-04-13",
+  "repo": "elden-ring-data-ui",
+  "cycles": [
+    {
+      "cycle_id": 1,
+      "current_phase": "equipment_catalog_canonicalization",
+      "data_slice_in_focus": [
+        "weapons",
+        "shields"
+      ],
+      "what_is_certain": [
+        "Weapons and shields now share module-local helpers in app_support/dataset_ui.py and app_support/dataset_presentations.py.",
+        "The detailed-view and Catalog UI behavior remained unchanged in smoke tests.",
+        "The project Conda environment elden_ring_ui has the runtime dependencies needed for verification."
+      ],
+      "what_remains_uncertain": [
+        "Whether a later slice should be folded into the same abstraction family or kept separate until its own parity tests are written."
+      ],
+      "architectural_intent": "Make the equipment catalog pair a canonical shared contract while preserving current resolver paths, labels, and dataset-specific selectors.",
+      "changes_made": [
+        "Extracted _equipment_spec in app_support/dataset_ui.py.",
+        "Extracted _equipment_presentation_spec in app_support/dataset_presentations.py.",
+        "Extended tests/test_dataset_presentation.py to validate weapons and shields parity.",
+        "Added direct render assertions for equipment description and edition output."
+      ],
+      "validated_assumptions": [
+        "Weapons and shields are literal near-clones in both registries except for dataset_key and label.",
+        "The shared equipment helpers can stay module-local without touching app.py."
+      ],
+      "exceptions": [
+        "Selector labels remain explicit in app_support/view_state.py.",
+        "Spell-family and progression-table deduplication stay deferred because they are separate semantic families."
+      ],
+      "new_abstractions": [
+        "Module-local equipment UI factory",
+        "Module-local equipment presentation factory"
+      ],
+      "verification_status": {
+        "unit_tests": "passed",
+        "smoke_tests": "passed",
+        "commands": [
+          "conda run -n elden_ring_ui python -m unittest tests.test_dataset_ui_registry tests.test_dataset_presentation tests.test_view_state_helpers",
+          "conda run -n elden_ring_ui python -m unittest tests.test_ui_smoke.UiSmokeTests.test_equipment_datasets_default_to_single_scope_detailed_flow tests.test_ui_smoke.UiSmokeTests.test_equipment_datasets_can_switch_back_to_catalog_flow"
+        ]
+      },
+      "next_slice_or_question": "Apply the same slice discipline to weapons_upgrades and shields_upgrades only if the progression-table contract needs another canonical helper."
+    }
+  ]
+}

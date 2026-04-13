@@ -10,6 +10,8 @@ Current policy:
 Primary artifacts:
 - [Version decision](./version-decision.md)
 - [Risk register](./risk-register.md)
+- [Flaw register](./flaw-register.md)
+- [Preserved flow matrix](./preserved-flow-matrix.md)
 - [Release checklist](./release-checklist.md)
 - [Changelog](./changelog.md)
 - [Release notes draft](./release-notes-draft.md)
@@ -17,4 +19,5 @@ Primary artifacts:
 
 Status:
 - Baseline established on `2026-03-18`.
-- Release is not approved yet.
+- Verification baseline refreshed on `2026-04-13`.
+- Release approval remains a separate decision.

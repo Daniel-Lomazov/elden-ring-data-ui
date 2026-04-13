@@ -37,6 +37,7 @@ python -m tools.optimizer_smoke
 python -m tools.workspace_verify
 python -m unittest discover -s tests -q
 python -m unittest tests.test_ui_smoke -q
+python -m unittest tests.test_runtime_controller -q
 ./scripts/verify-workspace.ps1 -Quick
 ```
 
@@ -71,10 +72,13 @@ Expected outcomes:
 
 The repository's GitHub Actions workflow currently runs:
 
-- `ruff check .`
-- `python -m tools.workspace_verify`
+- Linux:
+  - `ruff check .`
+  - `python -m tools.workspace_verify`
+- Windows:
+  - `python -m tools.workspace_verify --skip-optimizer --skip-smoke --tests-subset runtime`
 
-`tools.workspace_verify` runs the final check, optimizer check, and unit tests by default. Use `./scripts/verify-workspace.ps1 -Quick` when you want the wrapper to skip optimizer and tests during a fast local loop.
+`tools.workspace_verify` runs the final check, optimizer check, optimizer smoke, and split unit-test steps by default. On Windows it reports `tests_core` and `tests_runtime_controller` separately. Use `./scripts/verify-workspace.ps1 -Quick` when you want the wrapper to skip optimizer and tests during a fast local loop.
 
 ## Session docs (`docs/session/`)
 

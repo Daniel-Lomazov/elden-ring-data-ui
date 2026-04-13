@@ -13,6 +13,10 @@
 - File-signature cache keys and regression tests to reduce stale-cache risk in `DataLoader`.
 - Verified app launch via Streamlit on `127.0.0.1:8765`.
 - Verified app launch again on `127.0.0.1:8766` after the release-hardening changes.
+- Shared temp-root helpers in `tools/temp_support.py`.
+- Typed app state seams in `app_support/query_state.py` and `app_support/view_state.py`.
+- Architecture and preserved-flow docs under `docs/developer/architecture_map.md` and `docs/release/preserved-flow-matrix.md`.
+- Direct helper coverage for view/query state helpers.
 
 ### Fixed
 - Missing `plotly` runtime dependency.
@@ -20,6 +24,9 @@
 - DataLoader stale-cache risk caused by cache keys not tracking file signatures.
 - App launch verification gap for the documented local run path.
 - Git status warnings from transient repo-root `tmp*` artifacts.
+- Windows verification false negatives caused by temp-directory handling in `tests/test_runtime_controller.py`.
+- Import-time temp-environment leakage in `tests/test_ui_smoke.py`.
+- Opaque verification reporting by splitting `tools.workspace_verify` into `tests_core` and `tests_runtime_controller`.
 
 ### Known Gaps
 - `app.py` remains a large monolithic UI file.

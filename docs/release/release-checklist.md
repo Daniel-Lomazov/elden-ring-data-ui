@@ -24,3 +24,4 @@ Notes:
 - If any gate fails, keep the release in blocker mode rather than forcing the version decision.
 - The README/docs gate is accepted for the baseline and no longer blocks release status.
 - Critical UI flow coverage is now exercised by `tests/test_ui_smoke.py`.
+- Windows runtime lifecycle coverage is now exercised separately by `tests/test_runtime_controller.py` and the runtime-only CI job.

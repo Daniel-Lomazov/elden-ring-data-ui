@@ -3,11 +3,10 @@ from __future__ import annotations
 import contextlib
 import io
 import json
-import tempfile
 import unittest
-from pathlib import Path
 
 from tools.runtime_controller import RuntimeController, build_parser
+from tools.temp_support import cleanup_tree, make_temp_workspace
 
 
 class FakeProcess:
@@ -21,10 +20,13 @@ class FakeProcess:
 
 class RuntimeControllerTests(unittest.TestCase):
     def make_controller(self) -> RuntimeController:
-        temp_dir = tempfile.TemporaryDirectory()
-        self.addCleanup(temp_dir.cleanup)
-        root = Path(temp_dir.name)
-        return RuntimeController(root=root)
+        root = make_temp_workspace("runtime-controller-tests", prefix="case-")
+        self.addCleanup(cleanup_tree, root)
+        return RuntimeController(
+            root=root,
+            state_path=root / "runtime-controller.json",
+            log_path=root / "runtime-controller.log",
+        )
 
     def capture_output(self, callback):
         buffer = io.StringIO()
