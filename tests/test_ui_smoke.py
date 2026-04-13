@@ -452,23 +452,25 @@ class UiSmokeTests(unittest.TestCase):
         self.assertNotIn("Items / Remembrances", dataset_selectbox.options)
 
     def test_upgrade_dataset_uses_progression_browser_without_ranking_controls(self):
-        app = self._select_dataset(self._new_app(), "Weapons Upgrades")
+        for dataset_label in ("Weapons Upgrades", "Shields Upgrades"):
+            with self.subTest(dataset=dataset_label):
+                app = self._select_dataset(self._new_app(), dataset_label)
 
-        selectboxes = {widget.label: widget for widget in app.selectbox}
-        multiselects = {widget.label: widget for widget in app.multiselect}
-        radios = {widget.label: widget for widget in app.radio}
+                selectboxes = {widget.label: widget for widget in app.selectbox}
+                multiselects = {widget.label: widget for widget in app.multiselect}
+                radios = {widget.label: widget for widget in app.radio}
 
-        self.assertIn("Rows to preview:", selectboxes)
-        self.assertIn("Open item:", selectboxes)
-        self.assertNotIn("Choose View:", selectboxes)
-        self.assertNotIn("Choose Scope:", selectboxes)
-        self.assertNotIn("Highlighted stats:", multiselects)
-        self.assertNotIn("Highlight stat:", selectboxes)
-        self.assertNotIn("Sort order:", selectboxes)
-        self.assertNotIn("Rows to show:", selectboxes)
-        self.assertNotIn("Optimization engine", selectboxes)
-        self.assertFalse(any(label.startswith("Slot ") for label in selectboxes))
-        self.assertNotIn("Mode:", radios)
+                self.assertIn("Rows to preview:", selectboxes)
+                self.assertIn("Open item:", selectboxes)
+                self.assertNotIn("Choose View:", selectboxes)
+                self.assertNotIn("Choose Scope:", selectboxes)
+                self.assertNotIn("Highlighted stats:", multiselects)
+                self.assertNotIn("Highlight stat:", selectboxes)
+                self.assertNotIn("Sort order:", selectboxes)
+                self.assertNotIn("Rows to show:", selectboxes)
+                self.assertNotIn("Optimization engine", selectboxes)
+                self.assertFalse(any(label.startswith("Slot ") for label in selectboxes))
+                self.assertNotIn("Mode:", radios)
 
     def test_optimizer_smoke_script_runs_successfully(self):
         env = os.environ.copy()

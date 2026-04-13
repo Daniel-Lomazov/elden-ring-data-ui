@@ -180,18 +180,20 @@ class DatasetPresentationTests(unittest.TestCase):
         self.assertEqual(section_rows["Edition"], "DLC")
 
     def test_progression_dataset_presentation_orders_grouped_upgrade_fields(self):
-        spec = resolve_dataset_presentation_spec("weapons_upgrades")
-        ordered_labels = [
-            field.label
-            for section in spec.detail_sections
-            for field in section.fields
-        ]
+        for dataset_key, expected_name_field in (("weapons_upgrades", "weapon name"), ("shields_upgrades", "shield name")):
+            with self.subTest(dataset=dataset_key):
+                spec = resolve_dataset_presentation_spec(dataset_key)
+                ordered_labels = [
+                    field.label
+                    for section in spec.detail_sections
+                    for field in section.fields
+                ]
 
-        self.assertEqual(spec.name_field, "weapon name")
-        self.assertEqual(
-            ordered_labels,
-            ["Upgrade", "Attack Power", "Damage Reduction", "Stat Scaling", "Passive Effects"],
-        )
+                self.assertEqual(spec.name_field, expected_name_field)
+                self.assertEqual(
+                    ordered_labels,
+                    ["Upgrade", "Attack Power", "Damage Reduction", "Stat Scaling", "Passive Effects"],
+                )
 
 
 if __name__ == "__main__":

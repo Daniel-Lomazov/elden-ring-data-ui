@@ -46,6 +46,53 @@
         ]
       },
       "next_slice_or_question": "Apply the same slice discipline to weapons_upgrades and shields_upgrades only if the progression-table contract needs another canonical helper."
+    },
+    {
+      "cycle_id": 2,
+      "current_phase": "progression_table_loading_profile",
+      "data_slice_in_focus": [
+        "weapons_upgrades",
+        "shields_upgrades"
+      ],
+      "what_is_certain": [
+        "Weapons and shields upgrades now share module-local progression helpers in app_support/dataset_ui.py and app_support/dataset_presentations.py.",
+        "The progression-table loader profile now resolves the explicit weapon name and shield name identity columns instead of falling back to id/name.",
+        "The armors and progression smoke coverage passed after restoring valid loading-instructions JSON and hardening DataLoader path resolution."
+      ],
+      "what_remains_uncertain": [
+        "Whether the remaining top-level dataset families should also be moved onto explicit loader profiles in a later slice or left on the current full-file fallback path."
+      ],
+      "architectural_intent": "Make progression tables load through a shared column-loading contract while preserving browse-only rendering and explicit title-field differences.",
+      "changes_made": [
+        "Extracted _progression_spec in app_support/dataset_ui.py.",
+        "Extracted _progression_presentation_spec in app_support/dataset_presentations.py.",
+        "Added progression_table_visual to data/column_loading_instructions.json.",
+        "Hardened DataLoader path resolution and dataset-specific identity-column overrides.",
+        "Extended tests/test_data_loader_cache.py, tests/test_dataset_ui_registry.py, tests/test_dataset_presentation.py, and tests/test_ui_smoke.py for progression parity."
+      ],
+      "validated_assumptions": [
+        "The progression-table pair is structurally identical except for the title field and default sort field.",
+        "A dataset-specific always_include override is required for progression tables because they do not expose the generic name column.",
+        "The loading-instructions contract must be valid JSON for the loader profile path to work at app startup."
+      ],
+      "exceptions": [
+        "The progression-table profile uses explicit id plus weapon name or shield name identity columns rather than the generic name field.",
+        "Other top-level families still use the current loader fallback and remain outside this slice."
+      ],
+      "new_abstractions": [
+        "Module-local progression UI factory",
+        "Module-local progression presentation factory",
+        "Progression-table loader profile"
+      ],
+      "verification_status": {
+        "unit_tests": "passed",
+        "smoke_tests": "passed",
+        "commands": [
+          "conda run -n elden_ring_ui python -m unittest tests.test_data_loader_cache tests.test_dataset_ui_registry tests.test_dataset_presentation tests.test_ui_smoke",
+          "conda run -n elden_ring_ui python -c \"from data_loader import DataLoader; print(DataLoader().build_profile_columns('armors','single_piece_visual')); print(DataLoader().build_profile_columns('weapons_upgrades','progression_table_visual'))\""
+        ]
+      },
+      "next_slice_or_question": "Decide whether the remaining top-level dataset families should be brought onto explicit loader profiles or left as deliberate fallback cases."
     }
   ]
 }

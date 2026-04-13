@@ -137,6 +137,34 @@ def _equipment_spec(
     )
 
 
+def _progression_spec(
+    dataset_key: str,
+    *,
+    label: str,
+    default_sort_field: str,
+) -> DatasetUiSpec:
+    return DatasetUiSpec(
+        dataset_key=dataset_key,
+        label=label,
+        family=DATASET_FAMILY_PROGRESSION,
+        supported_views=("Catalog",),
+        supported_scopes=tuple(),
+        supports_ranking=False,
+        supports_multi_stat_sort=False,
+        supports_optimization=False,
+        default_sort_field=default_sort_field,
+        card_meta_fields=("upgrade", "attack power", "damage reduction (%)"),
+        detail_fields=(
+            "upgrade",
+            "attack power",
+            "damage reduction (%)",
+            "stat scaling",
+            "passive effects",
+        ),
+        loader_profile="progression_table_visual",
+    )
+
+
 _DATASET_UI_REGISTRY: dict[str, DatasetUiSpec] = {
     "armors": DatasetUiSpec(
         dataset_key="armors",
@@ -202,45 +230,15 @@ _DATASET_UI_REGISTRY: dict[str, DatasetUiSpec] = {
     "items/tools": _catalog_spec("items/tools", show_in_selector=False),
     "items/upgradeMaterials": _catalog_spec("items/upgradeMaterials", show_in_selector=False),
     "items/whetblades": _catalog_spec("items/whetblades", show_in_selector=False),
-    "shields_upgrades": DatasetUiSpec(
-        dataset_key="shields_upgrades",
+    "shields_upgrades": _progression_spec(
+        "shields_upgrades",
         label="Shields Upgrades",
-        family=DATASET_FAMILY_PROGRESSION,
-        supported_views=("Catalog",),
-        supported_scopes=tuple(),
-        supports_ranking=False,
-        supports_multi_stat_sort=False,
-        supports_optimization=False,
         default_sort_field="shield name",
-        card_meta_fields=("upgrade", "attack power", "damage reduction (%)"),
-        detail_fields=(
-            "upgrade",
-            "attack power",
-            "damage reduction (%)",
-            "stat scaling",
-            "passive effects",
-        ),
-        loader_profile=None,
     ),
-    "weapons_upgrades": DatasetUiSpec(
-        dataset_key="weapons_upgrades",
+    "weapons_upgrades": _progression_spec(
+        "weapons_upgrades",
         label="Weapons Upgrades",
-        family=DATASET_FAMILY_PROGRESSION,
-        supported_views=("Catalog",),
-        supported_scopes=tuple(),
-        supports_ranking=False,
-        supports_multi_stat_sort=False,
-        supports_optimization=False,
         default_sort_field="weapon name",
-        card_meta_fields=("upgrade", "attack power", "damage reduction (%)"),
-        detail_fields=(
-            "upgrade",
-            "attack power",
-            "damage reduction (%)",
-            "stat scaling",
-            "passive effects",
-        ),
-        loader_profile=None,
     ),
 }
 
