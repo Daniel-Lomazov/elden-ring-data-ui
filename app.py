@@ -60,7 +60,6 @@ from app_support import (
     ARMOR_CUSTOM_SCOPE_DESCRIPTION_PLACEHOLDER,
     DATASET_FAMILY_ARMOR,
     DATASET_FAMILY_CATALOG,
-    DATASET_FAMILY_PROGRESSION,
     DATASET_FAMILY_TALISMAN,
     DISPLAY_VARIANT_PROGRESSION_TABLE,
     field_matches_column,
@@ -1755,7 +1754,6 @@ def main():
     is_armor_dataset = ui_spec.family == DATASET_FAMILY_ARMOR
     is_talisman_dataset = ui_spec.family == DATASET_FAMILY_TALISMAN
     is_catalog_dataset = ui_spec.family == DATASET_FAMILY_CATALOG
-    is_progression_dataset = ui_spec.family == DATASET_FAMILY_PROGRESSION
 
     armor_single_piece = False
     armor_full_set = False
@@ -1766,8 +1764,6 @@ def main():
     type_label_map = {}
     armor_piece_labels = []
     detailed_view_active = False
-    armor_detail_scope = "Single item"
-    talisman_detail_scope = "Single item"
     armor_detail_item_name = None
     talisman_detail_item_name = None
     armor_detail_set_selection = {}
@@ -2127,7 +2123,6 @@ def main():
                 )
         else:
             detailed_view_active = True
-            armor_detail_scope = "Complete set"
             type_label_map, armor_piece_labels = resolve_armor_piece_types(df)
 
             def apply_armor_detail_filter(source_df: pd.DataFrame) -> pd.DataFrame:
@@ -2603,7 +2598,6 @@ def main():
                 talisman_full_set = True
         else:
             detailed_view_active = True
-            talisman_detail_scope = "Complete set"
             talisman_names = sorted(
                 {
                     str(name).strip()
@@ -2678,7 +2672,6 @@ def main():
     optimizer_objective_type = OPT_OBJECTIVE_STAT_RANK
     optimizer_encounter_profile = ""
     optimizer_lambda_status = 1.0
-    optimizer_preset_choice = ""
     preset_options = []
     optimizer_weights = None
     optimizer_weight_signature = None
@@ -2851,7 +2844,6 @@ def main():
         preset_options = list_weighted_preset_options(ROOT, dataset)
         preset_ids = ["", *[option.preset_id for option in preset_options]]
         ensure_state_in_options("optimizer_preset_choice", preset_ids, "")
-        optimizer_preset_choice = str(st.session_state.get("optimizer_preset_choice", ""))
 
     # perform sorting and show rows using internal rendering
     # Inline minimal renderer to avoid external dependencies
@@ -3751,7 +3743,7 @@ def main():
 
                     if view_state.show_encounter_profile:
                         if view_state.profile_options:
-                            optimizer_encounter_profile = st.selectbox(
+                            st.selectbox(
                                 "Encounter profile",
                                 options=view_state.profile_options,
                                 key="optimizer_encounter_profile",
@@ -3761,7 +3753,7 @@ def main():
                             st.error("No encounter profiles were found in `data/profiles`.")
 
                     if view_state.show_status_penalty_weight:
-                        optimizer_lambda_status = st.number_input(
+                        st.number_input(
                             "Status Penalty Weight",
                             min_value=0.0,
                             step=0.1,
