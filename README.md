@@ -12,11 +12,16 @@ A Streamlit app for exploring Elden Ring datasets, ranking candidates, and optim
 
 ## Documentation
 
-- `docs/README.md` — onboarding index for docs and session deep dives.
-- `docs/optimizer/README.md` — optimizer documentation hub.
-- `docs/developer/icon_and_stat_layout_customization.md` — current UI layout/icon/detailed-scope customization points.
-- Latest deep dive: `docs/session/2026-02-16_optimizer_v2_iteration_summary.md`.
-- Latest commit summary: `docs/session/2026-02-15_commit_summary.md`.
+- [`docs/README.md`](docs/README.md) — onboarding index for docs and session deep dives.
+- [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md) — architecture guide, module roles, and testing conventions.
+- [`docs/optimizer/README.md`](docs/optimizer/README.md) — optimizer documentation hub.
+- [`docs/developer/icon_and_stat_layout_customization.md`](docs/developer/icon_and_stat_layout_customization.md) — current UI layout/icon/detailed-scope customization points.
+
+## Contributing and legal
+
+- [`CONTRIBUTING.md`](CONTRIBUTING.md) — setup, verification, and pull request guidelines.
+- [`SECURITY.md`](SECURITY.md) — how to report a security vulnerability.
+- [`LICENSE`](LICENSE) — all rights reserved; see license for permitted use.
 
 ## Repository layout
 

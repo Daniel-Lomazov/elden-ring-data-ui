@@ -1,26 +1,60 @@
 # Documentation Index
 
-This folder contains repository-internal documentation artifacts, primarily session notes and deep-dive records.
+This folder contains both **canonical project documentation** and **internal historical
+planning records**. See the sections below to distinguish between them.
 
-## Start here
+---
 
-If you are onboarding to this repo, read in this order:
+## Canonical documentation (current and maintained)
 
-1. `../README.md` (project setup, usage, debugging, optimization overview)
-2. `session/2026-02-14_repo_deep_dive.md`
-3. `session/2026-02-15_startup_and_verify_deep_dive.md`
-4. `session/2026-02-15_commit_summary.md`
-5. `optimizer/README.md`
-6. `developer/icon_and_stat_layout_customization.md`
-7. `session/2026-02-16_optimizer_v2_iteration_summary.md`
+| Document | Purpose |
+|----------|---------|
+| [`../README.md`](../README.md) | Project overview, setup, and runtime command matrix |
+| [`DEVELOPMENT.md`](DEVELOPMENT.md) | Architecture guide, module roles, and testing conventions |
+| [`specs/optimizer_dialect.md`](specs/optimizer_dialect.md) | Current optimizer request/response contract |
+| [`specs/encounter_profiles.md`](specs/encounter_profiles.md) | Encounter input schema expectations |
+| [`specs/icon_registry.md`](specs/icon_registry.md) | Icon asset conventions and registry format |
+| [`optimizer/README.md`](optimizer/README.md) | Optimizer documentation hub |
+| [`developer/icon_and_stat_layout_customization.md`](developer/icon_and_stat_layout_customization.md) | UI layout/icon/detailed-scope customization |
+| [`release/README.md`](release/README.md) | Release documentation hub and checklist links |
+
+---
+
+## Internal historical records (archived planning material)
+
+The following documents in this folder are **internal working notes** generated
+during development sessions. They are kept for historical reference but do not
+represent current architecture or active guidance:
+
+| Document | Status |
+|----------|--------|
+| [`docs_onboarding_refactor_suggestions.md`](docs_onboarding_refactor_suggestions.md) | Historical — refactor suggestions from early session |
+| [`optimizer_dialect_refactor_suggestions.md`](optimizer_dialect_refactor_suggestions.md) | Historical — optimizer dialect iteration notes |
+| [`pr_commit_plan_optimizer_v2.md`](pr_commit_plan_optimizer_v2.md) | Historical — optimizer v2 commit planning notes |
+
+The [`session/`](session/) subfolder contains dated deep-dive session notes. These
+are internal records of development iterations, not contributor guides.
+
+The [`release/`](release/) subfolder contains both the active release checklist and
+internal analysis artifacts (flaw register, risk register, version decisions). See
+[`release/README.md`](release/README.md) to understand which are current versus
+historical.
+
+---
+
+## Start here (new contributor onboarding)
+
+1. [`../README.md`](../README.md) — project setup, usage, debugging, optimization overview
+2. [`DEVELOPMENT.md`](DEVELOPMENT.md) — architecture, module roles, test entry points
+3. [`optimizer/README.md`](optimizer/README.md) — optimizer design and usage
+4. [`developer/icon_and_stat_layout_customization.md`](developer/icon_and_stat_layout_customization.md) — UI layout customization
 
 If you are preparing a release or verifying a change, also read:
 
-1. `../README.md` for the documented run and verification commands.
-2. `specs/optimizer_dialect.md` for the current optimizer request contract.
-3. `specs/encounter_profiles.md` for encounter input expectations.
-4. `specs/icon_registry.md` for icon asset conventions.
-5. `release/README.md` for the release documentation hub and checklist links.
+1. [`specs/optimizer_dialect.md`](specs/optimizer_dialect.md) — current optimizer request contract
+2. [`specs/encounter_profiles.md`](specs/encounter_profiles.md) — encounter input expectations
+3. [`specs/icon_registry.md`](specs/icon_registry.md) — icon asset conventions
+4. [`release/README.md`](release/README.md) — release documentation hub and checklist links
 
 ## Quick verification
 
