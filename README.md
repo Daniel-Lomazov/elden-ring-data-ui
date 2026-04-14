@@ -39,22 +39,24 @@ elden_ring_data_ui/
 
 ## Setup
 
-### Option A (recommended): Conda
+### Recommended: uv
 
 ```powershell
-conda env create -f environment.yml
-conda activate elden_ring_ui
+.\setup.ps1
+```
+
+That script creates or refreshes a uv-managed `.venv` and installs the pinned packages from `requirements.txt`.
+
+Manual equivalent:
+
+```powershell
+uv venv --python 3.11 .venv
+uv pip install --reinstall --python .\.venv\Scripts\python.exe -r requirements.txt
+.\.venv\Scripts\Activate.ps1
 python -m streamlit run app.py
 ```
 
-### Option B: venv + pip
-
-```powershell
-python -m venv .venv
-.\.venv\Scripts\activate
-pip install -r requirements.txt
-python -m streamlit run app.py
-```
+The uv-managed `.venv` created by `setup.ps1` is the supported setup path.
 
 ## Fast start commands (Windows PowerShell)
 
@@ -332,8 +334,8 @@ Regression note:
 
 ### Typical issues and fixes
 
-- **Issue: `Conda environment 'elden_ring_ui' was not found`**
-  - Run `./scripts/ensure-conda-env.ps1`
+- **Issue: the uv-managed `.venv` is missing or stale**
+  - Run `./setup.ps1`
 
 - **Issue: app port conflict / stale Streamlit process**
   - Run `./scripts/reset-dev-session.ps1`

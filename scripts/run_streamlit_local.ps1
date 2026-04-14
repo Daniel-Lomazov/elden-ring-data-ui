@@ -1,11 +1,8 @@
 param(
-    [string]$EnvName = "elden_ring_ui",
     [int]$Port = 8501
 )
 
 $ErrorActionPreference = "Stop"
-
-. "$PSScriptRoot\conda-utils.ps1"
 
 function Write-Step([string]$Message) {
     Write-Host "[run_streamlit_local] $Message" -ForegroundColor Green
@@ -14,26 +11,9 @@ function Write-Step([string]$Message) {
 $repoRoot = Split-Path -Parent $PSScriptRoot
 Set-Location $repoRoot
 
-$condaExe = Resolve-CondaExecutable
-if (-not $condaExe) {
-    throw "Conda is required but was not found. Install conda or initialize your shell."
-}
-
-$envJson = & $condaExe env list --json | Out-String | ConvertFrom-Json
-$envPath = $null
-foreach ($path in $envJson.envs) {
-    if ((Split-Path $path -Leaf) -ieq $EnvName) {
-        $envPath = $path
-        break
-    }
-}
-if (-not $envPath) {
-    throw "Conda environment '$EnvName' was not found."
-}
-
-$pythonExe = Join-Path $envPath "python.exe"
+$pythonExe = Join-Path $repoRoot ".venv\Scripts\python.exe"
 if (-not (Test-Path $pythonExe)) {
-    throw "Python executable not found in environment '$EnvName': $pythonExe"
+    throw "Python executable not found in .venv: $pythonExe. Run .\setup.ps1 first."
 }
 
 $url = "http://localhost:$Port"

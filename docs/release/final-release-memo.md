@@ -8,10 +8,10 @@ Decision:
 
 Verification evidence:
 - App launch verified successfully through the documented local Streamlit command, including a final launch check on `127.0.0.1:8766`.
-- `C:\Users\lomaz\anaconda3\envs\elden_ring_ui\python.exe -m unittest discover tests -q` passed with 70 tests.
-- `C:\Users\lomaz\anaconda3\envs\elden_ring_ui\python.exe -m unittest tests.test_ui_smoke -q` passed.
-- `C:\Users\lomaz\anaconda3\envs\elden_ring_ui\python.exe -m unittest tests.test_runtime_controller -q` passed.
-- `C:\Users\lomaz\anaconda3\envs\elden_ring_ui\python.exe -m tools.workspace_verify` passed with `final_check`, `optimizer_check`, `optimizer_smoke`, `tests_core`, and `tests_runtime_controller`.
+- `.\.venv\Scripts\python.exe -m unittest discover tests -q` passed with 70 tests.
+- `.\.venv\Scripts\python.exe -m unittest tests.test_ui_smoke -q` passed.
+- `.\.venv\Scripts\python.exe -m unittest tests.test_runtime_controller -q` passed.
+- `.\.venv\Scripts\python.exe -m tools.workspace_verify` passed with `final_check`, `optimizer_check`, `optimizer_smoke`, `tests_core`, and `tests_runtime_controller`.
 
 Accepted risks:
 - `app.py` remains a large monolithic UI surface and should be treated as a refactor candidate rather than a release blocker for `0.1.0`.

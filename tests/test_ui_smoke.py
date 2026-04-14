@@ -5,6 +5,7 @@ import os
 import socket
 import subprocess
 import time
+import sys
 import unittest
 import urllib.request
 from functools import lru_cache
@@ -28,9 +29,8 @@ _TEMP_CLEANUP_PATCH.__enter__()
 
 from streamlit.testing.v1 import AppTest, element_tree  # noqa: E402
 
-
+PYTHON = Path(sys.executable)
 ROOT = Path(__file__).resolve().parents[1]
-PYTHON = ROOT.parent / "anaconda3" / "envs" / "elden_ring_ui" / "python.exe"
 TEST_TEMP_ROOT = ensure_temp_root("ui-smoke")
 
 

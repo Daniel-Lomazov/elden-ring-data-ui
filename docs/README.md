@@ -25,9 +25,9 @@ If you are preparing a release or verifying a change, also read:
 ## Quick verification
 
 ```powershell
-python -m venv .venv
-.\.venv\Scripts\activate
-pip install -r requirements.txt
+uv venv --python 3.11 .venv
+uv pip install --reinstall --python .\.venv\Scripts\python.exe -r requirements.txt
+.\.venv\Scripts\Activate.ps1
 ./scripts/run_streamlit_local.ps1
 ./scripts/stop_streamlit_port.ps1 -Port 8501
 ./scripts/start-app.ps1 -OpenBrowser:$false
@@ -39,6 +39,7 @@ python -m unittest discover -s tests -q
 python -m unittest tests.test_ui_smoke -q
 python -m unittest tests.test_runtime_controller -q
 ./scripts/verify-workspace.ps1 -Quick
+.\.venv\Scripts\python.exe -m tools.workspace_verify --quick
 ```
 
 Runtime usage notes:
@@ -48,7 +49,7 @@ Runtime usage notes:
 - `start-app.ps1`, `recover-app.ps1`, and `run-all.ps1 -RunApp` keep external browser launch disabled by default.
 - `.streamlit/config.toml` keeps direct `python -m streamlit run app.py` headless too.
 - `recover-app.ps1` remains the explicit managed restart command.
-- `run-all.ps1 -RunApp` is the full reset + verify + managed start wrapper.
+- `run-all.ps1 -RunApp` is the full reset + environment refresh + verify + managed start wrapper.
 
 Expected outcomes:
 
