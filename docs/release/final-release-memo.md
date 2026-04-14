@@ -8,8 +8,8 @@ Decision:
 
 Verification evidence:
 - App launch verified successfully through the documented local Streamlit command, including a final launch check on `127.0.0.1:8766`.
-- `C:\Users\lomaz\anaconda3\envs\elden_ring_ui\python.exe -m unittest discover tests` passed with 11 tests.
-- `C:\Users\lomaz\anaconda3\envs\elden_ring_ui\python.exe -m tools.workspace_verify` passed with final check, optimizer check, and tests.
+- `.\.venv\Scripts\python.exe -m unittest discover tests` passed with 11 tests.
+- `.\.venv\Scripts\python.exe -m tools.workspace_verify` passed with final check, optimizer check, and tests.
 - Critical UI flows are smoke-tested by `tests/test_ui_smoke.py`.
 
 Accepted risks:

@@ -112,6 +112,6 @@ If slot icons are missing, UI falls back to emoji slot icons.
 ## 8) Quick validation commands
 
 ```powershell
-conda run -n base python -m py_compile app.py ui_components.py
-conda run -n elden_ring_ui python -c "import pandas as pd; from ui_components import parse_armor_stats; df=parse_armor_stats(pd.read_csv('data/armors.csv')); r=df.loc[df['id']==597].iloc[0]; print(r['status.bleed'], r['status.frost'], r['status.death'])"
+.\.venv\Scripts\python.exe -m py_compile app.py ui_components.py
+.\.venv\Scripts\python.exe -c "import pandas as pd; from ui_components import parse_armor_stats; df=parse_armor_stats(pd.read_csv('data/armors.csv')); r=df.loc[df['id']==597].iloc[0]; print(r['status.bleed'], r['status.frost'], r['status.death'])"
 ```

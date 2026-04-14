@@ -6,6 +6,7 @@ import socket
 import subprocess
 import tempfile
 import time
+import sys
 import unittest
 import urllib.request
 from functools import lru_cache
@@ -20,9 +21,8 @@ from optimizer import (
 )
 from streamlit.testing.v1 import AppTest, element_tree
 
-
+PYTHON = Path(sys.executable)
 ROOT = Path(__file__).resolve().parents[1]
-PYTHON = ROOT.parent / "anaconda3" / "envs" / "elden_ring_ui" / "python.exe"
 TEST_TEMP_ROOT = ROOT / ".cache" / "ui-smoke"
 TEST_TEMP_ROOT.mkdir(parents=True, exist_ok=True)
 os.environ["TMP"] = str(TEST_TEMP_ROOT)

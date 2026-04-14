@@ -15,12 +15,12 @@ from datetime import datetime
 from pathlib import Path
 
 try:
-    import plotly.graph_objects as go
+    import plotly.graph_objects as go  # type: ignore
 except Exception:
     go = None
 
 try:
-    from streamlit_plotly_events import plotly_events
+    from streamlit_plotly_events import plotly_events  # type: ignore
 except Exception:
     plotly_events = None
 

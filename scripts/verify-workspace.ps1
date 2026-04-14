@@ -1,13 +1,10 @@
 param(
-    [string]$EnvName = "elden_ring_ui",
     [switch]$Quick,
     [switch]$SkipFinalCheck,
     [switch]$SkipOptimizerCheck
 )
 
 $ErrorActionPreference = "Stop"
-
-. "$PSScriptRoot\conda-utils.ps1"
 
 function Write-Step([string]$Message) {
     Write-Host "[verify] $Message" -ForegroundColor Cyan
@@ -20,11 +17,16 @@ function Write-Timing([string]$Label, [double]$Seconds) {
 $repoRoot = Split-Path -Parent $PSScriptRoot
 Set-Location $repoRoot
 
+$pythonExe = Join-Path $repoRoot ".venv\Scripts\python.exe"
+if (-not (Test-Path $pythonExe)) {
+    throw "Python executable not found in .venv: $pythonExe. Run .\setup.ps1 first."
+}
+
 $scriptTimer = [System.Diagnostics.Stopwatch]::StartNew()
 
 $requiredPaths = @(
     "app.py",
-    "environment.yml",
+    "setup.ps1",
     "requirements.txt",
     "tests",
     "data/armors.csv",
@@ -51,27 +53,6 @@ if ($Quick) {
 }
 
 $verifyTimer = [System.Diagnostics.Stopwatch]::StartNew()
-$condaExe = Resolve-CondaExecutable
-if (-not $condaExe) {
-    throw "Conda is required but was not found. Install conda or initialize your shell."
-}
-
-$envJson = & $condaExe env list --json | Out-String | ConvertFrom-Json
-$envPath = $null
-foreach ($path in $envJson.envs) {
-    if ((Split-Path $path -Leaf) -ieq $EnvName) {
-        $envPath = $path
-        break
-    }
-}
-if (-not $envPath) {
-    throw "Conda environment '$EnvName' was not found. Run scripts/ensure-conda-env.ps1 first."
-}
-
-$pythonExe = Join-Path $envPath "python.exe"
-if (-not (Test-Path $pythonExe)) {
-    throw "Python executable not found in environment '$EnvName': $pythonExe"
-}
 
 $pythonArgs = @("-m", "tools.workspace_verify")
 if ($skipFinal) {
