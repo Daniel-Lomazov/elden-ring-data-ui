@@ -24,9 +24,6 @@ from tools.temp_support import (
     temporary_env_root,
 )
 
-_TEMP_CLEANUP_PATCH = patched_temporary_directory_cleanup()
-_TEMP_CLEANUP_PATCH.__enter__()
-
 from streamlit.testing.v1 import AppTest, element_tree  # noqa: E402
 
 PYTHON = Path(sys.executable)
@@ -123,6 +120,8 @@ def _patched_multiselect_indices(self):
 class UiSmokeTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
+        cls._temp_cleanup_patch = patched_temporary_directory_cleanup()
+        cls._temp_cleanup_patch.__enter__()
         cls._temp_env = temporary_env_root(TEST_TEMP_ROOT)
         cls._temp_env.__enter__()
         cls._original_block_init = element_tree.Block.__init__
@@ -139,6 +138,7 @@ class UiSmokeTests(unittest.TestCase):
         element_tree.Selectbox.index = cls._original_selectbox_index
         element_tree.Multiselect.indices = cls._original_multiselect_indices
         cls._temp_env.__exit__(None, None, None)
+        cls._temp_cleanup_patch.__exit__(None, None, None)
 
     def _new_app(self) -> AppTest:
         app = AppTest.from_file(str(ROOT / "app.py"), default_timeout=60)
