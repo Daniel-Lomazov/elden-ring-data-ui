@@ -111,7 +111,7 @@ The repository's GitHub Actions workflow currently runs:
   - `ruff check .`
   - `python -m tools.workspace_verify`
 - Windows:
-  - `python -m tools.workspace_verify --skip-optimizer --skip-smoke --tests-subset runtime`
+  - `python -m tools.workspace_verify`
 
 `tools.workspace_verify` runs the final check, optimizer check, optimizer smoke, and split unit-test steps by default. On Windows it reports `tests_core` and `tests_runtime_controller` separately. Use `./scripts/verify-workspace.ps1 -Quick` when you want the wrapper to skip optimizer and tests during a fast local loop.
 
