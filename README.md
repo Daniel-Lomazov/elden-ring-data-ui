@@ -330,7 +330,7 @@ Regression note:
 
 - Current GitHub Actions CI runs:
   - Linux: `ruff check .` and `python -m tools.workspace_verify`
-  - Windows: `python -m tools.workspace_verify --skip-optimizer --skip-smoke --tests-subset runtime`
+  - Windows: `python -m tools.workspace_verify`
 - `tools.workspace_verify` runs `tools.final_check`, `tools.optimizer_check`, `tools.optimizer_smoke`, and split unit-test steps.
 - On Windows, the unittest portion is reported as `tests_core` and `tests_runtime_controller`.
 - The unit-test suite now includes Streamlit UI smoke coverage for the default detailed view and the main optimization flow.
