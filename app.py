@@ -1754,7 +1754,6 @@ def main():
     is_armor_dataset = ui_spec.family == DATASET_FAMILY_ARMOR
     is_talisman_dataset = ui_spec.family == DATASET_FAMILY_TALISMAN
     is_catalog_dataset = ui_spec.family == DATASET_FAMILY_CATALOG
-
     armor_single_piece = False
     armor_full_set = False
     armor_custom_set = False
