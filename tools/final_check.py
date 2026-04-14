@@ -2,7 +2,6 @@ import contextlib
 import importlib
 import io
 import logging
-import sys
 
 from data_loader import DataLoader
 from ui_components import parse_armor_stats
