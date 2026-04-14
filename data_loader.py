@@ -14,7 +14,11 @@ class DataLoader:
     """Loads and caches Elden Ring data from CSV files."""
 
     def __init__(self, data_dir: str = "data"):
-        self.data_dir = Path(data_dir)
+        base_dir = Path(__file__).resolve().parent
+        resolved_data_dir = Path(data_dir)
+        if not resolved_data_dir.is_absolute():
+            resolved_data_dir = base_dir / resolved_data_dir
+        self.data_dir = resolved_data_dir
         self.root_files = [
             "armors.csv",
             "ashesOfWar.csv",
@@ -90,15 +94,25 @@ class DataLoader:
         extra_columns: Optional[Sequence[str]] = None,
     ) -> tuple[str, ...]:
         """Resolve include columns from profile + dataset overrides + extras."""
-        spec = DataLoader.load_column_instructions(instructions_path)
+        instructions_file = Path(instructions_path)
+        if not instructions_file.is_absolute():
+            instructions_file = Path(__file__).resolve().parent / instructions_file
+        spec = DataLoader.load_column_instructions(str(instructions_file))
         always = spec.get("always_include", ["id", "name"])
         profiles = spec.get("profiles", {})
         profile = profiles.get(profile_name, {}) if isinstance(profiles, dict) else {}
-        include = list(always) + list(profile.get("include", []))
 
         overrides = spec.get("dataset_overrides", {})
         dataset_cfg = overrides.get(dataset_key, {}) if isinstance(overrides, dict) else {}
-        include.extend(dataset_cfg.get("always_include", []))
+        dataset_always_include = dataset_cfg.get("always_include")
+        if dataset_always_include is not None:
+            if isinstance(dataset_always_include, str):
+                dataset_always_include = [dataset_always_include]
+            include = list(DataLoader._sanitize_column_sequence(dataset_always_include) or [])
+        else:
+            include = list(always)
+
+        include.extend(list(profile.get("include", [])))
         profile_includes = dataset_cfg.get("profile_includes", {})
         if isinstance(profile_includes, dict):
             include.extend(profile_includes.get(profile_name, []))

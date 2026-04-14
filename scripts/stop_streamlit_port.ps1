@@ -1,50 +1,21 @@
 param(
     [int]$Port = 8501,
-    [string]$EnvName = "elden_ring_ui",
     [switch]$ForceAnyListener
 )
 
 $ErrorActionPreference = "Stop"
 
-. "$PSScriptRoot\conda-utils.ps1"
-
 function Write-Step([string]$Message) {
     Write-Host "[stop_streamlit_port] $Message" -ForegroundColor Cyan
-}
-
-function Resolve-EnvPython([string]$TargetEnvName) {
-    $condaExe = Resolve-CondaExecutable
-    if (-not $condaExe) {
-        return $null
-    }
-
-    $envJson = & $condaExe env list --json | Out-String | ConvertFrom-Json
-    $envPath = $null
-    foreach ($path in $envJson.envs) {
-        if ((Split-Path $path -Leaf) -ieq $TargetEnvName) {
-            $envPath = $path
-            break
-        }
-    }
-
-    if (-not $envPath) {
-        return $null
-    }
-
-    $pythonExe = Join-Path $envPath "python.exe"
-    if (-not (Test-Path $pythonExe)) {
-        return $null
-    }
-
-    return $pythonExe
 }
 
 $repoRoot = Split-Path -Parent $PSScriptRoot
 Set-Location $repoRoot
 
+$pythonExe = Join-Path $repoRoot ".venv\Scripts\python.exe"
+
 if (-not $ForceAnyListener) {
-    $pythonExe = Resolve-EnvPython -TargetEnvName $EnvName
-    if ($pythonExe) {
+    if (Test-Path $pythonExe) {
         Write-Step "Delegating stop to runtime controller..."
         & $pythonExe -m tools.runtime_controller stop --port $Port
         $controllerExitCode = $LASTEXITCODE
@@ -54,7 +25,7 @@ if (-not $ForceAnyListener) {
         throw "Runtime controller stop failed with exit code $controllerExitCode. Re-run with -ForceAnyListener to hard-kill any listener on the port."
     }
 
-    Write-Step "Runtime controller Python could not be resolved. Falling back to emergency port kill."
+    Write-Step "Local .venv Python could not be resolved. Falling back to emergency port kill."
 }
 
 $pids = @()

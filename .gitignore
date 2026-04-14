@@ -47,9 +47,6 @@ dist/
 build/
 *.egg-info/
 
-# Conda
-conda-meta/
-
 # Logs
 *.log
 /tmp*/

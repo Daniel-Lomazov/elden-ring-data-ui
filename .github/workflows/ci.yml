@@ -2,12 +2,12 @@ name: CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, dev/lomazov ]
   pull_request:
     branches: [ main ]
   schedule:
-    # Runs hourly at :00 each hour. Adjust cron as needed.
-    - cron: '0 * * * *'
+    # Nightly deep run at 02:00 UTC
+    - cron: '0 2 * * *'
   # Allow manual runs from the Actions UI
   workflow_dispatch:
 
@@ -25,7 +25,7 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.10'
+          python-version: '3.11'
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
@@ -35,5 +35,23 @@ jobs:
         run: |
           ruff check .
       - name: Run workspace verification
+        run: |
+          python -m tools.workspace_verify
+
+  verify-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        shell: pwsh
+        run: |
+          python -m pip install --upgrade pip
+          if (Test-Path requirements.txt) { python -m pip install -r requirements.txt }
+      - name: Run workspace verification
+        shell: pwsh
         run: |
           python -m tools.workspace_verify

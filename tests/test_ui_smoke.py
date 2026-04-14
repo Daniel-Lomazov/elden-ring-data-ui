@@ -4,8 +4,8 @@ import json
 import os
 import socket
 import subprocess
-import tempfile
 import time
+import sys
 import unittest
 import urllib.request
 from functools import lru_cache
@@ -18,16 +18,17 @@ from optimizer import (
     get_method_label,
     get_objective_label,
 )
-from streamlit.testing.v1 import AppTest, element_tree
+from tools.temp_support import (
+    ensure_temp_root,
+    patched_temporary_directory_cleanup,
+    temporary_env_root,
+)
 
+from streamlit.testing.v1 import AppTest, element_tree  # noqa: E402
 
+PYTHON = Path(sys.executable)
 ROOT = Path(__file__).resolve().parents[1]
-PYTHON = ROOT.parent / "anaconda3" / "envs" / "elden_ring_ui" / "python.exe"
-TEST_TEMP_ROOT = ROOT / ".cache" / "ui-smoke"
-TEST_TEMP_ROOT.mkdir(parents=True, exist_ok=True)
-os.environ["TMP"] = str(TEST_TEMP_ROOT)
-os.environ["TEMP"] = str(TEST_TEMP_ROOT)
-tempfile.tempdir = str(TEST_TEMP_ROOT)
+TEST_TEMP_ROOT = ensure_temp_root("ui-smoke")
 
 
 def _get_free_port() -> int:
@@ -119,30 +120,25 @@ def _patched_multiselect_indices(self):
 class UiSmokeTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
+        cls._temp_cleanup_patch = patched_temporary_directory_cleanup()
+        cls._temp_cleanup_patch.__enter__()
+        cls._temp_env = temporary_env_root(TEST_TEMP_ROOT)
+        cls._temp_env.__enter__()
         cls._original_block_init = element_tree.Block.__init__
         cls._original_selectbox_index = element_tree.Selectbox.index
         cls._original_multiselect_indices = element_tree.Multiselect.indices
-        cls._original_temp_cleanup = tempfile.TemporaryDirectory._cleanup.__func__
 
         element_tree.Block.__init__ = _patch_unknown_block_init
         element_tree.Selectbox.index = property(_patched_selectbox_index)
         element_tree.Multiselect.indices = property(_patched_multiselect_indices)
-
-        @classmethod
-        def _patched_temp_cleanup(inner_cls, name, warn_message, ignore_errors=False):
-            try:
-                return cls._original_temp_cleanup(inner_cls, name, warn_message, True)
-            except PermissionError:
-                return None
-
-        tempfile.TemporaryDirectory._cleanup = _patched_temp_cleanup
 
     @classmethod
     def tearDownClass(cls):
         element_tree.Block.__init__ = cls._original_block_init
         element_tree.Selectbox.index = cls._original_selectbox_index
         element_tree.Multiselect.indices = cls._original_multiselect_indices
-        tempfile.TemporaryDirectory._cleanup = classmethod(cls._original_temp_cleanup)
+        cls._temp_env.__exit__(None, None, None)
+        cls._temp_cleanup_patch.__exit__(None, None, None)
 
     def _new_app(self) -> AppTest:
         app = AppTest.from_file(str(ROOT / "app.py"), default_timeout=60)
@@ -326,21 +322,67 @@ class UiSmokeTests(unittest.TestCase):
         self.assertIn("Armors", selectboxes["Left pane dataset:"].options)
         self.assertIn("Talismans", selectboxes["Right pane dataset:"].options)
 
-    def test_generic_rankable_dataset_uses_shared_catalog_flow(self):
-        app = self._select_dataset(self._new_app(), "Weapons")
+    def test_equipment_datasets_default_to_single_scope_detailed_flow(self):
+        expectations = [
+            ("Weapons", "Choose Weapon:"),
+            ("Shields", "Choose Shield:"),
+        ]
 
-        selectboxes = {widget.label: widget for widget in app.selectbox}
-        multiselects = {widget.label: widget for widget in app.multiselect}
-        radios = {widget.label: widget for widget in app.radio}
+        for dataset_label, item_label in expectations:
+            with self.subTest(dataset=dataset_label):
+                app = self._select_dataset(self._new_app(), dataset_label)
 
-        self.assertNotIn("Choose View:", selectboxes)
-        self.assertNotIn("Choose Scope:", selectboxes)
-        self.assertIn("Highlighted stats:", multiselects)
-        self.assertIn("Sort order:", selectboxes)
-        self.assertIn("Rows to show:", selectboxes)
-        self.assertNotIn("Optimization engine", selectboxes)
-        self.assertNotIn("Mode:", radios)
-        self.assertFalse(any(label.startswith("Slot ") for label in selectboxes))
+                selectboxes = {widget.label: widget for widget in app.selectbox}
+                multiselects = {widget.label: widget for widget in app.multiselect}
+                radios = {widget.label: widget for widget in app.radio}
+
+                self.assertIn("Choose View:", selectboxes)
+                self.assertEqual(selectboxes["Choose View:"].options, ["Detailed view", "Catalog"])
+                self.assertEqual(selectboxes["Choose View:"].value, "Detailed view")
+                self.assertIn("Choose Scope:", selectboxes)
+                self.assertEqual(selectboxes["Choose Scope:"].options, ["Single"])
+                self.assertEqual(selectboxes["Choose Scope:"].value, "Single")
+                self.assertIn(item_label, selectboxes)
+                self.assertNotIn("Highlighted stats:", multiselects)
+                self.assertNotIn("Sort order:", selectboxes)
+                self.assertNotIn("Rows to show:", selectboxes)
+                self.assertNotIn("Optimization engine", selectboxes)
+                self.assertNotIn("Mode:", radios)
+                self.assertFalse(any(label.startswith("Slot ") for label in selectboxes))
+
+                markdown_values = [widget.value for widget in app.markdown]
+                self.assertTrue(any("#### Requirements" in value for value in markdown_values))
+                self.assertTrue(any("**Requirements:**" in value for value in markdown_values))
+                self.assertTrue(any("**Edition:**" in value for value in markdown_values))
+
+    def test_equipment_datasets_can_switch_back_to_catalog_flow(self):
+        expectations = [
+            ("Weapons", "Choose Weapon:"),
+            ("Shields", "Choose Shield:"),
+        ]
+
+        for dataset_label, item_label in expectations:
+            with self.subTest(dataset=dataset_label):
+                app = self._select_dataset(self._new_app(), dataset_label)
+
+                next(widget for widget in app.selectbox if widget.label == "Choose View:").select(
+                    "Catalog"
+                ).run(timeout=60)
+                self.assertEqual(len(app.exception), 0)
+
+                selectboxes = {widget.label: widget for widget in app.selectbox}
+                multiselects = {widget.label: widget for widget in app.multiselect}
+                radios = {widget.label: widget for widget in app.radio}
+
+                self.assertIn("Choose View:", selectboxes)
+                self.assertNotIn("Choose Scope:", selectboxes)
+                self.assertNotIn(item_label, selectboxes)
+                self.assertIn("Highlighted stats:", multiselects)
+                self.assertIn("Sort order:", selectboxes)
+                self.assertIn("Rows to show:", selectboxes)
+                self.assertNotIn("Optimization engine", selectboxes)
+                self.assertNotIn("Mode:", radios)
+                self.assertFalse(any(label.startswith("Slot ") for label in selectboxes))
 
     def test_generic_browse_only_dataset_hides_ranking_controls(self):
         app = self._select_dataset(self._new_app(), "Bosses")
@@ -410,23 +452,25 @@ class UiSmokeTests(unittest.TestCase):
         self.assertNotIn("Items / Remembrances", dataset_selectbox.options)
 
     def test_upgrade_dataset_uses_progression_browser_without_ranking_controls(self):
-        app = self._select_dataset(self._new_app(), "Weapons Upgrades")
+        for dataset_label in ("Weapons Upgrades", "Shields Upgrades"):
+            with self.subTest(dataset=dataset_label):
+                app = self._select_dataset(self._new_app(), dataset_label)
 
-        selectboxes = {widget.label: widget for widget in app.selectbox}
-        multiselects = {widget.label: widget for widget in app.multiselect}
-        radios = {widget.label: widget for widget in app.radio}
+                selectboxes = {widget.label: widget for widget in app.selectbox}
+                multiselects = {widget.label: widget for widget in app.multiselect}
+                radios = {widget.label: widget for widget in app.radio}
 
-        self.assertIn("Rows to preview:", selectboxes)
-        self.assertIn("Open item:", selectboxes)
-        self.assertNotIn("Choose View:", selectboxes)
-        self.assertNotIn("Choose Scope:", selectboxes)
-        self.assertNotIn("Highlighted stats:", multiselects)
-        self.assertNotIn("Highlight stat:", selectboxes)
-        self.assertNotIn("Sort order:", selectboxes)
-        self.assertNotIn("Rows to show:", selectboxes)
-        self.assertNotIn("Optimization engine", selectboxes)
-        self.assertFalse(any(label.startswith("Slot ") for label in selectboxes))
-        self.assertNotIn("Mode:", radios)
+                self.assertIn("Rows to preview:", selectboxes)
+                self.assertIn("Open item:", selectboxes)
+                self.assertNotIn("Choose View:", selectboxes)
+                self.assertNotIn("Choose Scope:", selectboxes)
+                self.assertNotIn("Highlighted stats:", multiselects)
+                self.assertNotIn("Highlight stat:", selectboxes)
+                self.assertNotIn("Sort order:", selectboxes)
+                self.assertNotIn("Rows to show:", selectboxes)
+                self.assertNotIn("Optimization engine", selectboxes)
+                self.assertFalse(any(label.startswith("Slot ") for label in selectboxes))
+                self.assertNotIn("Mode:", radios)
 
     def test_optimizer_smoke_script_runs_successfully(self):
         env = os.environ.copy()

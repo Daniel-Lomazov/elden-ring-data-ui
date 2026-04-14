@@ -26,5 +26,5 @@ This folder hosts local icon assets referenced by `data/icons/icons.json`.
 - Download/update local icons from Fandom file-page links in the registry:
 
   ```powershell
-  conda run -n elden_ring_ui python scripts/download_fandom_icons.py
+  .\.venv\Scripts\python.exe scripts/download_fandom_icons.py
   ```

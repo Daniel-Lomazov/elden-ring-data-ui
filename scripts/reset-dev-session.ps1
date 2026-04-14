@@ -1,6 +1,5 @@
 param(
     [int]$Port = 8501,
-    [string]$EnvName = "elden_ring_ui",
     [switch]$RemovePycache,
     [switch]$ClearRuffCache
 )
@@ -18,7 +17,7 @@ Write-Step "Workspace: $repoRoot"
 
 $stopFailed = $false
 try {
-    & "$PSScriptRoot\stop_streamlit_port.ps1" -Port $Port -EnvName $EnvName
+    & "$PSScriptRoot\stop_streamlit_port.ps1" -Port $Port
 } catch {
     $stopFailed = $true
     Write-Step $_.Exception.Message

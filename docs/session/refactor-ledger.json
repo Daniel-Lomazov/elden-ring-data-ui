@@ -1,0 +1,195 @@
+{
+  "schema_version": 1,
+  "updated_at": "2026-04-15",
+  "repo": "elden-ring-data-ui",
+  "cycles": [
+    {
+      "cycle_id": 1,
+      "current_phase": "equipment_catalog_canonicalization",
+      "data_slice_in_focus": [
+        "weapons",
+        "shields"
+      ],
+      "what_is_certain": [
+        "Weapons and shields now share module-local helpers in app_support/dataset_ui.py and app_support/dataset_presentations.py.",
+        "The detailed-view and Catalog UI behavior remained unchanged in smoke tests.",
+        "The project Conda environment elden_ring_ui has the runtime dependencies needed for verification."
+      ],
+      "what_remains_uncertain": [
+        "Whether a later slice should be folded into the same abstraction family or kept separate until its own parity tests are written."
+      ],
+      "architectural_intent": "Make the equipment catalog pair a canonical shared contract while preserving current resolver paths, labels, and dataset-specific selectors.",
+      "changes_made": [
+        "Extracted _equipment_spec in app_support/dataset_ui.py.",
+        "Extracted _equipment_presentation_spec in app_support/dataset_presentations.py.",
+        "Extended tests/test_dataset_presentation.py to validate weapons and shields parity.",
+        "Added direct render assertions for equipment description and edition output."
+      ],
+      "validated_assumptions": [
+        "Weapons and shields are literal near-clones in both registries except for dataset_key and label.",
+        "The shared equipment helpers can stay module-local without touching app.py."
+      ],
+      "exceptions": [
+        "Selector labels remain explicit in app_support/view_state.py.",
+        "Spell-family and progression-table deduplication stay deferred because they are separate semantic families."
+      ],
+      "new_abstractions": [
+        "Module-local equipment UI factory",
+        "Module-local equipment presentation factory"
+      ],
+      "verification_status": {
+        "unit_tests": "passed",
+        "smoke_tests": "passed",
+        "commands": [
+          "conda run -n elden_ring_ui python -m unittest tests.test_dataset_ui_registry tests.test_dataset_presentation tests.test_view_state_helpers",
+          "conda run -n elden_ring_ui python -m unittest tests.test_ui_smoke.UiSmokeTests.test_equipment_datasets_default_to_single_scope_detailed_flow tests.test_ui_smoke.UiSmokeTests.test_equipment_datasets_can_switch_back_to_catalog_flow"
+        ]
+      },
+      "next_slice_or_question": "Apply the same slice discipline to weapons_upgrades and shields_upgrades only if the progression-table contract needs another canonical helper."
+    },
+    {
+      "cycle_id": 2,
+      "current_phase": "progression_table_loading_profile",
+      "data_slice_in_focus": [
+        "weapons_upgrades",
+        "shields_upgrades"
+      ],
+      "what_is_certain": [
+        "Weapons and shields upgrades now share module-local progression helpers in app_support/dataset_ui.py and app_support/dataset_presentations.py.",
+        "The progression-table loader profile now resolves the explicit weapon name and shield name identity columns instead of falling back to id/name.",
+        "The armors and progression smoke coverage passed after restoring valid loading-instructions JSON and hardening DataLoader path resolution."
+      ],
+      "what_remains_uncertain": [
+        "Whether the remaining top-level dataset families should also be moved onto explicit loader profiles in a later slice or left on the current full-file fallback path."
+      ],
+      "architectural_intent": "Make progression tables load through a shared column-loading contract while preserving browse-only rendering and explicit title-field differences.",
+      "changes_made": [
+        "Extracted _progression_spec in app_support/dataset_ui.py.",
+        "Extracted _progression_presentation_spec in app_support/dataset_presentations.py.",
+        "Added progression_table_visual to data/column_loading_instructions.json.",
+        "Hardened DataLoader path resolution and dataset-specific identity-column overrides.",
+        "Extended tests/test_data_loader_cache.py, tests/test_dataset_ui_registry.py, tests/test_dataset_presentation.py, and tests/test_ui_smoke.py for progression parity."
+      ],
+      "validated_assumptions": [
+        "The progression-table pair is structurally identical except for the title field and default sort field.",
+        "A dataset-specific always_include override is required for progression tables because they do not expose the generic name column.",
+        "The loading-instructions contract must be valid JSON for the loader profile path to work at app startup."
+      ],
+      "exceptions": [
+        "The progression-table profile uses explicit id plus weapon name or shield name identity columns rather than the generic name field.",
+        "Other top-level families still use the current loader fallback and remain outside this slice."
+      ],
+      "new_abstractions": [
+        "Module-local progression UI factory",
+        "Module-local progression presentation factory",
+        "Progression-table loader profile"
+      ],
+      "verification_status": {
+        "unit_tests": "passed",
+        "smoke_tests": "passed",
+        "commands": [
+          "conda run -n elden_ring_ui python -m unittest tests.test_data_loader_cache tests.test_dataset_ui_registry tests.test_dataset_presentation tests.test_ui_smoke",
+          "conda run -n elden_ring_ui python -c \"from data_loader import DataLoader; print(DataLoader().build_profile_columns('armors','single_piece_visual')); print(DataLoader().build_profile_columns('weapons_upgrades','progression_table_visual'))\""
+        ]
+      },
+      "next_slice_or_question": "Decide whether the remaining top-level dataset families should be brought onto explicit loader profiles or left as deliberate fallback cases."
+    },
+    {
+      "cycle_id": 3,
+      "current_phase": "uv_requirements_bootstrap",
+      "data_slice_in_focus": [
+        "setup.ps1",
+        "tests/test_ui_smoke.py",
+        "README.md",
+        "docs/README.md"
+      ],
+      "what_is_certain": [
+        "uv 0.8.6 is available locally in this workspace.",
+        "The repository dependencies install correctly via uv pip install --reinstall -r requirements.txt into .venv.",
+        "The UI smoke suite passes under the uv-managed interpreter with no hardcoded Anaconda path.",
+        "setup.ps1 no longer depends on Conda for the primary bootstrap path."
+      ],
+      "what_remains_uncertain": [
+        "Whether the remaining Conda launcher and verification wrappers should be converted or retired in the next slice.",
+        "Whether environment.yml should remain as a legacy compatibility artifact until the wrapper migration is complete."
+      ],
+      "architectural_intent": "Make uv the preferred bootstrap path for the repo without changing app behavior, while deferring the remaining launcher-wrapper migration to a later compatibility slice.",
+      "changes_made": [
+        "Replaced the Conda/bootstrap logic in setup.ps1 with a uv-managed .venv creation and requirements install flow.",
+        "Switched tests/test_ui_smoke.py to use sys.executable instead of a hardcoded Anaconda interpreter path.",
+        "Rewrote README.md to recommend the uv setup path and describe the uv-managed environment as the primary bootstrap.",
+        "Updated docs/README.md quick verification commands to use uv and the uv-managed .venv explicitly."
+      ],
+      "validated_assumptions": [
+        "uv pip install with the requirements file resolves the full dependency set needed by pandas, streamlit, and plotly on Windows.",
+        "The smoke suite can run under the uv-managed interpreter without relying on a Conda installation.",
+        "A cleanly recreated .venv is safer than reusing the earlier partially installed environment."
+      ],
+      "exceptions": [
+        "Legacy Conda wrapper scripts and environment.yml remain untouched for a later slice.",
+        "The remaining runtime-launch scripts still encode the old conda-backed workflow."
+      ],
+      "new_abstractions": [
+        "uv-managed .venv bootstrap",
+        "interpreter-agnostic smoke test launcher"
+      ],
+      "verification_status": {
+        "unit_tests": "passed",
+        "smoke_tests": "passed",
+        "commands": [
+          "Set-Location 'c:\\Users\\lomaz\\elden_ring_data_ui'; .\\setup.ps1",
+          "Set-Location 'c:\\Users\\lomaz\\elden_ring_data_ui'; .\\.venv\\Scripts\\python.exe -m unittest tests.test_ui_smoke -q",
+          "Set-Location 'c:\\Users\\lomaz\\elden_ring_data_ui'; .\\.venv\\Scripts\\python.exe -m tools.workspace_verify --skip-smoke"
+        ]
+      },
+      "next_slice_or_question": "Move the remaining conda launcher and verification wrappers off Conda, starting with scripts/run_streamlit_local.ps1, scripts/start-app.ps1, scripts/stop_streamlit_port.ps1, scripts/verify-workspace.ps1, and scripts/run-all.ps1."
+    },
+    {
+      "cycle_id": 4,
+      "current_phase": "conda_wrapper_cleanup",
+      "data_slice_in_focus": [
+        "setup.ps1",
+        "scripts/run_streamlit_local.ps1",
+        "scripts/start-app.ps1",
+        "scripts/stop_streamlit_port.ps1",
+        "scripts/verify-workspace.ps1",
+        "scripts/run-all.ps1",
+        "scripts/start-armor-review.ps1"
+      ],
+      "what_is_certain": [
+        "All active setup, launch, stop, and verification scripts now resolve .venv\\Scripts\\python.exe directly.",
+        "The obsolete Conda bootstrap files and environment.yml manifest were deleted.",
+        "The full workspace verification suite passes under the local .venv interpreter."
+      ],
+      "what_remains_uncertain": [
+        "Whether the older historical session notes should be rewritten to remove the archived Conda context entirely."
+      ],
+      "architectural_intent": "Make uv and the repository-local .venv the only supported runtime path while leaving older notes intact as historical context.",
+      "changes_made": [
+        "Replaced the remaining Conda-backed PowerShell wrappers with direct .venv Python resolution.",
+        "Removed scripts/conda-utils.ps1, scripts/ensure-conda-env.ps1, and environment.yml.",
+        "Updated docs and release notes to refer to the current uv/.venv workflow."
+      ],
+      "validated_assumptions": [
+        "setup.ps1 can be invoked from other scripts after switching from exit codes to terminating errors.",
+        "The smoke, optimizer, and unit-test suites still pass with the local .venv interpreter."
+      ],
+      "exceptions": [
+        "Older session and release history may still mention the previous Conda-based workflow as archival context."
+      ],
+      "new_abstractions": [
+        "Repository-local .venv bootstrap",
+        "Environment-agnostic PowerShell launchers"
+      ],
+      "verification_status": {
+        "unit_tests": "passed",
+        "smoke_tests": "passed",
+        "commands": [
+          ".\\.venv\\Scripts\\python.exe -m tools.workspace_verify --quick",
+          ".\\.venv\\Scripts\\python.exe -m tools.workspace_verify"
+        ]
+      },
+      "next_slice_or_question": "Decide whether the archived session notes should be migrated to the new uv-only terminology or preserved verbatim as history."
+    }
+  ]
+}

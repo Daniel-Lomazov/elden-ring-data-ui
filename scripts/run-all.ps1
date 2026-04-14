@@ -1,5 +1,4 @@
 param(
-    [string]$EnvName = "elden_ring_ui",
     [int]$Port = 8501,
     [switch]$SkipReset,
     [switch]$SkipVerify,
@@ -7,8 +6,6 @@ param(
     [switch]$UltraQuick,
     [switch]$RunApp,
     [switch]$OpenBrowser,
-    [switch]$AlwaysUpdateEnv,
-    [switch]$AlwaysSyncPip,
     [switch]$RemovePycache,
     [switch]$ClearRuffCache,
     [int]$WaitForReadySeconds = 45
@@ -34,7 +31,7 @@ if ($RunApp -and -not $PSBoundParameters.ContainsKey("OpenBrowser")) {
     Write-Step "External browser launch disabled by default for app launch."
 }
 
-$autoFastLaunch = $RunApp -and -not $PSBoundParameters.ContainsKey("UltraQuick") -and -not $PSBoundParameters.ContainsKey("QuickVerify") -and -not $PSBoundParameters.ContainsKey("SkipVerify") -and -not $PSBoundParameters.ContainsKey("AlwaysUpdateEnv") -and -not $PSBoundParameters.ContainsKey("AlwaysSyncPip") -and -not $PSBoundParameters.ContainsKey("SkipReset")
+$autoFastLaunch = $RunApp -and -not $PSBoundParameters.ContainsKey("UltraQuick") -and -not $PSBoundParameters.ContainsKey("QuickVerify") -and -not $PSBoundParameters.ContainsKey("SkipVerify") -and -not $PSBoundParameters.ContainsKey("SkipReset")
 if ($autoFastLaunch) {
     $UltraQuick = $true
     Write-Step "Defaulting to fastest launch profile (UltraQuick, no external browser)."
@@ -43,7 +40,7 @@ if ($autoFastLaunch) {
 if ($UltraQuick) {
     $SkipReset = $true
     $SkipVerify = $true
-    Write-Step "UltraQuick mode enabled: skipping reset, env setup, and verification."
+    Write-Step "UltraQuick mode enabled: skipping reset, environment refresh, and verification."
 }
 
 if (-not $SkipReset) {
@@ -55,9 +52,9 @@ if (-not $SkipReset) {
 }
 
 if (-not $UltraQuick) {
-    Write-Step "Ensuring conda environment..."
+    Write-Step "Refreshing local Python environment..."
     $envTimer = [System.Diagnostics.Stopwatch]::StartNew()
-    & "$PSScriptRoot\ensure-conda-env.ps1" -EnvName $EnvName -AlwaysUpdate:$AlwaysUpdateEnv -AlwaysSyncPip:$AlwaysSyncPip
+    & "$PSScriptRoot\..\setup.ps1"
     $envTimer.Stop()
     Write-Timing "Environment phase" $envTimer.Elapsed.TotalSeconds
 }
@@ -65,7 +62,7 @@ if (-not $UltraQuick) {
 if (-not $SkipVerify) {
     Write-Step "Running workspace verification..."
     $verifyTimer = [System.Diagnostics.Stopwatch]::StartNew()
-    & "$PSScriptRoot\verify-workspace.ps1" -EnvName $EnvName -Quick:$QuickVerify
+    & "$PSScriptRoot\verify-workspace.ps1" -Quick:$QuickVerify
     $verifyTimer.Stop()
     Write-Timing "Verification phase" $verifyTimer.Elapsed.TotalSeconds
 }
@@ -73,7 +70,7 @@ if (-not $SkipVerify) {
 if ($RunApp) {
     Write-Step "Starting Streamlit app..."
     $appTimer = [System.Diagnostics.Stopwatch]::StartNew()
-    & "$PSScriptRoot\start-app.ps1" -EnvName $EnvName -Port $Port -WaitForReadySeconds $WaitForReadySeconds -OpenBrowser:$OpenBrowser
+    & "$PSScriptRoot\start-app.ps1" -Port $Port -WaitForReadySeconds $WaitForReadySeconds -OpenBrowser:$OpenBrowser
     $appTimer.Stop()
     Write-Timing "App launch phase" $appTimer.Elapsed.TotalSeconds
 } else {

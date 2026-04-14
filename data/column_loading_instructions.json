@@ -10,6 +10,16 @@
       "description": "Fast lookup and identity verification only.",
       "include": []
     },
+    "progression_table_visual": {
+      "description": "Columns needed for progression-table preview cards and grouped upgrade details.",
+      "include": [
+        "upgrade",
+        "attack power",
+        "stat scaling",
+        "passive effects",
+        "damage reduction (%)"
+      ]
+    },
     "optimization_core": {
       "description": "Columns needed for stat parsing and ranking/optimization.",
       "include": [
@@ -140,6 +150,18 @@
           "value"
         ]
       }
+    },
+    "weapons_upgrades": {
+      "always_include": [
+        "id",
+        "weapon name"
+      ]
+    },
+    "shields_upgrades": {
+      "always_include": [
+        "id",
+        "shield name"
+      ]
     }
   }
 }

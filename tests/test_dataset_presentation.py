@@ -85,7 +85,21 @@ class DatasetPresentationTests(unittest.TestCase):
         self.assertTrue(pd.isna(normalized.loc[1, "value"]))
 
     def test_equipment_presentation_formats_requirements_map(self):
-        spec = resolve_dataset_presentation_spec("weapons")
+        expected_card_meta_labels = (
+            "Category",
+            "Damage Type",
+            "Skill",
+            "Passive Effect",
+            "Description",
+        )
+        expected_card_metric_labels = ("Weight", "FP Cost")
+        expected_detail_summary_labels = ("Description",)
+        expected_detail_sections = (
+            ("Combat", ("Category", "Damage Type", "Skill", "Passive Effect", "FP Cost")),
+            ("Requirements", ("Requirements",)),
+            ("Item", ("Weight", "Edition")),
+        )
+
         row = pd.Series(
             {
                 "name": "Dueling Shield",
@@ -96,18 +110,50 @@ class DatasetPresentationTests(unittest.TestCase):
                 "passive effect": "No passive effects",
                 "weight": 9.0,
                 "FP cost": "9",
+                "description": "A sturdy shield.",
                 "dlc": 1,
             }
         )
 
-        sections = []
-        for section in spec.detail_sections:
-            sections.extend(list(iter_presented_fields(row, section.fields)))
-        section_rows = {field.label: text for field, text in sections}
+        for dataset_key in ("weapons", "shields"):
+            with self.subTest(dataset=dataset_key):
+                spec = resolve_dataset_presentation_spec(dataset_key)
 
-        self.assertEqual(section_rows["Requirements"], "STR 15, DEX 14")
-        self.assertEqual(section_rows["Weight"], "9.0")
-        self.assertEqual(section_rows["FP Cost"], "9")
+                self.assertEqual(
+                    tuple(field.label for field in spec.card_meta_fields),
+                    expected_card_meta_labels,
+                )
+                self.assertEqual(
+                    tuple(field.label for field in spec.card_metric_fields),
+                    expected_card_metric_labels,
+                )
+                self.assertEqual(
+                    tuple(field.label for field in spec.detail_summary_fields),
+                    expected_detail_summary_labels,
+                )
+                self.assertEqual(
+                    tuple(
+                        (section.title, tuple(field.label for field in section.fields))
+                        for section in spec.detail_sections
+                    ),
+                    expected_detail_sections,
+                )
+
+                summary_rows = {
+                    field.label: text for field, text in iter_presented_fields(row, spec.detail_summary_fields)
+                }
+
+                sections = []
+                for section in spec.detail_sections:
+                    sections.extend(list(iter_presented_fields(row, section.fields)))
+                section_rows = {field.label: text for field, text in sections}
+
+                self.assertEqual(summary_rows["Description"], "A sturdy shield.")
+
+                self.assertEqual(section_rows["Requirements"], "STR 15, DEX 14")
+                self.assertEqual(section_rows["Weight"], "9.0")
+                self.assertEqual(section_rows["FP Cost"], "9")
+                self.assertEqual(section_rows["Edition"], "DLC")
 
     def test_world_dataset_presentation_parses_serialized_relationships(self):
         spec = resolve_dataset_presentation_spec("locations")
@@ -134,18 +180,20 @@ class DatasetPresentationTests(unittest.TestCase):
         self.assertEqual(section_rows["Edition"], "DLC")
 
     def test_progression_dataset_presentation_orders_grouped_upgrade_fields(self):
-        spec = resolve_dataset_presentation_spec("weapons_upgrades")
-        ordered_labels = [
-            field.label
-            for section in spec.detail_sections
-            for field in section.fields
-        ]
+        for dataset_key, expected_name_field in (("weapons_upgrades", "weapon name"), ("shields_upgrades", "shield name")):
+            with self.subTest(dataset=dataset_key):
+                spec = resolve_dataset_presentation_spec(dataset_key)
+                ordered_labels = [
+                    field.label
+                    for section in spec.detail_sections
+                    for field in section.fields
+                ]
 
-        self.assertEqual(spec.name_field, "weapon name")
-        self.assertEqual(
-            ordered_labels,
-            ["Upgrade", "Attack Power", "Damage Reduction", "Stat Scaling", "Passive Effects"],
-        )
+                self.assertEqual(spec.name_field, expected_name_field)
+                self.assertEqual(
+                    ordered_labels,
+                    ["Upgrade", "Attack Power", "Damage Reduction", "Stat Scaling", "Passive Effects"],
+                )
 
 
 if __name__ == "__main__":

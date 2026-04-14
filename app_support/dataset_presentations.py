@@ -346,6 +346,91 @@ def build_default_presentation_spec(dataset_key: str) -> DatasetPresentationSpec
     )
 
 
+_EQUIPMENT_CARD_META_FIELDS = (
+    _field("category", "Category"),
+    _field("damage type", "Damage Type"),
+    _field("skill", "Skill"),
+    _field("passive effect", "Passive Effect"),
+    _field("description", "Description", style=STYLE_CAPTION),
+)
+
+
+_EQUIPMENT_CARD_METRIC_FIELDS = (
+    _field("weight", "Weight", formatter="weight"),
+    _field("FP cost", "FP Cost", formatter="fp_cost"),
+)
+
+
+_EQUIPMENT_DETAIL_SUMMARY_FIELDS = (
+    _field("description", "Description", style=STYLE_CAPTION),
+)
+
+
+_EQUIPMENT_DETAIL_SECTIONS = (
+    _section(
+        "Combat",
+        _field("category", "Category"),
+        _field("damage type", "Damage Type"),
+        _field("skill", "Skill"),
+        _field("passive effect", "Passive Effect"),
+        _field("FP cost", "FP Cost", formatter="fp_cost"),
+    ),
+    _section(
+        "Requirements",
+        _field("requirements", "Requirements", formatter="requirements_map"),
+    ),
+    _section(
+        "Item",
+        _field("weight", "Weight", formatter="weight"),
+        _field("dlc", "Edition", formatter="dlc"),
+    ),
+)
+
+
+def _equipment_presentation_spec(dataset_key: str) -> DatasetPresentationSpec:
+    return DatasetPresentationSpec(
+        dataset_key=dataset_key,
+        card_meta_fields=_EQUIPMENT_CARD_META_FIELDS,
+        card_metric_fields=_EQUIPMENT_CARD_METRIC_FIELDS,
+        detail_summary_fields=_EQUIPMENT_DETAIL_SUMMARY_FIELDS,
+        detail_sections=_EQUIPMENT_DETAIL_SECTIONS,
+    )
+
+
+_PROGRESSION_CARD_META_FIELDS = (
+    _field("upgrade", "Upgrade"),
+    _field("attack power", "Attack Power", formatter="structured"),
+    _field("damage reduction (%)", "Damage Reduction", formatter="structured"),
+)
+
+
+_PROGRESSION_DETAIL_SECTIONS = (
+    _section(
+        "Upgrade Path",
+        _field("upgrade", "Upgrade"),
+        _field("attack power", "Attack Power", formatter="structured"),
+        _field("damage reduction (%)", "Damage Reduction", formatter="structured"),
+        _field("stat scaling", "Stat Scaling", formatter="structured"),
+        _field("passive effects", "Passive Effects", formatter="structured"),
+    ),
+)
+
+
+def _progression_presentation_spec(
+    dataset_key: str,
+    *,
+    name_field: str,
+) -> DatasetPresentationSpec:
+    return DatasetPresentationSpec(
+        dataset_key=dataset_key,
+        name_field=name_field,
+        display_variant=DISPLAY_VARIANT_PROGRESSION_TABLE,
+        detail_mode=DETAIL_MODE_GROUPED,
+        card_meta_fields=_PROGRESSION_CARD_META_FIELDS,
+        detail_sections=_PROGRESSION_DETAIL_SECTIONS,
+    )
+
+
 _DATASET_PRESENTATION_REGISTRY: dict[str, DatasetPresentationSpec] = {
     "armors": DatasetPresentationSpec(
         dataset_key="armors",
@@ -485,78 +570,8 @@ _DATASET_PRESENTATION_REGISTRY: dict[str, DatasetPresentationSpec] = {
             ),
         ),
     ),
-    "weapons": DatasetPresentationSpec(
-        dataset_key="weapons",
-        card_meta_fields=(
-            _field("category", "Category"),
-            _field("damage type", "Damage Type"),
-            _field("skill", "Skill"),
-            _field("passive effect", "Passive Effect"),
-            _field("description", "Description", style=STYLE_CAPTION),
-        ),
-        card_metric_fields=(
-            _field("weight", "Weight", formatter="weight"),
-            _field("FP cost", "FP Cost", formatter="fp_cost"),
-        ),
-        detail_summary_fields=(
-            _field("description", "Description", style=STYLE_CAPTION),
-        ),
-        detail_sections=(
-            _section(
-                "Combat",
-                _field("category", "Category"),
-                _field("damage type", "Damage Type"),
-                _field("skill", "Skill"),
-                _field("passive effect", "Passive Effect"),
-                _field("FP cost", "FP Cost", formatter="fp_cost"),
-            ),
-            _section(
-                "Requirements",
-                _field("requirements", "Requirements", formatter="requirements_map"),
-            ),
-            _section(
-                "Item",
-                _field("weight", "Weight", formatter="weight"),
-                _field("dlc", "Edition", formatter="dlc"),
-            ),
-        ),
-    ),
-    "shields": DatasetPresentationSpec(
-        dataset_key="shields",
-        card_meta_fields=(
-            _field("category", "Category"),
-            _field("damage type", "Damage Type"),
-            _field("skill", "Skill"),
-            _field("passive effect", "Passive Effect"),
-            _field("description", "Description", style=STYLE_CAPTION),
-        ),
-        card_metric_fields=(
-            _field("weight", "Weight", formatter="weight"),
-            _field("FP cost", "FP Cost", formatter="fp_cost"),
-        ),
-        detail_summary_fields=(
-            _field("description", "Description", style=STYLE_CAPTION),
-        ),
-        detail_sections=(
-            _section(
-                "Combat",
-                _field("category", "Category"),
-                _field("damage type", "Damage Type"),
-                _field("skill", "Skill"),
-                _field("passive effect", "Passive Effect"),
-                _field("FP cost", "FP Cost", formatter="fp_cost"),
-            ),
-            _section(
-                "Requirements",
-                _field("requirements", "Requirements", formatter="requirements_map"),
-            ),
-            _section(
-                "Item",
-                _field("weight", "Weight", formatter="weight"),
-                _field("dlc", "Edition", formatter="dlc"),
-            ),
-        ),
-    ),
+    "weapons": _equipment_presentation_spec("weapons"),
+    "shields": _equipment_presentation_spec("shields"),
     "ashesOfWar": DatasetPresentationSpec(
         dataset_key="ashesOfWar",
         card_meta_fields=(
@@ -705,47 +720,13 @@ _DATASET_PRESENTATION_REGISTRY: dict[str, DatasetPresentationSpec] = {
             ),
         ),
     ),
-    "weapons_upgrades": DatasetPresentationSpec(
-        dataset_key="weapons_upgrades",
+    "weapons_upgrades": _progression_presentation_spec(
+        "weapons_upgrades",
         name_field="weapon name",
-        display_variant=DISPLAY_VARIANT_PROGRESSION_TABLE,
-        detail_mode=DETAIL_MODE_GROUPED,
-        card_meta_fields=(
-            _field("upgrade", "Upgrade"),
-            _field("attack power", "Attack Power", formatter="structured"),
-            _field("damage reduction (%)", "Damage Reduction", formatter="structured"),
-        ),
-        detail_sections=(
-            _section(
-                "Upgrade Path",
-                _field("upgrade", "Upgrade"),
-                _field("attack power", "Attack Power", formatter="structured"),
-                _field("damage reduction (%)", "Damage Reduction", formatter="structured"),
-                _field("stat scaling", "Stat Scaling", formatter="structured"),
-                _field("passive effects", "Passive Effects", formatter="structured"),
-            ),
-        ),
     ),
-    "shields_upgrades": DatasetPresentationSpec(
-        dataset_key="shields_upgrades",
+    "shields_upgrades": _progression_presentation_spec(
+        "shields_upgrades",
         name_field="shield name",
-        display_variant=DISPLAY_VARIANT_PROGRESSION_TABLE,
-        detail_mode=DETAIL_MODE_GROUPED,
-        card_meta_fields=(
-            _field("upgrade", "Upgrade"),
-            _field("attack power", "Attack Power", formatter="structured"),
-            _field("damage reduction (%)", "Damage Reduction", formatter="structured"),
-        ),
-        detail_sections=(
-            _section(
-                "Upgrade Path",
-                _field("upgrade", "Upgrade"),
-                _field("attack power", "Attack Power", formatter="structured"),
-                _field("damage reduction (%)", "Damage Reduction", formatter="structured"),
-                _field("stat scaling", "Stat Scaling", formatter="structured"),
-                _field("passive effects", "Passive Effects", formatter="structured"),
-            ),
-        ),
     ),
 }
 

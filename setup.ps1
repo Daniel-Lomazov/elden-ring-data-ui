@@ -1,9 +1,9 @@
 <#
 Simple Windows setup script for the trimmed Elden Ring Data UI.
 Usage:
-  - To create the conda environment (recommended):
+  - To create the uv-managed local environment (recommended):
       .\setup.ps1
-  - To create a venv instead:
+  - The -UseVenv switch is retained as a compatibility alias:
       .\setup.ps1 -UseVenv
 #>
 param(
@@ -14,36 +14,54 @@ function Write-Info($msg){ Write-Host $msg -ForegroundColor Cyan }
 function Write-Warn($msg){ Write-Host $msg -ForegroundColor Yellow }
 function Write-Err($msg){ Write-Host $msg -ForegroundColor Red }
 
-if (-not $UseVenv) {
-    if (-not (Get-Command conda -ErrorAction SilentlyContinue)) {
-        Write-Warn "Conda not found. Re-run with -UseVenv to create a Python venv instead."
-        exit 1
-    }
+$ErrorActionPreference = "Stop"
 
-    if (Test-Path ".\scripts\ensure-conda-env.ps1") {
-        Write-Info "Delegating to scripts\ensure-conda-env.ps1 ..."
-        & ".\scripts\ensure-conda-env.ps1" -EnvName "elden_ring_ui"
-    } else {
-        Write-Info "scripts\ensure-conda-env.ps1 not found, using legacy conda create/update flow..."
-        try {
-            conda env create -f environment.yml -n elden_ring_ui 2>&1 | Write-Host
-        } catch {
-            Write-Info "Environment may already exist — attempting update..."
-            conda env update -f environment.yml -n elden_ring_ui 2>&1 | Write-Host
-        }
-    }
-    Write-Info 'Done. Activate with: conda activate elden_ring_ui'
-} else {
-    Write-Info 'Creating a Python virtual environment in .\venv and installing requirements...'
-    python -m venv .venv
-    .\.venv\Scripts\Activate
-    python -m pip install --upgrade pip
-    if (Test-Path requirements.txt) {
-        pip install -r requirements.txt
-    } else {
-        Write-Warn "requirements.txt not found. Nothing installed."
-    }
-    Write-Info 'Done. Activate the venv with: .\.venv\Scripts\Activate'
+if (-not (Get-Command uv -ErrorAction SilentlyContinue)) {
+    Write-Err "uv not found. Install uv and re-run this script."
+    throw "uv not found. Install uv and re-run this script."
 }
 
-Write-Info "Setup complete. Run the app with: streamlit run app.py"
+if ($UseVenv) {
+    Write-Warn "-UseVenv is now a compatibility alias; uv handles the environment setup."
+}
+
+$repoRoot = $PSScriptRoot
+Set-Location $repoRoot
+
+$venvPath = Join-Path $repoRoot ".venv"
+$venvPython = Join-Path $venvPath "Scripts\python.exe"
+$desiredPythonVersion = "3.11"
+
+if (Test-Path $venvPython) {
+    try {
+        $existingPythonVersion = & $venvPython -c "import sys; print(f'{sys.version_info.major}.{sys.version_info.minor}')"
+        if ($existingPythonVersion.Trim() -ne $desiredPythonVersion) {
+            Write-Warn "Existing .venv uses Python $existingPythonVersion; recreating with Python $desiredPythonVersion..."
+            Remove-Item -Recurse -Force $venvPath
+        } else {
+            Write-Info "Refreshing existing .venv with uv..."
+        }
+    } catch {
+        Write-Warn "Existing .venv could not be inspected; recreating it with uv..."
+        Remove-Item -Recurse -Force $venvPath
+    }
+}
+
+if (-not (Test-Path $venvPython)) {
+    Write-Info "Creating .venv with uv..."
+    uv venv --python $desiredPythonVersion .venv
+    if ($LASTEXITCODE -ne 0) { throw "uv venv failed with exit code $LASTEXITCODE." }
+}
+
+if (-not (Test-Path "requirements.txt")) {
+    Write-Err "requirements.txt not found. Cannot sync dependencies."
+    throw "requirements.txt not found. Cannot sync dependencies."
+}
+
+Write-Info "Installing requirements into .venv..."
+uv pip install --reinstall --python $venvPython -r requirements.txt
+if ($LASTEXITCODE -ne 0) { throw "uv pip install failed with exit code $LASTEXITCODE." }
+
+Write-Info 'Done. Activate with: .\.venv\Scripts\Activate.ps1'
+Write-Info 'Or run directly with: .\.venv\Scripts\python.exe -m streamlit run app.py'
+Write-Info "Setup complete."

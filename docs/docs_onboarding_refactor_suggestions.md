@@ -1,5 +1,10 @@
 # Docs Onboarding + Documentation Refactor Suggestions
 
+> **Internal historical note** — This document is a working-session planning artifact
+> from early development (February 2026). It does not reflect current documentation
+> structure. For canonical contributor guidance see [`../CONTRIBUTING.md`](../CONTRIBUTING.md)
+> and [`DEVELOPMENT.md`](DEVELOPMENT.md).
+
 ## Source context
 The uploaded `README.md` is a **documentation index**. It instructs onboarding readers to start with `../README.md` and then proceed through session deep dives under `docs/session/`.
 

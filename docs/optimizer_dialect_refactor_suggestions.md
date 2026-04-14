@@ -1,5 +1,9 @@
 # Optimizer Dialect Refactor Suggestions (v2)
 
+> **Internal historical note** — This document captures optimizer dialect iteration
+> notes from early development (February 2026). For the current optimizer contract
+> see [`specs/optimizer_dialect.md`](specs/optimizer_dialect.md).
+
 ## Source context
 The uploaded `README.md` is a *documentation index* that points onboarding readers to `../README.md` and a set of session deep-dives under `docs/session/`.
 

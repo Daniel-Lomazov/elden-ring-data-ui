@@ -12,11 +12,16 @@ A Streamlit app for exploring Elden Ring datasets, ranking candidates, and optim
 
 ## Documentation
 
-- `docs/README.md` — onboarding index for docs and session deep dives.
-- `docs/optimizer/README.md` — optimizer documentation hub.
-- `docs/developer/icon_and_stat_layout_customization.md` — current UI layout/icon/detailed-scope customization points.
-- Latest deep dive: `docs/session/2026-02-16_optimizer_v2_iteration_summary.md`.
-- Latest commit summary: `docs/session/2026-02-15_commit_summary.md`.
+- [`docs/README.md`](docs/README.md) — onboarding index for docs and session deep dives.
+- [`docs/DEVELOPMENT.md`](docs/DEVELOPMENT.md) — architecture guide, module roles, and testing conventions.
+- [`docs/optimizer/README.md`](docs/optimizer/README.md) — optimizer documentation hub.
+- [`docs/developer/icon_and_stat_layout_customization.md`](docs/developer/icon_and_stat_layout_customization.md) — current UI layout/icon/detailed-scope customization points.
+
+## Contributing and legal
+
+- [`CONTRIBUTING.md`](CONTRIBUTING.md) — setup, verification, and pull request guidelines.
+- [`SECURITY.md`](SECURITY.md) — how to report a security vulnerability.
+- [`LICENSE`](LICENSE) — all rights reserved; see license for permitted use.
 
 ## Repository layout
 
@@ -39,22 +44,24 @@ elden_ring_data_ui/
 
 ## Setup
 
-### Option A (recommended): Conda
+### Recommended: uv
 
 ```powershell
-conda env create -f environment.yml
-conda activate elden_ring_ui
+.\setup.ps1
+```
+
+That script creates or refreshes a uv-managed `.venv` and installs the pinned packages from `requirements.txt`.
+
+Manual equivalent:
+
+```powershell
+uv venv --python 3.11 .venv
+uv pip install --reinstall --python .\.venv\Scripts\python.exe -r requirements.txt
+.\.venv\Scripts\Activate.ps1
 python -m streamlit run app.py
 ```
 
-### Option B: venv + pip
-
-```powershell
-python -m venv .venv
-.\.venv\Scripts\activate
-pip install -r requirements.txt
-python -m streamlit run app.py
-```
+The uv-managed `.venv` created by `setup.ps1` is the supported setup path.
 
 ## Fast start commands (Windows PowerShell)
 
@@ -321,16 +328,19 @@ Regression note:
 
 ### CI coverage
 
-- Current GitHub Actions CI runs `ruff check .` and `python -m tools.workspace_verify`.
-- `tools.workspace_verify` runs `tools.final_check`, `tools.optimizer_check`, and `unittest discover tests` by default.
+- Current GitHub Actions CI runs:
+  - Linux: `ruff check .` and `python -m tools.workspace_verify`
+  - Windows: `python -m tools.workspace_verify`
+- `tools.workspace_verify` runs `tools.final_check`, `tools.optimizer_check`, `tools.optimizer_smoke`, and split unit-test steps.
+- On Windows, the unittest portion is reported as `tests_core` and `tests_runtime_controller`.
 - The unit-test suite now includes Streamlit UI smoke coverage for the default detailed view and the main optimization flow.
 - `./scripts/verify-workspace.ps1 -Quick` keeps the wrapper fast by skipping optimizer and test execution.
 - Use `python -m tools.workspace_verify` or the wrapper before release-critical changes when you need full verification.
 
 ### Typical issues and fixes
 
-- **Issue: `Conda environment 'elden_ring_ui' was not found`**
-  - Run `./scripts/ensure-conda-env.ps1`
+- **Issue: the uv-managed `.venv` is missing or stale**
+  - Run `./setup.ps1`
 
 - **Issue: app port conflict / stale Streamlit process**
   - Run `./scripts/reset-dev-session.ps1`
