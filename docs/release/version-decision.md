@@ -1,5 +1,8 @@
 # Version Decision Record
 
+> **Internal release analysis** — This document records version-strategy decisions
+> made during release planning. It is a historical artifact rather than active guidance.
+
 Date: `2026-03-18`
 
 Decision:

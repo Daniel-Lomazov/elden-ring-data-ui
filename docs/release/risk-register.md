@@ -1,5 +1,9 @@
 # Risk Register
 
+> **Internal release analysis** — This document records risks assessed during
+> release preparation cycles. It is an internal development artifact retained for
+> historical reference.
+
 Baseline date: `2026-03-18`
 
 ## Current Risks

@@ -1,5 +1,9 @@
 # Flaw Register
 
+> **Internal release analysis** — This register tracks known flaws identified during
+> release preparation. It is an internal development artifact, not a public bug list.
+> For reporting issues to the project, open a GitHub issue.
+
 Last refreshed: `2026-04-13`
 
 | ID | Flaw | Impact | Owner | Status | Evidence / Fix |

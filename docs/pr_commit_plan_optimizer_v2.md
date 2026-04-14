@@ -1,5 +1,9 @@
 # PR / Commit Plan: Optimizer Dialect + Encounter Survival (Incremental)
 
+> **Internal historical note** — This is a development planning document from
+> February 2026. The work it describes has been completed. It is kept for historical
+> reference only and does not reflect any pending work.
+
 ## Goal
 Introduce an encounter-aware optimizer (damage mix + status threats) without breaking existing workflows.
 

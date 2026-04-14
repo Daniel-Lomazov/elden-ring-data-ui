@@ -1,5 +1,8 @@
 # Preserved Flow Matrix
 
+> **Internal release analysis** — This matrix captures expected runtime behaviors
+> verified at release time. It is a historical snapshot rather than an active spec.
+
 Last refreshed: `2026-04-13`
 
 | Flow | Expected behavior | Primary coverage |
